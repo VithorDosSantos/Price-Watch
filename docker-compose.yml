@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: pricewatch-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: pricewatch
+      POSTGRES_USER: pricewatch
+      POSTGRES_PASSWORD: pricewatch
+    ports:
+      - "5433:5432"
+    volumes:
+      - pricewatch_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  pricewatch_postgres_data:

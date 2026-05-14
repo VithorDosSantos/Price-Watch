@@ -1,0 +1,40 @@
+CREATE TABLE IF NOT EXISTS "Product" (
+  "id" TEXT PRIMARY KEY,
+  "externalId" TEXT NOT NULL UNIQUE,
+  "name" TEXT NOT NULL,
+  "price" DECIMAL(10, 2) NOT NULL,
+  "imageUrl" TEXT,
+  "productUrl" TEXT,
+  "storeName" TEXT,
+  "category" TEXT,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS "PriceHistory" (
+  "id" TEXT PRIMARY KEY,
+  "productId" TEXT NOT NULL REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  "oldPrice" DECIMAL(10, 2) NOT NULL,
+  "newPrice" DECIMAL(10, 2) NOT NULL,
+  "capturedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS "Favorite" (
+  "id" TEXT PRIMARY KEY,
+  "productId" TEXT NOT NULL REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  "userName" TEXT NOT NULL,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS "PriceAlert" (
+  "id" TEXT PRIMARY KEY,
+  "productId" TEXT NOT NULL REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  "targetPrice" DECIMAL(10, 2) NOT NULL,
+  "email" TEXT NOT NULL,
+  "isActive" BOOLEAN NOT NULL DEFAULT true,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS "PriceHistory_productId_idx" ON "PriceHistory"("productId");
+CREATE INDEX IF NOT EXISTS "Favorite_productId_idx" ON "Favorite"("productId");
+CREATE INDEX IF NOT EXISTS "PriceAlert_productId_idx" ON "PriceAlert"("productId");

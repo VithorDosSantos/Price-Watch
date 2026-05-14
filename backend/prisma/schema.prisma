@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id           String         @id @default(uuid())
+  externalId   String         @unique
+  name         String
+  price        Decimal        @db.Decimal(10, 2)
+  imageUrl     String?
+  productUrl   String?
+  storeName    String?
+  category     String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  priceHistory PriceHistory[]
+  favorites    Favorite[]
+  alerts       PriceAlert[]
+}
+
+model PriceHistory {
+  id         String   @id @default(uuid())
+  productId  String
+  oldPrice   Decimal  @db.Decimal(10, 2)
+  newPrice   Decimal  @db.Decimal(10, 2)
+  capturedAt DateTime @default(now())
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+  productId String
+  userName  String
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+}
+
+model PriceAlert {
+  id          String   @id @default(uuid())
+  productId   String
+  targetPrice Decimal  @db.Decimal(10, 2)
+  email       String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+}

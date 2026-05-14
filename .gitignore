@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.env
+.env.local
+.DS_Store
+*.log
+*.tsbuildinfo
+
+backend/generated/
+backend/dist/
+frontend/.vite/
+frontend/dist/
+frontend/vite.config.js
+frontend/vite.config.d.ts
+.figma-export/
