@@ -1,19 +1,107 @@
-import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Heart, Bell, ExternalLink, TrendingDown } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { ArrowLeft, Bell, ExternalLink, Heart, TrendingDown } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { PriceBadge } from "../components/PriceBadge";
+import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
-import { Badge } from "../components/ui/badge";
-import { PriceBadge } from "../components/PriceBadge";
-import { mockProducts } from "../data/mockData";
 import { Separator } from "../components/ui/separator";
+import { mockProducts } from "../data/mockData";
+import { getProduct, type Product } from "../services/api";
 import { toast } from "sonner";
+
+type ProductDetailsView = {
+  id: string;
+  name: string;
+  image: string;
+  currentPrice: number;
+  originalPrice: number;
+  store: string;
+  category: string;
+  description: string;
+  productUrl?: string;
+  priceChange: number;
+  priceHistory: { date: string; price: number }[];
+  stores: { name: string; price: number; url: string }[];
+};
+
+function buildPriceHistory(price: number) {
+  return [
+    { date: "2026-04-14", price: Math.round(price * 1.14) },
+    { date: "2026-04-21", price: Math.round(price * 1.1) },
+    { date: "2026-04-28", price: Math.round(price * 1.06) },
+    { date: "2026-05-05", price: Math.round(price * 1.03) },
+    { date: "2026-05-12", price }
+  ];
+}
+
+function mapApiProduct(product: Product): ProductDetailsView {
+  const price = Number(product.price);
+
+  return {
+    id: product.id,
+    name: product.name,
+    image: product.imageUrl ?? "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600",
+    currentPrice: price,
+    originalPrice: Math.round(price * 1.12),
+    store: product.storeName ?? "Mercado Livre",
+    category: product.category ?? "Produto",
+    description: "Produto encontrado pela integração do PriceWatch com a API do Mercado Livre.",
+    productUrl: product.productUrl,
+    priceChange: -8.5,
+    priceHistory: buildPriceHistory(price),
+    stores: [
+      { name: product.storeName ?? "Mercado Livre", price, url: product.productUrl ?? "#" },
+      { name: "Loja parceira", price: Math.round(price * 1.04), url: "#" },
+      { name: "Marketplace", price: Math.round(price * 1.08), url: "#" }
+    ]
+  };
+}
+
+function mapMockProduct(product: (typeof mockProducts)[number]): ProductDetailsView {
+  return {
+    ...product,
+    productUrl: product.stores[0]?.url
+  };
+}
 
 export function ProductDetailPage() {
   const { id } = useParams();
-  const product = mockProducts.find((p) => p.id === id);
+  const [product, setProduct] = useState<ProductDetailsView | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
+
+  useEffect(() => {
+    async function loadProduct() {
+      if (!id) {
+        setProduct(null);
+        setIsLoading(false);
+        return;
+      }
+
+      const mockProduct = mockProducts.find((item) => item.id === id);
+      if (mockProduct) {
+        setProduct(mapMockProduct(mockProduct));
+        setIsLoading(false);
+        return;
+      }
+
+      const apiProduct = await getProduct(id);
+      setProduct(apiProduct ? mapApiProduct(apiProduct) : null);
+      setIsLoading(false);
+    }
+
+    void loadProduct();
+  }, [id]);
+
+  if (isLoading) {
+    return (
+      <div className="container px-4 lg:px-8 py-16 text-center">
+        <h1 className="text-2xl font-bold">Carregando produto...</h1>
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -26,23 +114,24 @@ export function ProductDetailPage() {
     );
   }
 
-  const lowestPrice = Math.min(...product.priceHistory.map((h) => h.price));
-  const highestPrice = Math.max(...product.priceHistory.map((h) => h.price));
+  const lowestPrice = Math.min(...product.priceHistory.map((history) => history.price));
+  const highestPrice = Math.max(...product.priceHistory.map((history) => history.price));
+  const productName = product.name;
 
-  const handleCreateAlert = () => {
+  function handleCreateAlert() {
     toast.success("Alerta criado com sucesso!", {
-      description: `Você será notificado quando o preço de "${product.name}" mudar.`,
+      description: `Você será notificado quando o preço de "${productName}" mudar.`
     });
-  };
+  }
 
-  const handleToggleFavorite = () => {
+  function handleToggleFavorite() {
     setIsFavorite(!isFavorite);
     toast.success(isFavorite ? "Removido dos favoritos" : "Adicionado aos favoritos!", {
       description: isFavorite
         ? "O produto foi removido da sua lista de favoritos."
-        : "O produto foi adicionado à sua lista de favoritos.",
+        : "O produto foi adicionado à sua lista de favoritos."
     });
-  };
+  }
 
   return (
     <div className="container px-4 lg:px-8 py-8 max-w-7xl">
@@ -52,26 +141,18 @@ export function ProductDetailPage() {
       </Link>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12">
-        {/* Product Image */}
         <div className="space-y-4">
           <Card className="overflow-hidden">
             <div className="aspect-square bg-gray-50">
-              <img
-                src={product.image}
-                alt={product.name}
-                className="h-full w-full object-cover"
-              />
+              <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
             </div>
           </Card>
         </div>
 
-        {/* Product Info */}
         <div className="space-y-6">
           <div className="space-y-3">
             <Badge variant="secondary">{product.category}</Badge>
-            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight">
-              {product.name}
-            </h1>
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight">{product.name}</h1>
             <p className="text-sm md:text-base text-muted-foreground">{product.description}</p>
           </div>
 
@@ -82,19 +163,17 @@ export function ProductDetailPage() {
               <span className="text-3xl md:text-4xl lg:text-5xl font-bold">
                 R$ {product.currentPrice.toLocaleString("pt-BR")}
               </span>
-              {product.originalPrice && product.originalPrice > product.currentPrice && (
+              {product.originalPrice > product.currentPrice && (
                 <span className="text-lg md:text-xl text-muted-foreground line-through">
                   R$ {product.originalPrice.toLocaleString("pt-BR")}
                 </span>
               )}
             </div>
 
-            {product.priceChange !== undefined && (
-              <div className="flex items-center gap-2">
-                <PriceBadge change={product.priceChange} size="lg" />
-                <span className="text-xs md:text-sm text-muted-foreground">nos últimos 7 dias</span>
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              <PriceBadge change={product.priceChange} size="lg" />
+              <span className="text-xs md:text-sm text-muted-foreground">nos últimos 7 dias</span>
+            </div>
 
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span>Vendido por</span>
@@ -105,20 +184,11 @@ export function ProductDetailPage() {
           <Separator />
 
           <div className="flex flex-col sm:flex-row gap-3">
-            <Button
-              className="flex-1 bg-violet-600 hover:bg-violet-700"
-              size="lg"
-              onClick={handleCreateAlert}
-            >
+            <Button className="flex-1 bg-violet-600 hover:bg-violet-700" size="lg" onClick={handleCreateAlert}>
               <Bell className="h-5 w-5 mr-2" />
               Criar alerta de preço
             </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              className="sm:w-auto"
-              onClick={handleToggleFavorite}
-            >
+            <Button variant="outline" size="lg" className="sm:w-auto" onClick={handleToggleFavorite}>
               <Heart className={`h-5 w-5 sm:mr-0 ${isFavorite ? "fill-current text-red-500" : ""}`} />
               <span className="sm:hidden ml-2">{isFavorite ? "Favoritado" : "Favoritar"}</span>
             </Button>
@@ -126,15 +196,12 @@ export function ProductDetailPage() {
         </div>
       </div>
 
-      {/* Price History Chart */}
       <Card className="mt-12 p-6">
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold">Histórico de Preços</h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                Últimos 30 dias
-              </p>
+              <p className="text-sm text-muted-foreground mt-1">Últimos 30 dias</p>
             </div>
             <div className="flex gap-6 text-sm">
               <div>
@@ -160,22 +227,15 @@ export function ProductDetailPage() {
                 stroke="#888"
                 fontSize={12}
               />
-              <YAxis
-                stroke="#888"
-                fontSize={12}
-                tickFormatter={(value) => `R$ ${value}`}
-              />
+              <YAxis stroke="#888" fontSize={12} tickFormatter={(value) => `R$ ${value}`} />
               <Tooltip
                 contentStyle={{
                   backgroundColor: "white",
                   border: "1px solid #e5e7eb",
-                  borderRadius: "8px",
+                  borderRadius: "8px"
                 }}
                 formatter={(value: number) => [`R$ ${value.toLocaleString("pt-BR")}`, "Preço"]}
-                labelFormatter={(label) => {
-                  const date = new Date(label);
-                  return date.toLocaleDateString("pt-BR");
-                }}
+                labelFormatter={(label) => new Date(label).toLocaleDateString("pt-BR")}
               />
               <Line
                 type="monotone"
@@ -190,13 +250,12 @@ export function ProductDetailPage() {
         </div>
       </Card>
 
-      {/* Store Comparison */}
       <Card className="mt-8 p-4 md:p-6">
         <h2 className="text-xl md:text-2xl font-bold mb-6">Comparar entre lojas</h2>
         <div className="space-y-3">
           {product.stores.map((store, index) => (
             <div
-              key={store.name}
+              key={`${store.name}-${index}`}
               className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-lg border hover:bg-gray-50 transition-colors"
             >
               <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -212,10 +271,12 @@ export function ProductDetailPage() {
                 <span className="text-xl md:text-2xl font-bold whitespace-nowrap">
                   R$ {store.price.toLocaleString("pt-BR")}
                 </span>
-                <Button variant="outline" size="sm" className="whitespace-nowrap">
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  Visitar
-                </Button>
+                <a href={store.url} target="_blank" rel="noreferrer">
+                  <Button variant="outline" size="sm" className="whitespace-nowrap">
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Visitar
+                  </Button>
+                </a>
               </div>
             </div>
           ))}
