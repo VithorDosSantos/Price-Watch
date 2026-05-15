@@ -2,6 +2,7 @@ import cors from "cors";
 import "dotenv/config";
 import express from "express";
 import { alertRoutes } from "./routes/alertRoutes";
+import { authRoutes } from "./routes/authRoutes";
 import { favoriteRoutes } from "./routes/favoriteRoutes";
 import { productRoutes } from "./routes/productRoutes";
 
@@ -22,6 +23,7 @@ app.get("/health", (_request, response) => {
 app.use("/products", productRoutes);
 app.use("/favorites", favoriteRoutes);
 app.use("/alerts", alertRoutes);
+app.use("/auth", authRoutes);
 
 app.listen(port, () => {
   console.log(`PriceWatch API running on http://localhost:${port}`);

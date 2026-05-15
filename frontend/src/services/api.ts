@@ -9,6 +9,12 @@ export type Product = {
   category?: string;
 };
 
+export type ProductSearchResponse = {
+  products: Product[];
+  source: "mercado-livre" | "mock";
+  message?: string;
+};
+
 export type Favorite = {
   id: string;
   userName: string;
@@ -75,12 +81,15 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-export async function searchProducts(query: string): Promise<Product[]> {
+export async function searchProducts(query: string): Promise<ProductSearchResponse> {
   try {
-    const data = await request<{ products: Product[]; source: string }>(`/products/search?q=${encodeURIComponent(query)}`);
-    return data.products;
+    return await request<ProductSearchResponse>(`/products/search?q=${encodeURIComponent(query)}`);
   } catch {
-    return mockProducts;
+    return {
+      products: mockProducts,
+      source: "mock",
+      message: "Não foi possível conectar ao back-end. Exibindo produtos de demonstração."
+    };
   }
 }
 

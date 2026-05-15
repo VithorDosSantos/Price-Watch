@@ -33,13 +33,20 @@ export function HomePage() {
     setHasSearched(true);
     setFeedback("Consultando o back-end e a API do Mercado Livre...");
 
-    const results = await searchProducts(query);
-    setProducts(results.map(mapApiProductToCard));
-    setFeedback(
-      results.length > 0
-        ? `${results.length} produto(s) encontrado(s) pela rota GET /products/search.`
+    const result = await searchProducts(query);
+    setProducts(result.products.map(mapApiProductToCard));
+
+    if (result.source === "mock" && query.trim()) {
+      setFeedback(
+        result.message ?? "A API do Mercado Livre não retornou resultados reais. Exibindo produtos de demonstração."
+      );
+    } else {
+      setFeedback(
+        result.products.length > 0
+          ? `${result.products.length} produto(s) encontrado(s) no Mercado Livre pela rota GET /products/search.`
         : "Nenhum produto encontrado."
-    );
+      );
+    }
     setIsLoading(false);
 
     window.setTimeout(() => {
@@ -108,7 +115,7 @@ export function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {products.slice(0, 8).map((product) => (
+            {products.map((product) => (
               <ProductCard key={product.id} {...product} isFavorite={favoriteProducts.includes(product.id)} />
             ))}
           </div>

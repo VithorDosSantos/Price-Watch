@@ -44,7 +44,7 @@ function mapMercadoLivreItem(item: MercadoLivreItem): ProductDTO {
 }
 
 async function searchMercadoLivre(query: string): Promise<ProductDTO[]> {
-  const url = `${mercadoLivreApiUrl}/sites/MLB/search?q=${encodeURIComponent(query)}&limit=12`;
+  const url = `${mercadoLivreApiUrl}/sites/MLB/search?q=${encodeURIComponent(query)}`;
   const response = await fetch(url);
 
   if (!response.ok) {
@@ -55,7 +55,13 @@ async function searchMercadoLivre(query: string): Promise<ProductDTO[]> {
   return data.results.map(mapMercadoLivreItem);
 }
 
-export async function searchProducts(query: string): Promise<{ source: "mercado-livre" | "mock"; products: ProductDTO[] }> {
+type ProductSearchResult = {
+  source: "mercado-livre" | "mock";
+  products: ProductDTO[];
+  message?: string;
+};
+
+export async function searchProducts(query: string): Promise<ProductSearchResult> {
   if (!query.trim()) {
     return { source: "mock", products: mockProducts };
   }
@@ -63,8 +69,15 @@ export async function searchProducts(query: string): Promise<{ source: "mercado-
   try {
     const products = await searchMercadoLivre(query);
     return { source: "mercado-livre", products: products.length > 0 ? products : mockProducts };
-  } catch {
-    return { source: "mock", products: mockProducts };
+  } catch (error) {
+    return {
+      source: "mock",
+      products: mockProducts,
+      message:
+        error instanceof Error
+          ? `A API do Mercado Livre não retornou resultados reais: ${error.message}.`
+          : "A API do Mercado Livre não retornou resultados reais."
+    };
   }
 }
 
