@@ -144,6 +144,38 @@ API local:
 http://localhost:3333
 ```
 
+## Deploy do Back-end com Docker no Render
+
+O back-end possui um `Dockerfile` em `backend/Dockerfile` e uma pipeline em `.github/workflows/deploy-backend-docker.yml`.
+
+No Render, configure o serviço como Docker:
+
+```text
+Runtime: Docker
+Root Directory: backend
+Dockerfile Path: ./Dockerfile
+```
+
+Configure as variáveis de ambiente no Render:
+
+```text
+DATABASE_URL=sua_url_do_postgres_render
+MERCADO_LIVRE_API_URL=https://api.mercadolibre.com
+MERCADO_LIVRE_CLIENT_ID=seu_app_id
+MERCADO_LIVRE_CLIENT_SECRET=sua_secret_key
+MERCADO_LIVRE_REDIRECT_URI=https://price-watch-0uez.onrender.com/auth/callback
+```
+
+Para a pipeline disparar deploy automático, crie um Deploy Hook no Render e salve a URL no GitHub em:
+
+```text
+Settings > Secrets and variables > Actions > New repository secret
+Name: RENDER_DEPLOY_HOOK_URL
+Value: URL do Deploy Hook do Render
+```
+
+Depois de configurar, cada push na branch `main` que alterar o back-end fará o build da imagem Docker e chamará o deploy no Render.
+
 ## Como Instalar o Front-end
 
 Entre na pasta do front-end:
