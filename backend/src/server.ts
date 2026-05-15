@@ -4,6 +4,7 @@ import express from "express";
 import { alertRoutes } from "./routes/alertRoutes";
 import { authRoutes } from "./routes/authRoutes";
 import { favoriteRoutes } from "./routes/favoriteRoutes";
+import { notificationRoutes } from "./routes/notificationRoutes";
 import { productRoutes } from "./routes/productRoutes";
 
 const app = express();
@@ -24,6 +25,7 @@ app.use("/products", productRoutes);
 app.use("/favorites", favoriteRoutes);
 app.use("/alerts", alertRoutes);
 app.use("/auth", authRoutes);
+app.use("/notifications", notificationRoutes);
 
 app.listen(port, () => {
   console.log(`PriceWatch API running on http://localhost:${port}`);
