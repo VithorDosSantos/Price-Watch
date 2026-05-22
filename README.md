@@ -18,7 +18,7 @@ O tema escolhido foi monitoramento de preços de produtos. Esse tema permite dem
 - ORM: Prisma
 - API externa: Mercado Livre API
 - Gerenciador de pacotes: npm
-- Ambiente local de banco: Docker Compose
+- Ambiente local de banco: PostgreSQL local e PgAdmin
 
 ## Justificativa da Stack
 
@@ -29,7 +29,7 @@ O tema escolhido foi monitoramento de preços de produtos. Esse tema permite dem
 - PostgreSQL: banco relacional robusto, adequado para produtos, favoritos, alertas e histórico de preços.
 - Prisma: ORM tipado que organiza a modelagem do banco e facilita a evolução com migrations.
 - Mercado Livre API: fornece dados reais de produtos no contexto brasileiro e possui endpoints públicos para busca.
-- Docker Compose: simplifica a execução local do PostgreSQL.
+- PostgreSQL local + PgAdmin: permitem administrar o banco diretamente na máquina.
 
 ## Estrutura de Pastas
 
@@ -68,24 +68,30 @@ pricewatch/
 └── docker-compose.yml
 ```
 
-## Como Rodar o Banco com Docker
+## Como Rodar o Banco Localmente
 
-Na pasta `pricewatch/`, execute:
+O PgAdmin é apenas a ferramenta de administração. O banco em si precisa ser um PostgreSQL instalado na sua máquina, ou em outro servidor local acessível pela rede.
 
-```bash
-docker compose up -d
-```
-
-O PostgreSQL ficará disponível em:
+No PgAdmin, adicione um novo servidor com os dados abaixo:
 
 ```text
-localhost:5433
-database: pricewatch
-user: pricewatch
-password: pricewatch
+nome: PriceWatch Local
+host: localhost
+port: 5432
+database: PriceWatch
+user: postgres
+password: Murilo2006$
 ```
 
-A porta `5433` foi usada para evitar conflito com instalações locais de PostgreSQL na porta `5432`.
+Se o PostgreSQL estiver em outra máquina da rede, troque `localhost` pelo IP dessa máquina e mantenha a porta configurada no servidor.
+
+No backend, o arquivo `.env` já aponta para:
+
+```text
+DATABASE_URL=postgresql://postgres:Murilo2006$@localhost:5432/PriceWatch?schema=public
+```
+
+Se o seu PostgreSQL usar outra porta, ajuste esse valor no `.env` e no `.env.example`.
 
 ## Como Instalar o Back-end
 
@@ -120,9 +126,10 @@ npm run prisma:migrate
 Caso o Prisma Migrate apresente problema no ambiente local, use o SQL de fallback:
 
 ```powershell
-docker cp ".\backend\prisma\init.sql" pricewatch-postgres:/tmp/init.sql
-docker exec pricewatch-postgres psql -U pricewatch -d pricewatch -f /tmp/init.sql
+psql -h localhost -p 5432 -U pricewatch -d pricewatch -f .\backend\prisma\init.sql
 ```
+
+Se o comando `psql` não estiver disponível no seu sistema, instale o cliente do PostgreSQL ou use a aba de query do próprio PgAdmin para executar o conteúdo de `backend/prisma/init.sql`.
 
 Para abrir o Prisma Studio:
 
@@ -142,6 +149,12 @@ API local:
 
 ```text
 http://localhost:3333
+```
+
+Se ainda não tiver instalado as dependências, rode primeiro:
+
+```bash
+npm install
 ```
 
 ## Deploy do Back-end com Docker no Render
@@ -165,6 +178,8 @@ MERCADO_LIVRE_CLIENT_ID=seu_app_id
 MERCADO_LIVRE_CLIENT_SECRET=sua_secret_key
 MERCADO_LIVRE_REDIRECT_URI=https://price-watch-0uez.onrender.com/auth/callback
 ```
+
+Importante: no Render, o `DATABASE_URL` precisa apontar para o PostgreSQL do próprio Render, usando a string de conexão do serviço. Não use `localhost:5433` em produção, porque o container do Render não enxerga o seu banco local.
 
 Para a pipeline disparar deploy automático, crie um Deploy Hook no Render e salve a URL no GitHub em:
 
@@ -199,6 +214,12 @@ Aplicação local:
 http://localhost:5173
 ```
 
+Se ainda não tiver instalado as dependências, rode primeiro:
+
+```bash
+npm install
+```
+
 Caso necessário, configure a URL da API com:
 
 ```text
@@ -222,7 +243,9 @@ GET /products/search?q=notebook
 GET /products/:id
 ```
 
-A busca tenta consultar a API do Mercado Livre. Se a API falhar, o sistema retorna produtos mockados.
+A busca consulta a API do Mercado Livre em tempo real. Para funcionar corretamente, o backend precisa estar autenticado com um token válido do Mercado Livre. Se a integração não estiver configurada, a API retorna erro explícito em vez de dados simulados.
+
+No front, a conexão pode ser iniciada pela página de perfil, no bloco "Mercado Livre".
 
 ### Favoritos
 
@@ -269,7 +292,55 @@ Ela foi escolhida por ter dados reais de produtos do mercado brasileiro, permiti
 
 ## Integração com Token do Mercado Livre
 
-O back-end possui fluxo OAuth para salvar e renovar o token do Mercado Livre automaticamente.
+O back-end usa OAuth 2.0 no fluxo server side para obter, salvar e renovar o token do Mercado Livre automaticamente.
+
+### Como conseguir o token na prática
+
+1. Crie um aplicativo no painel do Mercado Livre Developer Center.
+2. Copie o `APP ID` e o `CLIENT SECRET` gerados para o aplicativo.
+3. Configure a `redirect_uri` exatamente como o ambiente que você está usando.
+  O painel do Mercado Livre exige HTTPS, então `http://localhost` não é aceito.
+
+```text
+Render: https://price-watch-0uez.onrender.com/auth/callback
+Tunnel HTTPS local: https://seu-tunel-publico/auth/callback
+```
+
+4. Preencha no arquivo `backend/.env` com a URL correspondente ao ambiente em execução:
+
+```text
+MERCADO_LIVRE_CLIENT_ID=seu_app_id
+MERCADO_LIVRE_CLIENT_SECRET=sua_secret_key
+MERCADO_LIVRE_REDIRECT_URI=https://price-watch-0uez.onrender.com/auth/callback
+```
+
+Se você for testar em um backend local, primeiro crie um túnel HTTPS (por exemplo com ngrok, Cloudflare Tunnel ou similar) e use a URL pública gerada:
+
+```text
+MERCADO_LIVRE_REDIRECT_URI=https://seu-tunel-publico/auth/callback
+```
+
+5. Inicie o backend com `npm run dev`.
+6. Abra no navegador a rota:
+
+```text
+https://price-watch-0uez.onrender.com/auth/login
+```
+
+ou pegue a URL pronta em:
+
+```text
+https://price-watch-0uez.onrender.com/auth/login/url
+```
+
+Se a URL gerada ainda mostrar `http://localhost`, significa que você está consultando o backend local. Nesse caso, o Mercado Livre só vai aceitar o fluxo se você usar um túnel HTTPS apontando para o backend local ou se rodar o fluxo publicado no Render.
+
+7. Faça login com uma conta de vendedor/usuário principal do Mercado Livre e autorize o aplicativo.
+8. O Mercado Livre vai redirecionar para `/auth/callback?code=...`.
+9. O back-end troca esse `code` por `access_token` e `refresh_token` e salva tudo no banco.
+10. Quando o token expirar, o back-end tenta renovar automaticamente usando o `refresh_token` salvo.
+
+### Rotas principais do fluxo
 
 Rotas principais:
 
@@ -278,6 +349,26 @@ GET /auth/login
 GET /auth/callback
 GET /auth/mercadolivre/status
 ```
+
+### Como conferir se funcionou
+
+Depois da autorização, verifique o status do token em:
+
+```text
+http://localhost:3333/auth/mercadolivre/status
+```
+
+Se o token estiver salvo corretamente, a resposta mostra `configured: true`.
+
+### Se continuar dando 403
+
+Confira estes pontos:
+
+1. A `redirect_uri` no painel do Mercado Livre precisa ser idêntica à do `.env`.
+2. O login precisa ser feito com a conta principal do vendedor, não com operador/colaborador.
+3. O aplicativo precisa ter grant/autorização na conta.
+4. Se o app estiver usando `refresh_token` antigo, gere um novo fluxo de autorização.
+5. A chamada pública de busca pode continuar retornando 403 enquanto o token não existir ou estiver inválido.
 
 Depois do deploy, configure no Render:
 

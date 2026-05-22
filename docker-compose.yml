@@ -12,5 +12,21 @@ services:
     volumes:
       - pricewatch_postgres_data:/var/lib/postgresql/data
 
+  pgadmin:
+    image: dpage/pgadmin4:8
+    container_name: pricewatch-pgadmin
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@pricewatch.local
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: "True"
+    ports:
+      - "5050:80"
+    volumes:
+      - pricewatch_pgadmin_data:/var/lib/pgadmin
+
 volumes:
   pricewatch_postgres_data:
+  pricewatch_pgadmin_data:
