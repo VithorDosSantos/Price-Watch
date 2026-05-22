@@ -28,8 +28,8 @@ export function Navbar() {
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
-      <div className="container flex h-16 items-center justify-between px-4 lg:px-8">
-        <div className="flex items-center gap-4 lg:gap-8">
+      <div className="container flex h-16 items-center justify-between gap-3 px-4 lg:px-8">
+        <div className="flex min-w-0 items-center gap-3 lg:gap-8">
           {!isHome && (
             <Sheet open={open} onOpenChange={setOpen}>
               <SheetTrigger asChild>
@@ -71,11 +71,11 @@ export function Navbar() {
             </Sheet>
           )}
 
-          <Link to="/" className="flex items-center gap-2 group">
+          <Link to="/" className="flex min-w-0 items-center gap-2 group">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 transition-transform group-hover:scale-105">
               <TrendingDown className="h-5 w-5 text-white" />
             </div>
-            <span className="text-xl font-semibold tracking-tight">PriceWatch</span>
+            <span className="hidden sm:block text-xl font-semibold tracking-tight">PriceWatch</span>
           </Link>
 
           {!isHome && (
@@ -86,7 +86,7 @@ export function Navbar() {
           )}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <Link
             to="/alerts"
             className="inline-flex h-9 w-9 items-center justify-center rounded-md text-gray-700 transition-colors hover:bg-gray-100 hover:text-gray-900"
@@ -98,14 +98,19 @@ export function Navbar() {
           {token ? (
             <div className="flex items-center gap-2">
               {user?.role === "ADMIN" && <Link to="/admin" className="text-sm text-violet-600">Admin</Link>}
-              <Button variant="ghost" size="icon" onClick={() => { logout(); navigate("/"); }}>
-                <User className="h-5 w-5" />
+              <Button asChild variant="ghost" size="icon" title="Meu perfil" aria-label="Meu perfil">
+                <Link to="/profile">
+                  <User className="h-5 w-5" />
+                </Link>
+              </Button>
+              <Button variant="ghost" className="text-sm text-gray-700 hidden sm:inline-flex" onClick={() => { logout(); navigate("/"); }}>
+                Sair
               </Button>
             </div>
           ) : (
             <div className="flex items-center gap-2">
               <Link to="/login" className="text-sm">Entrar</Link>
-              <Link to="/register" className="text-sm text-violet-600">Criar conta</Link>
+              <Link to="/register" className="text-sm text-violet-600 hidden sm:inline">Criar conta</Link>
             </div>
           )}
         </div>

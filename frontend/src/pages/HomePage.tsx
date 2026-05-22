@@ -1,10 +1,10 @@
-import { Bell, Search, Shield, TrendingUp } from "lucide-react";
+import { Bell, Search, Shield, TrendingUp, User, Heart, BarChart3 } from "lucide-react";
 import { FormEvent, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ProductCard, type ProductCardProps } from "../components/ProductCard";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { searchProducts, listFavorites, mapProductToCard } from "../services/api";
+import { listFavorites, mapProductToCard, searchProducts } from "../services/api";
 
 export function HomePage() {
   const [query, setQuery] = useState("notebook");
@@ -24,12 +24,14 @@ export function HomePage() {
     try {
       const result = await searchProducts(query);
       let favorites: string[] = [];
+
       try {
-        favorites = (await listFavorites()).map((f) => f.product.id);
+        favorites = (await listFavorites()).map((item) => item.product.id);
       } catch {
         favorites = [];
       }
-      setProducts(result.products.map((p) => ({ ...mapProductToCard(p), isFavorite: favorites.includes(p.id) })));
+
+      setProducts(result.products.map((product) => ({ ...mapProductToCard(product), isFavorite: favorites.includes(product.id) })));
       setFeedback(
         result.message ??
           (result.products.length > 0
@@ -50,13 +52,14 @@ export function HomePage() {
 
   async function loadShowcase() {
     setIsLoading(true);
+
     try {
       const result = await searchProducts(query);
-      const favorites = (await listFavorites()).map((f) => f.product.id);
-      setProducts(result.products.map((p) => ({ ...mapProductToCard(p), isFavorite: favorites.includes(p.id) })));
+      const favorites = (await listFavorites()).map((item) => item.product.id);
+      setProducts(result.products.map((product) => ({ ...mapProductToCard(product), isFavorite: favorites.includes(product.id) })));
       setHasSearched(false);
       setFeedback("Sugestões carregadas para você explorar.");
-    } catch (err) {
+    } catch {
       setFeedback("Não foi possível carregar os resultados agora. Tente novamente.");
     } finally {
       setIsLoading(false);
@@ -65,31 +68,33 @@ export function HomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      <section className="container px-4 lg:px-8 py-16 lg:py-20">
-        <div className="max-w-3xl mx-auto text-center space-y-6">
-          <h1 className="text-4xl lg:text-6xl font-bold tracking-tight">
+      <section className="container px-4 py-12 sm:py-16 lg:px-8 lg:py-20">
+        <div className="mx-auto max-w-3xl space-y-6 text-center">
+          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-6xl">
             Monitore preços e
-            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-indigo-600">
+            <span className="block bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
               economize dinheiro
             </span>
           </h1>
-          <p className="text-lg lg:text-xl text-muted-foreground">
+          <p className="text-base text-muted-foreground sm:text-lg lg:text-xl">
             Pesquise um produto, abra os detalhes e salve o que quiser acompanhar depois.
           </p>
 
-          <form onSubmit={handleSearch} className="relative max-w-2xl mx-auto mt-8">
-            <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type="search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Digite o nome do produto ou cole o link da loja"
-              className="h-14 pl-12 pr-28 text-base shadow-lg border-gray-200"
-            />
+          <form onSubmit={handleSearch} className="mx-auto mt-8 flex max-w-2xl flex-col gap-3 sm:flex-row">
+            <div className="relative flex-1">
+              <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="search"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Digite o nome do produto ou cole o link da loja"
+                className="h-14 pl-12 text-base shadow-lg border-gray-200"
+              />
+            </div>
             <Button
               type="submit"
               size="lg"
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-violet-600 hover:bg-violet-700"
+              className="h-14 w-full bg-violet-600 hover:bg-violet-700 sm:w-auto sm:px-8"
               disabled={isLoading}
             >
               {isLoading ? "Buscando" : "Pesquisar"}
@@ -99,25 +104,85 @@ export function HomePage() {
         </div>
       </section>
 
-      <section ref={resultsRef} className="container scroll-mt-20 px-4 lg:px-8 pb-16">
+      <section className="container px-4 pb-8 lg:px-8">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <Link
+            to="/dashboard"
+            className="group rounded-2xl border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md"
+          >
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Fluxo principal</p>
+                <h3 className="mt-1 text-lg font-semibold">Painel</h3>
+              </div>
+              <BarChart3 className="h-5 w-5 text-violet-600" />
+            </div>
+            <p className="mt-3 text-sm text-muted-foreground">Veja seus favoritos, histórico e alertas em um só lugar.</p>
+          </Link>
+
+          <Link
+            to="/favorites"
+            className="group rounded-2xl border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md"
+          >
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Lista pessoal</p>
+                <h3 className="mt-1 text-lg font-semibold">Favoritos</h3>
+              </div>
+              <Heart className="h-5 w-5 text-violet-600" />
+            </div>
+            <p className="mt-3 text-sm text-muted-foreground">Revise os produtos que você quer acompanhar depois.</p>
+          </Link>
+
+          <Link
+            to="/alerts"
+            className="group rounded-2xl border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md"
+          >
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Avisos</p>
+                <h3 className="mt-1 text-lg font-semibold">Alertas</h3>
+              </div>
+              <Bell className="h-5 w-5 text-violet-600" />
+            </div>
+            <p className="mt-3 text-sm text-muted-foreground">Crie e ajuste os limites de preço dos produtos monitorados.</p>
+          </Link>
+
+          <Link
+            to="/profile"
+            className="group rounded-2xl border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md"
+          >
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Sua conta</p>
+                <h3 className="mt-1 text-lg font-semibold">Perfil</h3>
+              </div>
+              <User className="h-5 w-5 text-violet-600" />
+            </div>
+            <p className="mt-3 text-sm text-muted-foreground">Atualize seus dados e encontre os atalhos do app.</p>
+          </Link>
+        </div>
+      </section>
+
+      <section ref={resultsRef} className="container scroll-mt-20 px-4 pb-16 lg:px-8">
         <div className="space-y-8">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-3xl font-bold tracking-tight">
                 {hasSearched ? "Resultados da busca" : "Comece sua busca"}
               </h2>
-              <p className="text-muted-foreground mt-2">
+              <p className="mt-2 text-muted-foreground">
                 {hasSearched
                   ? `Resultados para "${query}" exibidos abaixo.`
                   : "Digite um termo para ver produtos reais do Mercado Livre."}
               </p>
             </div>
-            <Button variant="outline" onClick={() => void loadShowcase()}>
+            <Button className="w-full sm:w-auto" variant="outline" onClick={() => void loadShowcase()}>
               Ver sugestões
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
             {products.map((product) => (
               <ProductCard key={product.id} {...product} isFavorite={product.isFavorite} />
             ))}
@@ -125,27 +190,23 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="container px-4 lg:px-8 py-16 border-y bg-white">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          <div className="text-center space-y-3">
+      <section className="container border-y bg-white px-4 py-16 lg:px-8">
+        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-8 md:grid-cols-3">
+          <div className="space-y-3 text-center">
             <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-violet-100">
               <TrendingUp className="h-6 w-6 text-violet-600" />
             </div>
             <h3 className="font-semibold">Histórico</h3>
-            <p className="text-sm text-muted-foreground">
-              Veja como o preço mudou ao longo do tempo.
-            </p>
+            <p className="text-sm text-muted-foreground">Veja como o preço mudou ao longo do tempo.</p>
           </div>
-          <div className="text-center space-y-3">
+          <div className="space-y-3 text-center">
             <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-violet-100">
               <Bell className="h-6 w-6 text-violet-600" />
             </div>
             <h3 className="font-semibold">Alertas</h3>
-            <p className="text-sm text-muted-foreground">
-              Receba um aviso quando o preço chegar ao valor que você definiu.
-            </p>
+            <p className="text-sm text-muted-foreground">Receba um aviso quando o preço chegar ao valor que você definiu.</p>
           </div>
-          <div className="text-center space-y-3">
+          <div className="space-y-3 text-center">
             <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-violet-100">
               <Shield className="h-6 w-6 text-violet-600" />
             </div>
@@ -155,13 +216,18 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="container px-4 lg:px-8 py-16">
-        <div className="bg-gradient-to-br from-violet-600 to-indigo-600 rounded-2xl p-8 lg:p-12 text-center text-white">
-          <h2 className="text-3xl lg:text-4xl font-bold mb-4">Pronto para economizar?</h2>
-          <p className="text-lg text-violet-100 mb-8 max-w-2xl mx-auto">
+      <section className="container px-4 py-16 lg:px-8">
+        <div className="rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 p-6 text-center text-white sm:p-8 lg:p-12">
+          <h2 className="mb-4 text-2xl font-bold sm:text-3xl lg:text-4xl">Pronto para economizar?</h2>
+          <p className="mx-auto mb-8 max-w-2xl text-base text-violet-100 sm:text-lg">
             Comece agora e acompanhe os produtos que mais importam para você.
           </p>
-          <Button size="lg" variant="secondary" className="bg-white text-violet-600 hover:bg-gray-100" onClick={() => navigate("/alerts")}>
+          <Button
+            size="lg"
+            variant="secondary"
+            className="w-full bg-white text-violet-600 hover:bg-gray-100 sm:w-auto"
+            onClick={() => navigate("/alerts")}
+          >
             Criar meu alerta
           </Button>
         </div>

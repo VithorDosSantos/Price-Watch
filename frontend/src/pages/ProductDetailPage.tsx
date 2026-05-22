@@ -131,7 +131,7 @@ export function ProductDetailPage() {
         Voltar
       </Link>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-12">
         <div className="space-y-4">
           <Card className="overflow-hidden">
             <div className="aspect-square bg-gray-50">
@@ -187,14 +187,14 @@ export function ProductDetailPage() {
         </div>
       </div>
 
-      <Card className="mt-12 p-6">
+      <Card className="mt-12 p-4 sm:p-6">
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h2 className="text-2xl font-bold">Histórico de Preços</h2>
+              <h2 className="text-xl sm:text-2xl font-bold">Histórico de Preços</h2>
               <p className="text-sm text-muted-foreground mt-1">Últimos 30 dias</p>
             </div>
-            <div className="flex gap-6 text-sm">
+            <div className="flex flex-wrap gap-4 text-sm sm:gap-6">
               <div>
                 <p className="text-muted-foreground">Menor preço</p>
                 <p className="font-bold text-green-600">R$ {lowestPrice.toLocaleString("pt-BR")}</p>
@@ -206,7 +206,7 @@ export function ProductDetailPage() {
             </div>
           </div>
 
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={260}>
             <LineChart data={product.priceHistory}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis
@@ -241,15 +241,15 @@ export function ProductDetailPage() {
         </div>
       </Card>
 
-      <Card className="mt-8 p-4 md:p-6">
-        <h2 className="text-xl md:text-2xl font-bold mb-6">Comparar entre lojas</h2>
+      <Card className="mt-8 p-4 sm:p-6">
+        <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-6">Comparar entre lojas</h2>
         <div className="space-y-3">
           {product.stores.map((store, index) => (
             <div
               key={`${store.name}-${index}`}
-              className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-lg border hover:bg-gray-50 transition-colors"
+              className="flex flex-col gap-3 rounded-lg border p-4 transition-colors hover:bg-gray-50 sm:flex-row sm:items-center sm:justify-between"
             >
-              <div className="flex items-center gap-3 w-full sm:w-auto">
+              <div className="flex w-full items-center gap-3 sm:w-auto">
                 {index === 0 && (
                   <Badge className="bg-green-600 whitespace-nowrap">
                     <TrendingDown className="h-3 w-3 mr-1" />
@@ -258,12 +258,12 @@ export function ProductDetailPage() {
                 )}
                 <span className="font-medium truncate">{store.name}</span>
               </div>
-              <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto">
+              <div className="flex w-full items-center justify-between gap-4 sm:w-auto sm:justify-end">
                 <span className="text-xl md:text-2xl font-bold whitespace-nowrap">
                   R$ {store.price.toLocaleString("pt-BR")}
                 </span>
                 <a href={store.url} target="_blank" rel="noreferrer">
-                  <Button variant="outline" size="sm" className="whitespace-nowrap">
+                  <Button variant="outline" size="sm" className="w-full whitespace-nowrap sm:w-auto">
                     <ExternalLink className="h-4 w-4 mr-2" />
                     Visitar
                   </Button>

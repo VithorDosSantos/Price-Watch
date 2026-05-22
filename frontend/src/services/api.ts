@@ -152,6 +152,34 @@ export async function getCurrentUser() {
   return request<{ user: { id: string; email: string; name?: string; role: string } }>("/auth/me");
 }
 
+export async function getMercadoLivreLoginUrl() {
+  return request<{ url: string }>("/auth/login/url");
+}
+
+export async function getMercadoLivreStatus() {
+  return request<{
+    configured: boolean;
+    storedInDatabase: boolean;
+    tokenType?: string;
+    userId?: string;
+    expiresAt?: string;
+    updatedAt?: string;
+  }>("/auth/mercadolivre/status");
+}
+
+export async function updateCurrentUser(input: { name?: string; password?: string }) {
+  return request<{ user: { id: string; email: string; name?: string; role: string } }>("/auth/me", {
+    method: "PATCH",
+    body: JSON.stringify(input)
+  });
+}
+
+export async function deleteCurrentUser() {
+  return request<void>("/auth/me", {
+    method: "DELETE"
+  });
+}
+
 // Admin user management
 export async function getUsers() {
   return request<{ users: Array<{ id: string; email: string; name?: string; role: string; createdAt: string }> }>("/users");

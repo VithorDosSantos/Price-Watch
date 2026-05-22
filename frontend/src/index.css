@@ -79,14 +79,28 @@
 @layer base {
   * {
     @apply border-border;
+    box-sizing: border-box;
   }
 
   html {
     font-size: var(--font-size);
+    width: 100%;
   }
 
   body {
     @apply bg-background text-foreground;
+    width: 100%;
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  #root {
+    width: 100%;
+  }
+
+  img {
+    display: block;
+    max-width: 100%;
   }
 }
 

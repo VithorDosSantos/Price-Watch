@@ -15,19 +15,21 @@ import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { AdminPage } from "./pages/AdminPage";
 import { AdminUsersPage } from "./pages/AdminUsersPage";
+import { ProfilePage } from "./pages/ProfilePage";
 import { AdminRoute } from "./components/AdminRoute";
 import { AppErrorBoundary } from "./components/AppErrorBoundary";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const isHome = location.pathname === "/";
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen w-full overflow-x-hidden bg-white flex flex-col">
       <Navbar />
-      <div className="flex flex-1">
+      <div className="flex min-w-0 flex-1">
         {!isHome && <Sidebar />}
-        <main className={isHome ? "flex-1 flex flex-col" : "flex-1 p-4 md:p-6 lg:p-8"}>
+        <main className={isHome ? "min-w-0 flex-1 flex flex-col" : "min-w-0 flex-1 p-3 sm:p-4 md:p-6 lg:p-8"}>
           {children}
         </main>
       </div>
@@ -53,6 +55,7 @@ export default function App() {
             <Route path="/price-history" element={<PriceHistoryPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
             <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
             <Route path="/admin/users" element={<AdminRoute><AdminUsersPage /></AdminRoute>} />
           </Routes>

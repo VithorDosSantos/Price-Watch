@@ -1,4 +1,4 @@
-import { BarChart3, Bell, Clock3, Heart, Home, Layers3, Store } from "lucide-react";
+import { BarChart3, Bell, Clock3, Heart, Home, Layers3, Store, User } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "./ui/utils";
 
@@ -9,14 +9,15 @@ const navigation = [
   { name: "Alertas", href: "/alerts", icon: Bell },
   { name: "Lojas", href: "/stores", icon: Store },
   { name: "Categorias", href: "/categories", icon: Layers3 },
-  { name: "Histórico", href: "/price-history", icon: Clock3 }
+  { name: "Histórico", href: "/price-history", icon: Clock3 },
+  { name: "Perfil", href: "/profile", icon: User }
 ];
 
 export function Sidebar() {
   const location = useLocation();
 
   return (
-    <aside className="hidden lg:flex w-64 flex-col border-r bg-gray-50/40">
+    <aside className="hidden lg:flex w-64 shrink-0 flex-col border-r bg-gray-50/40">
       <nav className="flex-1 space-y-1 p-4">
         {navigation.map((item) => {
           const isActive = location.pathname === item.href;
