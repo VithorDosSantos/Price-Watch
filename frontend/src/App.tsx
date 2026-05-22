@@ -4,10 +4,18 @@ import { Navbar } from "./components/Navbar";
 import { Sidebar } from "./components/Sidebar";
 import { Toaster } from "./components/ui/sonner";
 import { AlertsPage } from "./pages/AlertsPage";
+import { CategoriesPage } from "./pages/CategoriesPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { FavoritesPage } from "./pages/FavoritesPage";
 import { HomePage } from "./pages/HomePage";
+import { PriceHistoryPage } from "./pages/PriceHistoryPage";
 import { ProductDetailPage } from "./pages/ProductDetailPage";
+import { StoresPage } from "./pages/StoresPage";
+import { LoginPage } from "./pages/LoginPage";
+import { RegisterPage } from "./pages/RegisterPage";
+import { AdminPage } from "./pages/AdminPage";
+import { AdminUsersPage } from "./pages/AdminUsersPage";
+import { AdminRoute } from "./components/AdminRoute";
 
 function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
@@ -38,6 +46,13 @@ export default function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/alerts" element={<AlertsPage />} />
           <Route path="/favorites" element={<FavoritesPage />} />
+          <Route path="/stores" element={<StoresPage />} />
+          <Route path="/categories" element={<CategoriesPage />} />
+          <Route path="/price-history" element={<PriceHistoryPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
+          <Route path="/admin/users" element={<AdminRoute><AdminUsersPage /></AdminRoute>} />
         </Routes>
       </Layout>
     </BrowserRouter>

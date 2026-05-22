@@ -7,7 +7,6 @@ import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Separator } from "../components/ui/separator";
-import { mockProducts } from "../data/mockData";
 import { getProduct, type Product } from "../services/api";
 import { toast } from "sonner";
 
@@ -59,12 +58,7 @@ function mapApiProduct(product: Product): ProductDetailsView {
   };
 }
 
-function mapMockProduct(product: (typeof mockProducts)[number]): ProductDetailsView {
-  return {
-    ...product,
-    productUrl: product.stores[0]?.url
-  };
-}
+
 
 export function ProductDetailPage() {
   const { id } = useParams();
@@ -79,14 +73,6 @@ export function ProductDetailPage() {
         setIsLoading(false);
         return;
       }
-
-      const mockProduct = mockProducts.find((item) => item.id === id);
-      if (mockProduct) {
-        setProduct(mapMockProduct(mockProduct));
-        setIsLoading(false);
-        return;
-      }
-
       const apiProduct = await getProduct(id);
       setProduct(apiProduct ? mapApiProduct(apiProduct) : null);
       setIsLoading(false);

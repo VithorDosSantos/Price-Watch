@@ -1,10 +1,10 @@
 import { Bell, Search, Shield, TrendingUp } from "lucide-react";
 import { FormEvent, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ProductCard, type ProductCardProps } from "../components/ProductCard";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { favoriteProducts, mockProducts } from "../data/mockData";
-import { searchProducts, type Product } from "../services/api";
+import { searchProducts, listFavorites, type Product } from "../services/api";
 
 function mapApiProductToCard(product: Product): ProductCardProps {
   return {
@@ -21,32 +21,23 @@ function mapApiProductToCard(product: Product): ProductCardProps {
 
 export function HomePage() {
   const [query, setQuery] = useState("notebook");
-  const [products, setProducts] = useState<ProductCardProps[]>(mockProducts);
+  const [products, setProducts] = useState<ProductCardProps[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
-  const [feedback, setFeedback] = useState("Produtos populares carregados como vitrine inicial.");
+  const [feedback, setFeedback] = useState("Digite um produto para começar a busca.");
   const resultsRef = useRef<HTMLElement>(null);
+  const navigate = useNavigate();
 
   async function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsLoading(true);
     setHasSearched(true);
-    setFeedback("Consultando o back-end e a API do Mercado Livre...");
+    setFeedback("Buscando preços reais no Mercado Livre...");
 
     const result = await searchProducts(query);
-    setProducts(result.products.map(mapApiProductToCard));
-
-    if (result.source === "mock" && query.trim()) {
-      setFeedback(
-        result.message ?? "A API do Mercado Livre não retornou resultados reais. Exibindo produtos de demonstração."
-      );
-    } else {
-      setFeedback(
-        result.products.length > 0
-          ? `${result.products.length} produto(s) encontrado(s) no Mercado Livre pela rota GET /products/search.`
-        : "Nenhum produto encontrado."
-      );
-    }
+    const favorites = (await listFavorites()).map((f) => f.product.id);
+    setProducts(result.products.map((p) => ({ ...mapApiProductToCard(p), isFavorite: favorites.includes(p.id) })));
+    setFeedback(result.products.length > 0 ? `${result.products.length} resultado(s) encontrado(s).` : "Nenhum produto encontrado para essa busca.");
     setIsLoading(false);
 
     window.setTimeout(() => {
@@ -54,10 +45,19 @@ export function HomePage() {
     }, 80);
   }
 
-  function showMockShowcase() {
-    setProducts(mockProducts);
-    setHasSearched(false);
-    setFeedback("Produtos populares carregados como vitrine inicial.");
+  async function loadShowcase() {
+    setIsLoading(true);
+    try {
+      const result = await searchProducts(query);
+      const favorites = (await listFavorites()).map((f) => f.product.id);
+      setProducts(result.products.map((p) => ({ ...mapApiProductToCard(p), isFavorite: favorites.includes(p.id) })));
+      setHasSearched(false);
+      setFeedback("Sugestões carregadas para você explorar.");
+    } catch (err) {
+      setFeedback("Não foi possível carregar os resultados agora. Tente novamente.");
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -71,7 +71,7 @@ export function HomePage() {
             </span>
           </h1>
           <p className="text-lg lg:text-xl text-muted-foreground">
-            Acompanhe milhares de produtos, receba alertas de queda de preço e encontre as melhores ofertas.
+            Pesquise um produto, abra os detalhes e salve o que quiser acompanhar depois.
           </p>
 
           <form onSubmit={handleSearch} className="relative max-w-2xl mx-auto mt-8">
@@ -80,7 +80,7 @@ export function HomePage() {
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Digite o nome do produto ou cole o link da loja..."
+              placeholder="Digite o nome do produto ou cole o link da loja"
               className="h-14 pl-12 pr-28 text-base shadow-lg border-gray-200"
             />
             <Button
@@ -89,7 +89,7 @@ export function HomePage() {
               className="absolute right-2 top-1/2 -translate-y-1/2 bg-violet-600 hover:bg-violet-700"
               disabled={isLoading}
             >
-              {isLoading ? "Buscando" : "Buscar"}
+              {isLoading ? "Buscando" : "Pesquisar"}
             </Button>
           </form>
           <p className="text-sm text-muted-foreground">{feedback}</p>
@@ -101,22 +101,22 @@ export function HomePage() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-3xl font-bold tracking-tight">
-                {hasSearched ? "Resultados da busca" : "Produtos Populares"}
+                {hasSearched ? "Resultados da busca" : "Comece sua busca"}
               </h2>
               <p className="text-muted-foreground mt-2">
                 {hasSearched
                   ? `Resultados para "${query}" exibidos abaixo.`
-                  : "Os produtos mais monitorados pelos usuários."}
+                  : "Digite um termo para ver produtos reais do Mercado Livre."}
               </p>
             </div>
-            <Button variant="outline" onClick={showMockShowcase}>
-              Ver vitrine
+            <Button variant="outline" onClick={() => void loadShowcase()}>
+              Ver sugestões
             </Button>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {products.map((product) => (
-              <ProductCard key={product.id} {...product} isFavorite={favoriteProducts.includes(product.id)} />
+              <ProductCard key={product.id} {...product} isFavorite={product.isFavorite} />
             ))}
           </div>
         </div>
@@ -128,18 +128,18 @@ export function HomePage() {
             <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-violet-100">
               <TrendingUp className="h-6 w-6 text-violet-600" />
             </div>
-            <h3 className="font-semibold">Histórico de Preços</h3>
+            <h3 className="font-semibold">Histórico</h3>
             <p className="text-sm text-muted-foreground">
-              Visualize gráficos detalhados com variações de preço ao longo do tempo.
+              Veja como o preço mudou ao longo do tempo.
             </p>
           </div>
           <div className="text-center space-y-3">
             <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-violet-100">
               <Bell className="h-6 w-6 text-violet-600" />
             </div>
-            <h3 className="font-semibold">Alertas Inteligentes</h3>
+            <h3 className="font-semibold">Alertas</h3>
             <p className="text-sm text-muted-foreground">
-              Receba notificações quando o preço atingir o valor desejado.
+              Receba um aviso quando o preço chegar ao valor que você definiu.
             </p>
           </div>
           <div className="text-center space-y-3">
@@ -147,7 +147,7 @@ export function HomePage() {
               <Shield className="h-6 w-6 text-violet-600" />
             </div>
             <h3 className="font-semibold">100% Gratuito</h3>
-            <p className="text-sm text-muted-foreground">Monitore quantos produtos quiser sem pagar nada.</p>
+            <p className="text-sm text-muted-foreground">Acompanhe quantos produtos quiser sem custo.</p>
           </div>
         </div>
       </section>
@@ -156,10 +156,10 @@ export function HomePage() {
         <div className="bg-gradient-to-br from-violet-600 to-indigo-600 rounded-2xl p-8 lg:p-12 text-center text-white">
           <h2 className="text-3xl lg:text-4xl font-bold mb-4">Pronto para economizar?</h2>
           <p className="text-lg text-violet-100 mb-8 max-w-2xl mx-auto">
-            Comece a monitorar seus produtos favoritos agora mesmo.
+            Comece agora e acompanhe os produtos que mais importam para você.
           </p>
-          <Button size="lg" variant="secondary" className="bg-white text-violet-600 hover:bg-gray-100">
-            Criar alerta de preço
+          <Button size="lg" variant="secondary" className="bg-white text-violet-600 hover:bg-gray-100" onClick={() => navigate("/alerts")}>
+            Criar meu alerta
           </Button>
         </div>
       </section>

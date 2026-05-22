@@ -1,73 +1,199 @@
 # Casos de Uso
 
+Este documento usa um padrão único com ator, pré-condições, fluxo principal, fluxos alternativos e pós-condições.
+
 ## UC01 - Pesquisar Produtos
 
-O usuário informa um termo de busca e o sistema exibe produtos encontrados pela API do Mercado Livre ou por dados mockados.
+- Ator: Usuário
+- Pré-condições: O sistema está disponível e o usuário está na página inicial.
+- Fluxo principal:
+	1. O usuário informa um termo de busca.
+	2. O sistema consulta a API do Mercado Livre.
+	3. Se houver falha externa, o sistema utiliza dados mockados.
+	4. O sistema exibe os produtos encontrados.
+- Fluxos alternativos:
+	- A1: Se a busca vier vazia, o sistema mantém a vitrine inicial.
+	- A2: Se não houver resultados, o sistema informa que nenhum produto foi encontrado.
+- Pós-condições: Os resultados da busca ficam visíveis para navegação e seleção.
 
-## UC02 - Visualizar Cards de Produtos
+## UC02 - Visualizar Produtos em Destaque
 
-O usuário visualiza nome, imagem, preço, loja e variação de preço nos cards da página inicial.
+- Ator: Usuário
+- Pré-condições: A página inicial foi carregada.
+- Fluxo principal:
+	1. O sistema apresenta os produtos em destaque.
+	2. O usuário consulta nome, imagem, preço e loja nos cards.
+	3. O usuário escolhe um card para continuar a navegação.
+- Fluxos alternativos:
+	- A1: Se não houver dados reais, o sistema exibe produtos de demonstração.
+- Pós-condições: O usuário visualizou a vitrine inicial do sistema.
 
-## UC03 - Abrir Detalhes de Produto
+## UC03 - Visualizar Detalhes de Produto
 
-O usuário seleciona um produto e acessa uma página com informações detalhadas.
+- Ator: Usuário
+- Pré-condições: Existe um produto listado na busca, vitrine ou favoritos.
+- Fluxo principal:
+	1. O usuário seleciona um produto.
+	2. O sistema abre a tela de detalhes.
+	3. O sistema exibe descrição, preço atual, histórico e lojas comparáveis.
+- Fluxos alternativos:
+	- A1: Se o produto não existir, o sistema informa que o item não foi encontrado.
+- Pós-condições: O usuário acessou a visão detalhada do produto.
 
 ## UC04 - Consultar Histórico de Preço
 
-O usuário visualiza uma representação inicial do histórico de preços de um produto.
+- Ator: Usuário
+- Pré-condições: O produto possui dados de preço anteriores ou dados simulados.
+- Fluxo principal:
+	1. O sistema recupera os valores de histórico do produto.
+	2. O sistema renderiza o gráfico de evolução de preço.
+	3. O usuário analisa a tendência de queda ou aumento.
+- Fluxos alternativos:
+	- A1: Se não houver histórico real, o sistema exibe uma série simulada para demonstração.
+- Pós-condições: O usuário visualizou a evolução do preço do produto.
 
-## UC05 - Comparar Preços por Loja
+## UC05 - Comparar Preços entre Lojas
 
-O usuário consulta uma lista inicial de lojas e preços disponíveis para o produto.
+- Ator: Usuário
+- Pré-condições: O produto possui mais de uma oferta associada.
+- Fluxo principal:
+	1. O sistema lista lojas e preços para o produto.
+	2. O usuário compara os valores exibidos.
+	3. O usuário pode abrir a loja de interesse.
+- Fluxos alternativos:
+	- A1: Se houver apenas uma loja, o sistema exibe somente a oferta disponível.
+- Pós-condições: O usuário tem uma visão comparativa dos preços.
 
-## UC06 - Favoritar Produto
+## UC06 - Cadastrar Produto no Sistema
 
-O usuário marca um produto como favorito para acompanhar posteriormente.
+- Ator: Usuário autenticado ou processo de integração.
+- Pré-condições: O produto foi localizado pela busca ou recebido por integração externa.
+- Fluxo principal:
+	1. O sistema recebe os dados do produto.
+	2. O sistema valida campos obrigatórios como identificador externo, nome e preço.
+	3. O sistema grava o produto no banco de dados.
+- Fluxos alternativos:
+	- A1: Se o produto já existir, o sistema evita duplicidade.
+	- A2: Se algum dado obrigatório estiver ausente, o sistema rejeita o cadastro.
+- Pós-condições: O produto passa a existir na base do sistema.
 
-## UC07 - Listar Produtos Favoritos
+## UC07 - Atualizar Produto
 
-O usuário acessa a página de favoritos para visualizar os produtos salvos.
+- Ator: Administrador ou integração de sincronização.
+- Pré-condições: O produto já existe no banco.
+- Fluxo principal:
+	1. O sistema localiza o produto pelo identificador.
+	2. O ator altera nome, preço, categoria, imagem ou link.
+	3. O sistema valida os novos dados.
+	4. O sistema salva as alterações.
+- Fluxos alternativos:
+	- A1: Se o produto não for encontrado, o sistema informa erro de atualização.
+- Pós-condições: O cadastro do produto fica atualizado.
 
-## UC08 - Criar Alerta de Preço
+## UC08 - Remover Produto
 
-O usuário informa um preço alvo para acompanhar determinado produto.
+- Ator: Administrador.
+- Pré-condições: O produto existe e não está bloqueado por uma regra de negócio.
+- Fluxo principal:
+	1. O ator solicita a exclusão do produto.
+	2. O sistema verifica dependências como favoritos, alertas e histórico.
+	3. O sistema remove o produto ou aplica remoção lógica.
+- Fluxos alternativos:
+	- A1: Se houver dependências ativas, o sistema impede a exclusão física.
+- Pós-condições: O produto deixa de estar disponível no catálogo administrativo.
 
-## UC09 - Listar Alertas de Preço
+## UC09 - Favoritar Produto
 
-O usuário acessa a página de alertas e consulta os alertas cadastrados.
+- Ator: Usuário.
+- Pré-condições: O produto está disponível para seleção.
+- Fluxo principal:
+	1. O usuário aciona a opção de favoritar.
+	2. O sistema cria o vínculo entre usuário e produto.
+	3. O sistema confirma o registro do favorito.
+- Fluxos alternativos:
+	- A1: Se o favorito já existir, o sistema evita duplicidade.
+- Pós-condições: O produto fica salvo na lista de favoritos.
 
-## UC10 - Ativar ou Desativar Alerta
+## UC10 - Listar Favoritos
 
-O usuário altera o status de um alerta de preço.
+- Ator: Usuário.
+- Pré-condições: O usuário possui favoritos cadastrados ou a lista está vazia.
+- Fluxo principal:
+	1. O usuário acessa a página de favoritos.
+	2. O sistema consulta os itens salvos.
+	3. O sistema exibe os produtos favoritados.
+- Fluxos alternativos:
+	- A1: Se não houver favoritos, o sistema apresenta uma mensagem de estado vazio.
+- Pós-condições: O usuário visualizou sua lista de favoritos.
 
-## UC11 - Remover Alerta
+## UC11 - Remover Favorito
 
-O usuário remove um alerta que não deseja mais acompanhar.
+- Ator: Usuário.
+- Pré-condições: O item já está salvo como favorito.
+- Fluxo principal:
+	1. O usuário solicita a remoção do favorito.
+	2. O sistema exclui o vínculo do produto com o usuário.
+	3. O sistema atualiza a lista exibida.
+- Fluxos alternativos:
+	- A1: Se o item não existir mais, o sistema apenas atualiza a interface.
+- Pós-condições: O favorito deixa de ser exibido na lista do usuário.
 
-## UC12 - Consultar Dashboard
+## UC12 - Criar Alerta de Preço
 
-O usuário acessa o dashboard para visualizar um resumo dos produtos monitorados.
+- Ator: Usuário.
+- Pré-condições: O produto existe e o usuário informa um preço alvo válido.
+- Fluxo principal:
+	1. O usuário informa produto, preço alvo e e-mail.
+	2. O sistema valida os dados recebidos.
+	3. O sistema grava o alerta com status ativo.
+- Fluxos alternativos:
+	- A1: Se o preço alvo for inválido, o sistema rejeita o cadastro.
+	- A2: Se o produto não existir, o sistema não cria o alerta.
+- Pós-condições: O alerta fica disponível para monitoramento.
 
-## UC13 - Consultar Status da API
+## UC13 - Listar Alertas de Preço
 
-O desenvolvedor acessa `GET /health` para verificar se o back-end está online.
+- Ator: Usuário.
+- Pré-condições: O usuário possui alertas cadastrados ou a lista está vazia.
+- Fluxo principal:
+	1. O usuário acessa a página de alertas.
+	2. O sistema recupera os alertas do banco.
+	3. O sistema apresenta status, preço alvo e produto associado.
+- Fluxos alternativos:
+	- A1: Se não houver alertas, o sistema exibe orientação para criar o primeiro alerta.
+- Pós-condições: O usuário visualizou seus alertas cadastrados.
 
-## UC14 - Usar Dados Mockados em Caso de Falha
+## UC14 - Atualizar Alerta de Preço
 
-O sistema retorna dados simulados quando a API externa ou o back-end não estiver disponível.
+- Ator: Usuário.
+- Pré-condições: O alerta existe.
+- Fluxo principal:
+	1. O usuário altera preço alvo, e-mail ou status do alerta.
+	2. O sistema valida as novas informações.
+	3. O sistema atualiza o registro.
+- Fluxos alternativos:
+	- A1: Se o alerta não for encontrado, o sistema informa erro.
+- Pós-condições: O alerta fica com os novos dados persistidos.
 
-## UC15 - Salvar Produto no Banco
+## UC15 - Remover Alerta de Preço
 
-Ao favoritar ou criar alerta, o sistema registra o produto no banco de dados.
+- Ator: Usuário.
+- Pré-condições: O alerta existe e está visível na lista.
+- Fluxo principal:
+	1. O usuário solicita a remoção do alerta.
+	2. O sistema confirma a ação.
+	3. O sistema exclui o alerta do banco.
+- Fluxos alternativos:
+	- A1: Se a remoção não puder ser concluída, o sistema mantém o alerta ativo.
+- Pós-condições: O alerta deixa de existir para o usuário.
 
-## UC16 - Registrar Favorito no Banco
+## Como chegar a 5 CRUDs no projeto
 
-O sistema salva o produto favoritado na tabela `Favorite`.
+Hoje o projeto já possui três áreas com operação de criação, leitura e remoção ou atualização: Produtos, Favoritos e Alertas. Para atender ao requisito acadêmico de pelo menos cinco telas CRUD, as duas expansões mais naturais do domínio são:
 
-## UC17 - Registrar Alerta no Banco
+- Histórico de Preços: CRUD para registros de variação de preço por produto.
+- Lojas Monitoradas ou Integração de Notificações: CRUD para cadastrar, listar, atualizar e remover lojas ou registros de notificações recebidas.
 
-O sistema salva o alerta na tabela `PriceAlert`.
+Se for necessário completar o mínimo com ainda mais segurança, a terceira expansão recomendada é uma entidade de administração, como Categorias Monitoradas, que permite tela própria, filtros e manutenção de catálogo.
 
-## UC18 - Preparar Histórico de Preços
-
-O banco possui a tabela `PriceHistory` para permitir evolução futura da coleta de preços.
+Essas expansões fazem sentido porque aproveitam os modelos já existentes em `Product` e `PriceHistory`, e mantêm o sistema coerente com a proposta de monitoramento de preços.

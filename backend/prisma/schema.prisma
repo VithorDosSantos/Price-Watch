@@ -55,3 +55,45 @@ model PriceAlert {
 
   @@index([productId])
 }
+
+model Store {
+  id           String   @id @default(uuid())
+  name         String
+  website      String
+  contactEmail String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model PriceHistoryEntry {
+  id          String   @id @default(uuid())
+  productName String
+  oldPrice    Decimal  @db.Decimal(10, 2)
+  newPrice    Decimal  @db.Decimal(10, 2)
+  capturedAt  DateTime @default(now())
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String?
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

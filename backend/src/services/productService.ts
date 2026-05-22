@@ -1,5 +1,4 @@
 import { prisma } from "../prisma/client";
-import { mockProducts } from "./mockData";
 
 type MercadoLivreItem = {
   id: string;
@@ -45,7 +44,11 @@ function mapMercadoLivreItem(item: MercadoLivreItem): ProductDTO {
 
 async function searchMercadoLivre(query: string): Promise<ProductDTO[]> {
   const url = `${mercadoLivreApiUrl}/sites/MLB/search?q=${encodeURIComponent(query)}`;
-  const response = await fetch(url);
+  const headers: Record<string, string> = { Accept: "application/json" };
+  const token = process.env.MERCADO_LIVRE_ACCESS_TOKEN;
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const response = await fetch(url, { headers });
 
   if (!response.ok) {
     throw new Error(`Mercado Livre API returned ${response.status}`);
@@ -62,31 +65,16 @@ type ProductSearchResult = {
 };
 
 export async function searchProducts(query: string): Promise<ProductSearchResult> {
+  // If query is empty, return empty result set (no client-side mocks)
   if (!query.trim()) {
-    return { source: "mock", products: mockProducts };
+    return { source: "mercado-livre", products: [] };
   }
 
-  try {
-    const products = await searchMercadoLivre(query);
-    return { source: "mercado-livre", products: products.length > 0 ? products : mockProducts };
-  } catch (error) {
-    return {
-      source: "mock",
-      products: mockProducts,
-      message:
-        error instanceof Error
-          ? `A API do Mercado Livre não retornou resultados reais: ${error.message}.`
-          : "A API do Mercado Livre não retornou resultados reais."
-    };
-  }
+  const products = await searchMercadoLivre(query);
+  return { source: "mercado-livre", products };
 }
 
 export async function getProductById(id: string): Promise<ProductDTO | null> {
-  const mockProduct = mockProducts.find((product) => product.id === id || product.externalId === id);
-  if (mockProduct) {
-    return mockProduct;
-  }
-
   const savedProduct = await prisma.product.findFirst({
     where: {
       OR: [{ id }, { externalId: id }]
@@ -106,17 +94,17 @@ export async function getProductById(id: string): Promise<ProductDTO | null> {
     };
   }
 
-  try {
-    const response = await fetch(`${mercadoLivreApiUrl}/items/${encodeURIComponent(id)}`);
-    if (!response.ok) {
-      return null;
-    }
+  const headers: Record<string, string> = { Accept: "application/json" };
+  const token = process.env.MERCADO_LIVRE_ACCESS_TOKEN;
+  if (token) headers.Authorization = `Bearer ${token}`;
 
-    const item = (await response.json()) as MercadoLivreItem;
-    return mapMercadoLivreItem(item);
-  } catch {
+  const response = await fetch(`${mercadoLivreApiUrl}/items/${encodeURIComponent(id)}`, { headers });
+  if (!response.ok) {
     return null;
   }
+
+  const item = (await response.json()) as MercadoLivreItem;
+  return mapMercadoLivreItem(item);
 }
 
 export async function upsertProduct(product: ProductDTO): Promise<string> {

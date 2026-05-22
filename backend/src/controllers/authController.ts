@@ -11,6 +11,16 @@ export function mercadoLivreLoginController(_request: Request, response: Respons
   }
 }
 
+export function mercadoLivreLoginUrlController(_request: Request, response: Response) {
+  try {
+    return response.json({ url: getMercadoLivreAuthorizationUrl() });
+  } catch (error) {
+    return response.status(500).json({
+      message: error instanceof Error ? error.message : "Erro ao gerar URL de autenticação."
+    });
+  }
+}
+
 export async function mercadoLivreCallbackController(request: Request, response: Response) {
   const code = String(request.query.code ?? "");
 

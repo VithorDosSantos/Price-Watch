@@ -35,6 +35,33 @@ CREATE TABLE IF NOT EXISTS "PriceAlert" (
   "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS "Store" (
+  "id" TEXT PRIMARY KEY,
+  "name" TEXT NOT NULL,
+  "website" TEXT NOT NULL,
+  "contactEmail" TEXT NOT NULL,
+  "isActive" BOOLEAN NOT NULL DEFAULT true,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS "Category" (
+  "id" TEXT PRIMARY KEY,
+  "name" TEXT NOT NULL,
+  "description" TEXT NOT NULL,
+  "isActive" BOOLEAN NOT NULL DEFAULT true,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS "PriceHistoryEntry" (
+  "id" TEXT PRIMARY KEY,
+  "productName" TEXT NOT NULL,
+  "oldPrice" DECIMAL(10, 2) NOT NULL,
+  "newPrice" DECIMAL(10, 2) NOT NULL,
+  "capturedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE INDEX IF NOT EXISTS "PriceHistory_productId_idx" ON "PriceHistory"("productId");
 CREATE INDEX IF NOT EXISTS "Favorite_productId_idx" ON "Favorite"("productId");
 CREATE INDEX IF NOT EXISTS "PriceAlert_productId_idx" ON "PriceAlert"("productId");

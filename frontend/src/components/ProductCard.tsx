@@ -1,9 +1,13 @@
 import { Link } from "react-router-dom";
 import { Heart, TrendingDown, TrendingUp } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { cn } from "./ui/utils";
+import { favoriteProduct } from "../services/api";
+import { toast } from "sonner";
+import { useAuth } from "../contexts/AuthContext";
 
 export interface ProductCardProps {
   id: string;
@@ -26,9 +30,31 @@ export function ProductCard({
   priceChange,
   isFavorite = false,
 }: ProductCardProps) {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const discount = originalPrice
     ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
     : 0;
+
+  async function handleFavoriteClick() {
+    if (!user) {
+      toast.error("Faça login para salvar favoritos.");
+      navigate("/login");
+      return;
+    }
+
+    if (isFavorite) {
+      navigate("/favorites");
+      return;
+    }
+
+    try {
+      await favoriteProduct(id);
+      toast.success("Produto salvo nos favoritos.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível salvar o favorito.");
+    }
+  }
 
   return (
     <Card className="group overflow-hidden transition-all hover:shadow-lg border-gray-200">
@@ -39,12 +65,16 @@ export function ProductCard({
           className="h-full w-full object-cover transition-transform group-hover:scale-105"
         />
         <Button
+          type="button"
           size="icon"
           variant="ghost"
+          onClick={() => void handleFavoriteClick()}
           className={cn(
             "absolute right-2 top-2 h-8 w-8 rounded-full bg-white/90 backdrop-blur hover:bg-white",
             isFavorite && "text-red-500"
           )}
+          aria-label={isFavorite ? "Ver favoritos" : "Salvar nos favoritos"}
+          title={isFavorite ? "Ver favoritos" : "Salvar nos favoritos"}
         >
           <Heart className={cn("h-4 w-4", isFavorite && "fill-current")} />
         </Button>

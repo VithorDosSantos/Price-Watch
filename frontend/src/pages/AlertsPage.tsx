@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { /* useState removed here to avoid duplicate import */ } from "react";
 import { Bell, Plus, Trash2, Search } from "lucide-react";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -23,69 +23,61 @@ import {
   TableHeader,
   TableRow,
 } from "../components/ui/table";
-import { mockAlerts } from "../data/mockData";
+import { listAlerts, createAlert } from "../services/api";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export function AlertsPage() {
-  const [alerts, setAlerts] = useState(mockAlerts);
+  const [alerts, setAlerts] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredAlerts = alerts.filter((alert) =>
-    alert.productName.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const activeAlerts = alerts.filter((a) => a.active).length;
-
-  const toggleAlert = (id: string) => {
-    setAlerts(alerts.map((a) => {
-      if (a.id === id) {
-        const newActive = !a.active;
-        toast.success(newActive ? "Alerta ativado com sucesso!" : "Alerta desativado");
-        return { ...a, active: newActive };
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await listAlerts();
+        setAlerts(res);
+      } catch (err) {
+        setAlerts([]);
       }
-      return a;
-    }));
-  };
+    }
 
-  const deleteAlert = (id: string) => {
-    setAlerts(alerts.filter((a) => a.id !== id));
-    toast.success("Alerta removido com sucesso!");
-  };
+    void load();
+  }, []);
+
+  const filteredAlerts = alerts.filter((alert) => alert.product.productName.toLowerCase().includes(searchQuery.toLowerCase()));
+
+  const activeAlerts = alerts.filter((a) => a.isActive ?? true).length;
 
   return (
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Alertas de Preço</h1>
-          <p className="text-sm md:text-base text-muted-foreground mt-2">
-            Gerencie seus alertas e seja notificado quando os preços caírem
-          </p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Alertas</h1>
+          <p className="text-sm md:text-base text-muted-foreground mt-2">Crie avisos para saber quando um produto ficar mais barato.</p>
         </div>
 
         <Dialog>
           <DialogTrigger asChild>
             <Button className="bg-violet-600 hover:bg-violet-700 w-full sm:w-auto">
               <Plus className="h-4 w-4 mr-2" />
-              Criar alerta
+              Novo alerta
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Criar Alerta de Preço</DialogTitle>
-              <DialogDescription>
-                Configure um alerta para ser notificado quando o preço atingir o valor desejado
-              </DialogDescription>
+              <DialogTitle>Criar alerta</DialogTitle>
+              <DialogDescription>Defina o preço que você quer pagar e receba um aviso quando ele chegar lá.</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="product">Produto</Label>
+                <Label htmlFor="product">Produto ou link</Label>
                 <Input
                   id="product"
-                  placeholder="Digite o nome do produto ou cole o link..."
+                  placeholder="Digite o nome do produto ou cole o link"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="price">Preço desejado (R$)</Label>
+                <Label htmlFor="price">Preço que você quer pagar (R$)</Label>
                 <Input
                   id="price"
                   type="number"
@@ -97,13 +89,22 @@ export function AlertsPage() {
               <Button
                 type="submit"
                 className="bg-violet-600 hover:bg-violet-700"
-                onClick={() => {
-                  toast.success("Alerta criado com sucesso!", {
-                    description: "Você será notificado quando o preço atingir o valor desejado."
-                  });
+                onClick={async () => {
+                  const productInput = (document.getElementById("product") as HTMLInputElement).value;
+                  const priceInput = Number((document.getElementById("price") as HTMLInputElement).value || 0);
+                  try {
+                    await createAlert(productInput, priceInput, "user@example.com");
+                    toast.success("Alerta criado com sucesso!", {
+                      description: "Você será notificado quando o preço atingir o valor desejado."
+                    });
+                    const res = await listAlerts();
+                    setAlerts(res);
+                  } catch (err) {
+                    toast.error("Erro ao criar alerta");
+                  }
                 }}
               >
-                Criar alerta
+                Salvar alerta
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -115,7 +116,7 @@ export function AlertsPage() {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Total de Alertas</p>
+              <p className="text-sm text-muted-foreground">Total de alertas</p>
               <p className="text-3xl font-bold mt-2">{alerts.length}</p>
             </div>
             <div className="h-12 w-12 rounded-lg bg-violet-50 flex items-center justify-center">
@@ -127,7 +128,7 @@ export function AlertsPage() {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Alertas Ativos</p>
+              <p className="text-sm text-muted-foreground">Alertas ativos</p>
               <p className="text-3xl font-bold mt-2">{activeAlerts}</p>
             </div>
             <div className="h-12 w-12 rounded-lg bg-green-50 flex items-center justify-center">
@@ -139,7 +140,7 @@ export function AlertsPage() {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Alertas Disparados</p>
+              <p className="text-sm text-muted-foreground">Alertas enviados</p>
               <p className="text-3xl font-bold mt-2">12</p>
               <p className="text-xs text-green-600 mt-1">Este mês</p>
             </div>
@@ -154,9 +155,9 @@ export function AlertsPage() {
       <Card className="p-6">
         <div className="relative mb-6">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
+            <Input
             type="search"
-            placeholder="Buscar alertas..."
+            placeholder="Buscar por produto"
             className="pl-10"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -170,7 +171,7 @@ export function AlertsPage() {
             <h3 className="font-semibold mb-2">Nenhum alerta encontrado</h3>
             <p className="text-sm text-muted-foreground">
               {searchQuery
-                ? "Tente buscar por outro termo"
+                ? "Tente outra busca"
                 : "Crie seu primeiro alerta para começar"}
             </p>
           </div>
@@ -191,13 +192,13 @@ export function AlertsPage() {
                 </TableHeader>
                 <TableBody>
                   {filteredAlerts.map((alert) => {
-                    const difference = alert.currentPrice - alert.targetPrice;
-                    const percentDiff = (difference / alert.currentPrice) * 100;
+                    const difference = alert.product.currentPrice - alert.targetPrice;
+                    const percentDiff = (difference / alert.product.currentPrice) * 100;
 
                     return (
                       <TableRow key={alert.id}>
                         <TableCell className="font-medium max-w-xs">
-                          <span className="truncate block">{alert.productName}</span>
+                          <span className="truncate block">{alert.product.productName}</span>
                         </TableCell>
                         <TableCell className="font-bold text-green-600">
                           R$ {alert.targetPrice.toLocaleString("pt-BR")}
@@ -205,7 +206,7 @@ export function AlertsPage() {
                         <TableCell>
                           <div className="space-y-1">
                             <div className="font-semibold">
-                              R$ {alert.currentPrice.toLocaleString("pt-BR")}
+                              R$ {alert.product.currentPrice.toLocaleString("pt-BR")}
                             </div>
                             <div className="text-xs text-muted-foreground">
                               {difference > 0 ? "+" : ""}
@@ -214,30 +215,16 @@ export function AlertsPage() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Switch
-                              checked={alert.active}
-                              onCheckedChange={() => toggleAlert(alert.id)}
-                            />
-                            <Badge
-                              variant={alert.active ? "default" : "secondary"}
-                              className={alert.active ? "bg-green-600" : ""}
-                            >
-                              {alert.active ? "Ativo" : "Inativo"}
-                            </Badge>
-                          </div>
+                          <Badge variant={alert.isActive ? "default" : "secondary"} className={alert.isActive ? "bg-green-600" : ""}>
+                            {alert.isActive ? "Ativo" : "Inativo"}
+                          </Badge>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {new Date(alert.createdAt).toLocaleDateString("pt-BR")}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => deleteAlert(alert.id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-red-600" />
-                          </Button>
+                          {/* No delete/toggle API available server-side; actions disabled */}
+                          <span className="text-xs text-muted-foreground">Sem ações</span>
                         </TableCell>
                       </TableRow>
                     );
@@ -249,61 +236,34 @@ export function AlertsPage() {
             {/* Mobile Cards */}
             <div className="md:hidden space-y-3">
               {filteredAlerts.map((alert) => {
-                const difference = alert.currentPrice - alert.targetPrice;
-                const percentDiff = (difference / alert.currentPrice) * 100;
+                const difference = alert.product.currentPrice - alert.targetPrice;
+                const percentDiff = (difference / alert.product.currentPrice) * 100;
 
                 return (
                   <Card key={alert.id} className="p-4">
                     <div className="space-y-3">
                       <div className="flex items-start justify-between gap-2">
-                        <h3 className="font-medium text-sm line-clamp-2 flex-1">
-                          {alert.productName}
-                        </h3>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 shrink-0"
-                          onClick={() => deleteAlert(alert.id)}
-                        >
-                          <Trash2 className="h-4 w-4 text-red-600" />
-                        </Button>
+                        <h3 className="font-medium text-sm line-clamp-2 flex-1">{alert.product.productName}</h3>
+                        <span className="text-xs text-muted-foreground">Sem ações</span>
                       </div>
 
                       <div className="grid grid-cols-2 gap-3 text-sm">
                         <div>
                           <p className="text-muted-foreground text-xs">Preço Alvo</p>
-                          <p className="font-bold text-green-600">
-                            R$ {alert.targetPrice.toLocaleString("pt-BR")}
-                          </p>
+                          <p className="font-bold text-green-600">R$ {alert.targetPrice.toLocaleString("pt-BR")}</p>
                         </div>
                         <div>
                           <p className="text-muted-foreground text-xs">Preço Atual</p>
-                          <p className="font-semibold">
-                            R$ {alert.currentPrice.toLocaleString("pt-BR")}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {difference > 0 ? "+" : ""}
-                            {percentDiff.toFixed(1)}% do alvo
-                          </p>
+                          <p className="font-semibold">R$ {alert.product.currentPrice.toLocaleString("pt-BR")}</p>
+                          <p className="text-xs text-muted-foreground">{difference > 0 ? "+" : ""}{percentDiff.toFixed(1)}% do alvo</p>
                         </div>
                       </div>
 
                       <div className="flex items-center justify-between pt-2 border-t">
-                        <div className="flex items-center gap-2">
-                          <Switch
-                            checked={alert.active}
-                            onCheckedChange={() => toggleAlert(alert.id)}
-                          />
-                          <Badge
-                            variant={alert.active ? "default" : "secondary"}
-                            className={alert.active ? "bg-green-600" : ""}
-                          >
-                            {alert.active ? "Ativo" : "Inativo"}
-                          </Badge>
+                        <div>
+                          <Badge variant={alert.isActive ? "default" : "secondary"} className={alert.isActive ? "bg-green-600" : ""}>{alert.isActive ? "Ativo" : "Inativo"}</Badge>
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(alert.createdAt).toLocaleDateString("pt-BR")}
-                        </p>
+                        <p className="text-xs text-muted-foreground">{new Date(alert.createdAt).toLocaleDateString("pt-BR")}</p>
                       </div>
                     </div>
                   </Card>
@@ -316,23 +276,23 @@ export function AlertsPage() {
 
       {/* How it works */}
       <Card className="p-6 bg-gradient-to-br from-violet-50 to-indigo-50 border-violet-200">
-        <h3 className="font-semibold mb-3">Como funcionam os alertas?</h3>
+        <h3 className="font-semibold mb-3">Como os alertas funcionam</h3>
         <ul className="space-y-2 text-sm text-muted-foreground">
           <li className="flex gap-2">
             <span className="text-violet-600">•</span>
-            <span>Monitore produtos 24/7 automaticamente</span>
+            <span>Você define o preço e o sistema acompanha para você.</span>
           </li>
           <li className="flex gap-2">
             <span className="text-violet-600">•</span>
-            <span>Receba notificações por email quando o preço atingir o valor desejado</span>
+            <span>Quando o preço baixar, você recebe um aviso por email.</span>
           </li>
           <li className="flex gap-2">
             <span className="text-violet-600">•</span>
-            <span>Ative ou desative alertas a qualquer momento</span>
+            <span>Você pode ver e ajustar seus alertas sempre que quiser.</span>
           </li>
           <li className="flex gap-2">
             <span className="text-violet-600">•</span>
-            <span>Sem limite de alertas ativos</span>
+            <span>Crie quantos alertas precisar.</span>
           </li>
         </ul>
       </Card>

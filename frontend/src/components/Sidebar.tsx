@@ -1,4 +1,4 @@
-import { BarChart3, Bell, Heart, Home } from "lucide-react";
+import { BarChart3, Bell, Clock3, Heart, Home, Layers3, Store } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "./ui/utils";
 
@@ -6,7 +6,10 @@ const navigation = [
   { name: "Home", href: "/", icon: Home },
   { name: "Dashboard", href: "/dashboard", icon: BarChart3 },
   { name: "Favoritos", href: "/favorites", icon: Heart },
-  { name: "Alertas", href: "/alerts", icon: Bell }
+  { name: "Alertas", href: "/alerts", icon: Bell },
+  { name: "Lojas", href: "/stores", icon: Store },
+  { name: "Categorias", href: "/categories", icon: Layers3 },
+  { name: "Histórico", href: "/price-history", icon: Clock3 }
 ];
 
 export function Sidebar() {
