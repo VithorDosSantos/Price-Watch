@@ -5,7 +5,7 @@ import {
   mercadoLivreLoginUrlController,
   mercadoLivreStatusController
 } from "../controllers/authController";
-import { registerController, loginController, meController } from "../controllers/localAuthController";
+import { deleteMeController, loginController, meController, registerController, updateMeController } from "../controllers/localAuthController";
 import { authenticate } from "../middleware/authMiddleware";
 
 export const authRoutes = Router();
@@ -17,3 +17,5 @@ authRoutes.get("/mercadolivre/status", mercadoLivreStatusController);
 authRoutes.post("/register", registerController);
 authRoutes.post("/login/local", loginController);
 authRoutes.get("/me", authenticate, meController);
+authRoutes.patch("/me", authenticate, updateMeController);
+authRoutes.delete("/me", authenticate, deleteMeController);

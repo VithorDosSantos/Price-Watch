@@ -1,6 +1,5 @@
 import { prisma } from "../prisma/client";
 import { getValidMercadoLivreAccessToken } from "./mercadoLivreAuthService";
-import { mockProducts } from "./mockData";
 
 type MercadoLivreItem = {
   id: string;
@@ -53,7 +52,14 @@ async function searchMercadoLivre(query: string): Promise<ProductDTO[]> {
   const response = await fetch(url, { headers });
 
   if (!response.ok) {
-    throw new Error(`Mercado Livre API returned ${response.status}`);
+    const details = await response.text();
+    if (response.status === 403) {
+      throw new Error(
+        "Mercado Livre retornou 403. Conecte uma conta válida pelo fluxo de autenticação ou configure MERCADO_LIVRE_ACCESS_TOKEN."
+      );
+    }
+
+    throw new Error(details || `Mercado Livre API returned ${response.status}`);
   }
 
   const data = (await response.json()) as MercadoLivreSearchResponse;
@@ -71,19 +77,8 @@ export async function searchProducts(query: string): Promise<ProductSearchResult
     return { source: "mercado-livre", products: [] };
   }
 
-  try {
-    const products = await searchMercadoLivre(query);
-    return { source: "mercado-livre", products };
-  } catch (error) {
-    return {
-      source: "mock",
-      products: mockProducts,
-      message:
-        error instanceof Error
-          ? `A API do Mercado Livre não retornou resultados reais: ${error.message}.`
-          : "A API do Mercado Livre não retornou resultados reais."
-    };
-  }
+  const products = await searchMercadoLivre(query);
+  return { source: "mercado-livre", products };
 }
 
 export async function getProductById(id: string): Promise<ProductDTO | null> {
