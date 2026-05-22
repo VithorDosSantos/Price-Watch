@@ -267,6 +267,40 @@ GET https://api.mercadolibre.com/sites/MLB/search?q=termo
 
 Ela foi escolhida por ter dados reais de produtos do mercado brasileiro, permitir busca sem autenticação para endpoints públicos e fornecer informações úteis como nome, preço, imagem, link e vendedor.
 
+## Integração com Token do Mercado Livre
+
+O back-end possui fluxo OAuth para salvar e renovar o token do Mercado Livre automaticamente.
+
+Rotas principais:
+
+```http
+GET /auth/login
+GET /auth/callback
+GET /auth/mercadolivre/status
+```
+
+Depois do deploy, configure no Render:
+
+```text
+MERCADO_LIVRE_CLIENT_ID=seu_app_id
+MERCADO_LIVRE_CLIENT_SECRET=sua_secret_key
+MERCADO_LIVRE_REDIRECT_URI=https://price-watch-0uez.onrender.com/auth/callback
+```
+
+Abra esta URL para autorizar a aplicação:
+
+```text
+https://price-watch-0uez.onrender.com/auth/login
+```
+
+Quando o Mercado Livre redirecionar para `/auth/callback`, o back-end salva o `access_token`, `refresh_token` e expiração no banco. A busca de produtos passa a usar o token salvo e renova automaticamente quando o token expira.
+
+Para verificar se o token está salvo:
+
+```text
+https://price-watch-0uez.onrender.com/auth/mercadolivre/status
+```
+
 ## Funcionalidades Entregues na Sprint 1
 
 - Estrutura profissional de repositório.

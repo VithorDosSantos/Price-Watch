@@ -97,3 +97,15 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model ExternalApiCredential {
+  id           String   @id @default(uuid())
+  provider     String   @unique
+  accessToken  String
+  refreshToken String?
+  tokenType    String?
+  userId       String?
+  expiresAt    DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}

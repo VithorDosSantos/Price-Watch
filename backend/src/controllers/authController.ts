@@ -1,5 +1,9 @@
 import type { Request, Response } from "express";
-import { getMercadoLivreAuthorizationUrl, getMercadoLivreToken } from "../services/mercadoLivreAuthService";
+import {
+  getMercadoLivreAuthorizationUrl,
+  getMercadoLivreCredentialStatus,
+  getMercadoLivreToken
+} from "../services/mercadoLivreAuthService";
 
 export function mercadoLivreLoginController(_request: Request, response: Response) {
   try {
@@ -34,9 +38,8 @@ export async function mercadoLivreCallbackController(request: Request, response:
     const token = await getMercadoLivreToken(code);
 
     return response.json({
-      message: "Token do Mercado Livre gerado com sucesso. Guarde esses dados no .env do back-end.",
-      accessToken: token.access_token,
-      refreshToken: token.refresh_token,
+      message: "Token do Mercado Livre gerado e salvo com sucesso.",
+      tokenSaved: true,
       expiresIn: token.expires_in,
       tokenType: token.token_type,
       userId: token.user_id
@@ -45,6 +48,17 @@ export async function mercadoLivreCallbackController(request: Request, response:
     return response.status(500).json({
       message: "Erro ao trocar o código pelo token do Mercado Livre.",
       details: error instanceof Error ? error.message : "Erro desconhecido."
+    });
+  }
+}
+
+export async function mercadoLivreStatusController(_request: Request, response: Response) {
+  try {
+    const status = await getMercadoLivreCredentialStatus();
+    return response.json(status);
+  } catch (error) {
+    return response.status(500).json({
+      message: error instanceof Error ? error.message : "Erro ao consultar status do token do Mercado Livre."
     });
   }
 }

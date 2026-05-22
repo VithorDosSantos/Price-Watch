@@ -1,4 +1,6 @@
 import { prisma } from "../prisma/client";
+import { getValidMercadoLivreAccessToken } from "./mercadoLivreAuthService";
+import { mockProducts } from "./mockData";
 
 type MercadoLivreItem = {
   id: string;
@@ -45,7 +47,7 @@ function mapMercadoLivreItem(item: MercadoLivreItem): ProductDTO {
 async function searchMercadoLivre(query: string): Promise<ProductDTO[]> {
   const url = `${mercadoLivreApiUrl}/sites/MLB/search?q=${encodeURIComponent(query)}`;
   const headers: Record<string, string> = { Accept: "application/json" };
-  const token = process.env.MERCADO_LIVRE_ACCESS_TOKEN;
+  const token = await getValidMercadoLivreAccessToken();
   if (token) headers.Authorization = `Bearer ${token}`;
 
   const response = await fetch(url, { headers });
@@ -65,13 +67,23 @@ type ProductSearchResult = {
 };
 
 export async function searchProducts(query: string): Promise<ProductSearchResult> {
-  // If query is empty, return empty result set (no client-side mocks)
   if (!query.trim()) {
     return { source: "mercado-livre", products: [] };
   }
 
-  const products = await searchMercadoLivre(query);
-  return { source: "mercado-livre", products };
+  try {
+    const products = await searchMercadoLivre(query);
+    return { source: "mercado-livre", products };
+  } catch (error) {
+    return {
+      source: "mock",
+      products: mockProducts,
+      message:
+        error instanceof Error
+          ? `A API do Mercado Livre não retornou resultados reais: ${error.message}.`
+          : "A API do Mercado Livre não retornou resultados reais."
+    };
+  }
 }
 
 export async function getProductById(id: string): Promise<ProductDTO | null> {
@@ -95,7 +107,7 @@ export async function getProductById(id: string): Promise<ProductDTO | null> {
   }
 
   const headers: Record<string, string> = { Accept: "application/json" };
-  const token = process.env.MERCADO_LIVRE_ACCESS_TOKEN;
+  const token = await getValidMercadoLivreAccessToken();
   if (token) headers.Authorization = `Bearer ${token}`;
 
   const response = await fetch(`${mercadoLivreApiUrl}/items/${encodeURIComponent(id)}`, { headers });

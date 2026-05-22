@@ -34,11 +34,27 @@ export function HomePage() {
     setHasSearched(true);
     setFeedback("Buscando preços reais no Mercado Livre...");
 
-    const result = await searchProducts(query);
-    const favorites = (await listFavorites()).map((f) => f.product.id);
-    setProducts(result.products.map((p) => ({ ...mapApiProductToCard(p), isFavorite: favorites.includes(p.id) })));
-    setFeedback(result.products.length > 0 ? `${result.products.length} resultado(s) encontrado(s).` : "Nenhum produto encontrado para essa busca.");
-    setIsLoading(false);
+    try {
+      const result = await searchProducts(query);
+      let favorites: string[] = [];
+      try {
+        favorites = (await listFavorites()).map((f) => f.product.id);
+      } catch {
+        favorites = [];
+      }
+      setProducts(result.products.map((p) => ({ ...mapApiProductToCard(p), isFavorite: favorites.includes(p.id) })));
+      setFeedback(
+        result.message ??
+          (result.products.length > 0
+            ? `${result.products.length} resultado(s) encontrado(s).`
+            : "Nenhum produto encontrado para essa busca.")
+      );
+    } catch {
+      setProducts([]);
+      setFeedback("Não foi possível consultar a API agora. Tente novamente em instantes.");
+    } finally {
+      setIsLoading(false);
+    }
 
     window.setTimeout(() => {
       resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
