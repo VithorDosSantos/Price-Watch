@@ -51,11 +51,16 @@ export function PriceHistoryPage() {
   const [form, setForm] = useState<PriceHistoryFormState>(emptyForm);
 
   useEffect(() => {
-    void listPriceHistory().then(setRecords);
+    void listPriceHistory()
+      .then(setRecords)
+      .catch(() => {
+        setRecords([]);
+        toast.error("Não foi possível carregar o histórico de preços.");
+      });
   }, []);
 
   const filteredRecords = useMemo(
-    () => records.filter((record) => record.productName.toLowerCase().includes(searchQuery.toLowerCase())),
+    () => records.filter((record) => (record.productName ?? "").toLowerCase().includes(searchQuery.toLowerCase())),
     [records, searchQuery]
   );
 

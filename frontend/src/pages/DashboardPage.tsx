@@ -3,7 +3,7 @@ import { StatsCard } from "../components/StatsCard";
 import { ProductCard } from "../components/ProductCard";
 import { Card } from "../components/ui/card";
 import { PriceBadge } from "../components/PriceBadge";
-import { listFavorites, listPriceHistory } from "../services/api";
+import { listFavorites, listPriceHistory, mapProductToCard } from "../services/api";
 import { useEffect, useState } from "react";
 import {
   Table,
@@ -23,7 +23,7 @@ export function DashboardPage() {
     async function load() {
       try {
         const favs = await listFavorites();
-        setFavorites(favs.map((f) => f.product));
+        setFavorites(favs.map((f) => mapProductToCard(f.product)));
         const history = await listPriceHistory();
         setPriceHistory(history);
       } catch (err) {

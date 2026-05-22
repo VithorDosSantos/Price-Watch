@@ -73,9 +73,14 @@ export function ProductDetailPage() {
         setIsLoading(false);
         return;
       }
-      const apiProduct = await getProduct(id);
-      setProduct(apiProduct ? mapApiProduct(apiProduct) : null);
-      setIsLoading(false);
+      try {
+        const apiProduct = await getProduct(id);
+        setProduct(apiProduct ? mapApiProduct(apiProduct) : null);
+      } catch {
+        setProduct(null);
+      } finally {
+        setIsLoading(false);
+      }
     }
 
     void loadProduct();

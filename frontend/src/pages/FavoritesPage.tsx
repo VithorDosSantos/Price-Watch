@@ -2,7 +2,7 @@ import { Heart } from "lucide-react";
 import { ProductCard } from "../components/ProductCard";
 import { EmptyState } from "../components/EmptyState";
 import { useNavigate } from "react-router-dom";
-import { listFavorites } from "../services/api";
+import { listFavorites, mapProductToCard } from "../services/api";
 import { useEffect, useState } from "react";
 
 export function FavoritesPage() {
@@ -40,7 +40,7 @@ export function FavoritesPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {favorites.map((fav) => (
-            <ProductCard key={fav.id} {...fav.product} isFavorite={true} />
+            <ProductCard key={fav.id} {...mapProductToCard(fav.product)} isFavorite={true} />
           ))}
         </div>
       )}

@@ -44,7 +44,21 @@ export function AlertsPage() {
     void load();
   }, []);
 
-  const filteredAlerts = alerts.filter((alert) => alert.product.productName.toLowerCase().includes(searchQuery.toLowerCase()));
+  function getProductName(alert: any) {
+    return alert.product?.name ?? alert.product?.productName ?? "Produto sem nome";
+  }
+
+  function getProductPrice(alert: any) {
+    return Number(alert.product?.price ?? alert.product?.currentPrice ?? 0);
+  }
+
+  function getTargetPrice(alert: any) {
+    return Number(alert.targetPrice ?? 0);
+  }
+
+  const filteredAlerts = alerts.filter((alert) =>
+    getProductName(alert).toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const activeAlerts = alerts.filter((a) => a.isActive ?? true).length;
 
@@ -192,21 +206,24 @@ export function AlertsPage() {
                 </TableHeader>
                 <TableBody>
                   {filteredAlerts.map((alert) => {
-                    const difference = alert.product.currentPrice - alert.targetPrice;
-                    const percentDiff = (difference / alert.product.currentPrice) * 100;
+                    const productName = getProductName(alert);
+                    const currentPrice = getProductPrice(alert);
+                    const targetPrice = getTargetPrice(alert);
+                    const difference = currentPrice - targetPrice;
+                    const percentDiff = currentPrice > 0 ? (difference / currentPrice) * 100 : 0;
 
                     return (
                       <TableRow key={alert.id}>
                         <TableCell className="font-medium max-w-xs">
-                          <span className="truncate block">{alert.product.productName}</span>
+                          <span className="truncate block">{productName}</span>
                         </TableCell>
                         <TableCell className="font-bold text-green-600">
-                          R$ {alert.targetPrice.toLocaleString("pt-BR")}
+                          R$ {targetPrice.toLocaleString("pt-BR")}
                         </TableCell>
                         <TableCell>
                           <div className="space-y-1">
                             <div className="font-semibold">
-                              R$ {alert.product.currentPrice.toLocaleString("pt-BR")}
+                              R$ {currentPrice.toLocaleString("pt-BR")}
                             </div>
                             <div className="text-xs text-muted-foreground">
                               {difference > 0 ? "+" : ""}
@@ -236,25 +253,28 @@ export function AlertsPage() {
             {/* Mobile Cards */}
             <div className="md:hidden space-y-3">
               {filteredAlerts.map((alert) => {
-                const difference = alert.product.currentPrice - alert.targetPrice;
-                const percentDiff = (difference / alert.product.currentPrice) * 100;
+                const productName = getProductName(alert);
+                const currentPrice = getProductPrice(alert);
+                const targetPrice = getTargetPrice(alert);
+                const difference = currentPrice - targetPrice;
+                const percentDiff = currentPrice > 0 ? (difference / currentPrice) * 100 : 0;
 
                 return (
                   <Card key={alert.id} className="p-4">
                     <div className="space-y-3">
                       <div className="flex items-start justify-between gap-2">
-                        <h3 className="font-medium text-sm line-clamp-2 flex-1">{alert.product.productName}</h3>
+                        <h3 className="font-medium text-sm line-clamp-2 flex-1">{productName}</h3>
                         <span className="text-xs text-muted-foreground">Sem ações</span>
                       </div>
 
                       <div className="grid grid-cols-2 gap-3 text-sm">
                         <div>
                           <p className="text-muted-foreground text-xs">Preço Alvo</p>
-                          <p className="font-bold text-green-600">R$ {alert.targetPrice.toLocaleString("pt-BR")}</p>
+                          <p className="font-bold text-green-600">R$ {targetPrice.toLocaleString("pt-BR")}</p>
                         </div>
                         <div>
                           <p className="text-muted-foreground text-xs">Preço Atual</p>
-                          <p className="font-semibold">R$ {alert.product.currentPrice.toLocaleString("pt-BR")}</p>
+                          <p className="font-semibold">R$ {currentPrice.toLocaleString("pt-BR")}</p>
                           <p className="text-xs text-muted-foreground">{difference > 0 ? "+" : ""}{percentDiff.toFixed(1)}% do alvo</p>
                         </div>
                       </div>

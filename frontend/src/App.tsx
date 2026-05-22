@@ -16,6 +16,7 @@ import { RegisterPage } from "./pages/RegisterPage";
 import { AdminPage } from "./pages/AdminPage";
 import { AdminUsersPage } from "./pages/AdminUsersPage";
 import { AdminRoute } from "./components/AdminRoute";
+import { AppErrorBoundary } from "./components/AppErrorBoundary";
 
 function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
@@ -40,20 +41,22 @@ export default function App() {
   return (
     <BrowserRouter>
       <Layout>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/product/:id" element={<ProductDetailPage />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/alerts" element={<AlertsPage />} />
-          <Route path="/favorites" element={<FavoritesPage />} />
-          <Route path="/stores" element={<StoresPage />} />
-          <Route path="/categories" element={<CategoriesPage />} />
-          <Route path="/price-history" element={<PriceHistoryPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
-          <Route path="/admin/users" element={<AdminRoute><AdminUsersPage /></AdminRoute>} />
-        </Routes>
+        <AppErrorBoundary>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/product/:id" element={<ProductDetailPage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/alerts" element={<AlertsPage />} />
+            <Route path="/favorites" element={<FavoritesPage />} />
+            <Route path="/stores" element={<StoresPage />} />
+            <Route path="/categories" element={<CategoriesPage />} />
+            <Route path="/price-history" element={<PriceHistoryPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
+            <Route path="/admin/users" element={<AdminRoute><AdminUsersPage /></AdminRoute>} />
+          </Routes>
+        </AppErrorBoundary>
       </Layout>
     </BrowserRouter>
   );

@@ -9,6 +9,16 @@ export type Product = {
   category?: string;
 };
 
+export type ProductCardView = {
+  id: string;
+  name: string;
+  image: string;
+  currentPrice: number;
+  originalPrice: number;
+  store: string;
+  priceChange: number;
+};
+
 export type ProductSearchResponse = {
   products: Product[];
   source: "mercado-livre" | "mock";
@@ -100,7 +110,14 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   });
 
   if (!response.ok) {
-    throw new Error("Falha na comunicação com a API.");
+    let message = "Falha na comunicação com a API.";
+    try {
+      const data = await response.json();
+      message = data?.message ?? message;
+    } catch {
+      // Keep generic message when the API does not return JSON.
+    }
+    throw new Error(message);
   }
 
   if (response.status === 204) {
@@ -149,6 +166,20 @@ export async function updateUserRole(userId: string, role: "ADMIN" | "USER") {
 
 export async function searchProducts(query: string): Promise<ProductSearchResponse> {
   return await request<ProductSearchResponse>(`/products/search?q=${encodeURIComponent(query)}`);
+}
+
+export function mapProductToCard(product: Product): ProductCardView {
+  const price = Number(product.price ?? 0);
+
+  return {
+    id: product.id,
+    name: product.name ?? "Produto sem nome",
+    image: product.imageUrl ?? "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600",
+    currentPrice: price,
+    originalPrice: Math.round(price * 1.12),
+    store: product.storeName ?? "Mercado Livre",
+    priceChange: -8.5
+  };
 }
 
 export async function getProduct(id: string): Promise<Product | undefined> {

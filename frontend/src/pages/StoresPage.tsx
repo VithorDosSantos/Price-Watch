@@ -48,11 +48,16 @@ export function StoresPage() {
   const [form, setForm] = useState<StoreFormState>(emptyForm);
 
   useEffect(() => {
-    void listStores().then(setStores);
+    void listStores()
+      .then(setStores)
+      .catch(() => {
+        setStores([]);
+        toast.error("Não foi possível carregar as lojas.");
+      });
   }, []);
 
   const filteredStores = useMemo(
-    () => stores.filter((store) => store.name.toLowerCase().includes(searchQuery.toLowerCase())),
+    () => stores.filter((store) => (store.name ?? "").toLowerCase().includes(searchQuery.toLowerCase())),
     [searchQuery, stores]
   );
 

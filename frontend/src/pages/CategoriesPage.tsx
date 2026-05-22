@@ -45,11 +45,16 @@ export function CategoriesPage() {
   const [form, setForm] = useState<CategoryFormState>(emptyForm);
 
   useEffect(() => {
-    void listCategories().then(setCategories);
+    void listCategories()
+      .then(setCategories)
+      .catch(() => {
+        setCategories([]);
+        toast.error("Não foi possível carregar as categorias.");
+      });
   }, []);
 
   const filteredCategories = useMemo(
-    () => categories.filter((category) => category.name.toLowerCase().includes(searchQuery.toLowerCase())),
+    () => categories.filter((category) => (category.name ?? "").toLowerCase().includes(searchQuery.toLowerCase())),
     [categories, searchQuery]
   );
 

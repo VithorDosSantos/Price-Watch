@@ -4,20 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { ProductCard, type ProductCardProps } from "../components/ProductCard";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { searchProducts, listFavorites, type Product } from "../services/api";
-
-function mapApiProductToCard(product: Product): ProductCardProps {
-  return {
-    id: product.id,
-    name: product.name,
-    image: product.imageUrl ?? "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600",
-    currentPrice: Number(product.price),
-    originalPrice: Math.round(Number(product.price) * 1.12),
-    store: product.storeName ?? "Mercado Livre",
-    priceChange: -8.5,
-    isFavorite: false
-  };
-}
+import { searchProducts, listFavorites, mapProductToCard } from "../services/api";
 
 export function HomePage() {
   const [query, setQuery] = useState("notebook");
@@ -42,7 +29,7 @@ export function HomePage() {
       } catch {
         favorites = [];
       }
-      setProducts(result.products.map((p) => ({ ...mapApiProductToCard(p), isFavorite: favorites.includes(p.id) })));
+      setProducts(result.products.map((p) => ({ ...mapProductToCard(p), isFavorite: favorites.includes(p.id) })));
       setFeedback(
         result.message ??
           (result.products.length > 0
@@ -66,7 +53,7 @@ export function HomePage() {
     try {
       const result = await searchProducts(query);
       const favorites = (await listFavorites()).map((f) => f.product.id);
-      setProducts(result.products.map((p) => ({ ...mapApiProductToCard(p), isFavorite: favorites.includes(p.id) })));
+      setProducts(result.products.map((p) => ({ ...mapProductToCard(p), isFavorite: favorites.includes(p.id) })));
       setHasSearched(false);
       setFeedback("Sugestões carregadas para você explorar.");
     } catch (err) {
