@@ -157,6 +157,23 @@ Se ainda não tiver instalado as dependências, rode primeiro:
 npm install
 ```
 
+## Como Rodar os Testes do Back-end
+
+Dentro de `backend/`:
+
+```bash
+npm test
+```
+
+Tambem e possivel executar por camada:
+
+```bash
+npm run test:unit
+npm run test:integration
+```
+
+Os casos de teste documentados ficam em `docs/casos-de-teste.md`.
+
 ## Deploy do Back-end com Docker no Render
 
 O back-end possui um `Dockerfile` em `backend/Dockerfile` e uma pipeline em `.github/workflows/deploy-backend-docker.yml`.
