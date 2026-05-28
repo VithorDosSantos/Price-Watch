@@ -28,6 +28,13 @@ export type ProductDTO = {
   category?: string;
 };
 
+export class MercadoLivreError extends Error {
+  constructor(public status: number, public body: string) {
+    super(`MercadoLivreError ${status}`);
+    this.name = "MercadoLivreError";
+  }
+}
+
 const mercadoLivreApiUrl = process.env.MERCADO_LIVRE_API_URL ?? "https://api.mercadolibre.com";
 
 async function fetchMercadoLivreSearch(query: string, useAuth: boolean): Promise<Response> {
@@ -67,6 +74,15 @@ async function searchMercadoLivre(query: string): Promise<ProductDTO[]> {
     return authedData.results.map(mapMercadoLivreItem);
   }
 
+
+  // Log response body for diagnosis when authenticated call fails
+  try {
+    const text = await authedResponse.text();
+    console.error("MercadoLivre authed search failed", { status: authedResponse.status, body: text });
+  } catch (e) {
+    console.error("MercadoLivre authed search failed and body could not be read", e);
+  }
+
   if (authedResponse.status === 403) {
     const publicResponse = await fetchMercadoLivreSearch(query, false);
 
@@ -76,11 +92,12 @@ async function searchMercadoLivre(query: string): Promise<ProductDTO[]> {
     }
 
     const details = await publicResponse.text();
-    throw new Error(details || `Mercado Livre API returned ${publicResponse.status}`);
+    console.error("MercadoLivre public search also failed", { status: publicResponse.status, body: details });
+    throw new MercadoLivreError(publicResponse.status, details || `Mercado Livre API returned ${publicResponse.status}`);
   }
 
   const details = await authedResponse.text();
-  throw new Error(details || `Mercado Livre API returned ${authedResponse.status}`);
+  throw new MercadoLivreError(authedResponse.status, details || `Mercado Livre API returned ${authedResponse.status}`);
 }
 
 type ProductSearchResult = {
@@ -138,13 +155,27 @@ export async function getProductById(id: string): Promise<ProductDTO | null> {
     return mapMercadoLivreItem(item);
   }
 
+  try {
+    const text = await authedResponse.text();
+    console.error("MercadoLivre authed item fetch failed", { status: authedResponse.status, body: text });
+  } catch (e) {
+    console.error("MercadoLivre authed item fetch failed and body could not be read", e);
+  }
+
   if (authedResponse.status === 403) {
     const publicResponse = await fetch(`${mercadoLivreApiUrl}/items/${encodeURIComponent(id)}`, {
       headers: await buildHeaders(false)
     });
 
     if (!publicResponse.ok) {
-      return null;
+      try {
+        const details = await publicResponse.text();
+        console.error("MercadoLivre public item fetch also failed", { status: publicResponse.status, body: details });
+        throw new MercadoLivreError(publicResponse.status, details || `Mercado Livre API returned ${publicResponse.status}`);
+      } catch (e) {
+        console.error("MercadoLivre public item fetch also failed and body could not be read", e);
+        throw new MercadoLivreError(publicResponse.status, "unreadable body");
+      }
     }
 
     const item = (await publicResponse.json()) as MercadoLivreItem;
