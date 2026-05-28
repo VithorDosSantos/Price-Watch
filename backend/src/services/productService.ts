@@ -32,7 +32,11 @@ const mercadoLivreApiUrl = process.env.MERCADO_LIVRE_API_URL ?? "https://api.mer
 
 async function fetchMercadoLivreSearch(query: string, useAuth: boolean): Promise<Response> {
   const url = `${mercadoLivreApiUrl}/sites/MLB/search?q=${encodeURIComponent(query)}`;
-  const headers: Record<string, string> = { Accept: "application/json" };
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+    "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+    "User-Agent": "PriceWatch/1.0 (+https://price-watch-0uez.onrender.com)"
+  };
 
   if (useAuth) {
     const token = await getValidMercadoLivreAccessToken();
