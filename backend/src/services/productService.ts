@@ -26,6 +26,9 @@ type SerpApiSearchResponse = {
     next?: string;
     previous?: string;
   };
+  search_information?: {
+    total_results?: number;
+  };
   error?: string;
 };
 
@@ -177,7 +180,8 @@ async function searchSerpApi(query: string, page: number, limit: number): Promis
   return {
     products: collectSerpApiResults(data).slice(0, limit).map(mapSerpApiItem),
     hasNextPage: hasNextPage(data) || collectSerpApiResults(data).length >= limit,
-    hasPreviousPage: hasPreviousPage(data)
+    hasPreviousPage: hasPreviousPage(data),
+    totalResults: data.search_information?.total_results
   };
 }
 
@@ -188,6 +192,8 @@ type ProductSearchResult = {
   limit: number;
   hasNextPage: boolean;
   hasPreviousPage: boolean;
+  totalResults?: number;
+  totalPages?: number;
   message?: string;
 };
 
@@ -207,13 +213,17 @@ export async function searchProducts(query: string, page = 1, limit = 8): Promis
 
   await Promise.allSettled(searchResult.products.map((product) => upsertProduct(product)));
 
+  const totalResults = searchResult.totalResults;
+
   return {
     source: "serpapi",
     products: searchResult.products,
     page,
     limit,
     hasNextPage: searchResult.hasNextPage,
-    hasPreviousPage: searchResult.hasPreviousPage
+    hasPreviousPage: searchResult.hasPreviousPage,
+    totalResults,
+    totalPages: totalResults ? Math.max(1, Math.ceil(totalResults / limit)) : undefined
   };
 }
 

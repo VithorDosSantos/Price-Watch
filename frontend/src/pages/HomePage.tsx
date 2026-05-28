@@ -15,12 +15,47 @@ export function HomePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState<number | null>(null);
   const [hasNextPage, setHasNextPage] = useState(false);
   const [hasPreviousPage, setHasPreviousPage] = useState(false);
   const [feedback, setFeedback] = useState("Digite um produto para começar a busca.");
   const resultsRef = useRef<HTMLElement>(null);
   const navigate = useNavigate();
+  const [pageButtons, setPageButtons] = useState<number[]>([]);
   const canPaginate = hasSearched && (hasNextPage || hasPreviousPage || products.length >= SEARCH_PAGE_SIZE);
+
+  function buildPageButtons(page: number, totalPages?: number): number[] {
+    if (!totalPages) {
+      const buttons = new Set<number>();
+      buttons.add(1);
+      buttons.add(page);
+      if (page > 1) buttons.add(page - 1);
+      buttons.add(page + 1);
+      buttons.add(page + 2);
+      return Array.from(buttons)
+        .filter((value) => value > 0)
+        .sort((a, b) => a - b);
+    }
+
+    if (totalPages <= 8) {
+      return Array.from({ length: totalPages }, (_, index) => index + 1);
+    }
+
+    const buttons = new Set<number>();
+    buttons.add(1);
+    buttons.add(2);
+    buttons.add(totalPages - 1);
+    buttons.add(totalPages);
+
+    for (let delta = -2; delta <= 2; delta += 1) {
+      const candidate = page + delta;
+      if (candidate > 2 && candidate < totalPages - 1) {
+        buttons.add(candidate);
+      }
+    }
+
+    return Array.from(buttons).sort((a, b) => a - b);
+  }
 
   function normalizeProducts(resultProducts: Product[], favorites: string[]) {
     return resultProducts
@@ -44,13 +79,18 @@ export function HomePage() {
       setProducts(normalizeProducts(result.products, favorites));
       setSubmittedQuery(searchQuery);
       setCurrentPage(result.page);
+      const pageCount = result.totalPages ?? null;
+      setTotalPages(pageCount);
+      setPageButtons(buildPageButtons(result.page, pageCount ?? undefined));
       setHasNextPage(result.hasNextPage || result.products.length >= SEARCH_PAGE_SIZE);
       setHasPreviousPage(result.page > 1 || result.hasPreviousPage);
       setHasSearched(true);
       setFeedback(
         result.message ??
           (result.products.length > 0
-            ? `${result.products.length} resultado(s) encontrado(s).`
+            ? result.totalResults
+              ? `Mostrando ${result.products.length} de ${result.totalResults} resultados.`
+              : `Mostrando ${result.products.length} resultado(s) nesta página.`
             : "Nenhum produto encontrado para essa busca.")
       );
     } catch {
@@ -81,6 +121,9 @@ export function HomePage() {
       setProducts(normalizeProducts(result.products, favorites));
       setSubmittedQuery(query);
       setCurrentPage(result.page);
+      const pageCount = result.totalPages ?? null;
+      setTotalPages(pageCount);
+      setPageButtons(buildPageButtons(result.page, pageCount ?? undefined));
       setHasNextPage(result.hasNextPage || result.products.length >= SEARCH_PAGE_SIZE);
       setHasPreviousPage(result.page > 1 || result.hasPreviousPage);
       setHasSearched(false);
@@ -228,9 +271,10 @@ export function HomePage() {
           {canPaginate && (
             <div className="flex flex-col items-center justify-between gap-3 rounded-2xl border bg-white p-4 shadow-sm sm:flex-row">
               <p className="text-sm text-muted-foreground">
-                Página {currentPage} de resultados para "{submittedQuery}"
+                Página {currentPage}
+                {totalPages ? ` de ${totalPages}` : ""} para "{submittedQuery}"
               </p>
-              <div className="flex w-full gap-2 sm:w-auto">
+              <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
                 <Button
                   variant="outline"
                   className="flex-1 sm:flex-none"
@@ -239,6 +283,19 @@ export function HomePage() {
                 >
                   Anterior
                 </Button>
+                {pageButtons.length > 0 ? (
+                  pageButtons.map((page) => (
+                    <Button
+                      key={page}
+                      variant={page === currentPage ? "secondary" : "outline"}
+                      className={page === currentPage ? "bg-violet-600 text-white" : ""}
+                      onClick={() => void handlePageChange(page)}
+                      disabled={isLoading || page === currentPage}
+                    >
+                      {page}
+                    </Button>
+                  ))
+                ) : null}
                 <Button
                   className="flex-1 bg-violet-600 hover:bg-violet-700 sm:flex-none"
                   onClick={() => void handlePageChange(currentPage + 1)}

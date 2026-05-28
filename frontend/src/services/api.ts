@@ -26,6 +26,8 @@ export type ProductSearchResponse = {
   limit: number;
   hasNextPage: boolean;
   hasPreviousPage: boolean;
+  totalResults?: number;
+  totalPages?: number;
   message?: string;
 };
 
