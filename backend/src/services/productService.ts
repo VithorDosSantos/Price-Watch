@@ -30,6 +30,18 @@ export type ProductDTO = {
 
 const mercadoLivreApiUrl = process.env.MERCADO_LIVRE_API_URL ?? "https://api.mercadolibre.com";
 
+async function fetchMercadoLivreSearch(query: string, useAuth: boolean): Promise<Response> {
+  const url = `${mercadoLivreApiUrl}/sites/MLB/search?q=${encodeURIComponent(query)}`;
+  const headers: Record<string, string> = { Accept: "application/json" };
+
+  if (useAuth) {
+    const token = await getValidMercadoLivreAccessToken();
+    if (token) headers.Authorization = `Bearer ${token}`;
+  }
+
+  return fetch(url, { headers });
+}
+
 function mapMercadoLivreItem(item: MercadoLivreItem): ProductDTO {
   return {
     id: item.id,
@@ -44,26 +56,27 @@ function mapMercadoLivreItem(item: MercadoLivreItem): ProductDTO {
 }
 
 async function searchMercadoLivre(query: string): Promise<ProductDTO[]> {
-  const url = `${mercadoLivreApiUrl}/sites/MLB/search?q=${encodeURIComponent(query)}`;
-  const headers: Record<string, string> = { Accept: "application/json" };
-  const token = await getValidMercadoLivreAccessToken();
-  if (token) headers.Authorization = `Bearer ${token}`;
+  const authedResponse = await fetchMercadoLivreSearch(query, true);
 
-  const response = await fetch(url, { headers });
-
-  if (!response.ok) {
-    const details = await response.text();
-    if (response.status === 403) {
-      throw new Error(
-        "Mercado Livre retornou 403. Conecte uma conta válida pelo fluxo de autenticação ou configure MERCADO_LIVRE_ACCESS_TOKEN."
-      );
-    }
-
-    throw new Error(details || `Mercado Livre API returned ${response.status}`);
+  if (authedResponse.ok) {
+    const authedData = (await authedResponse.json()) as MercadoLivreSearchResponse;
+    return authedData.results.map(mapMercadoLivreItem);
   }
 
-  const data = (await response.json()) as MercadoLivreSearchResponse;
-  return data.results.map(mapMercadoLivreItem);
+  if (authedResponse.status === 403) {
+    const publicResponse = await fetchMercadoLivreSearch(query, false);
+
+    if (publicResponse.ok) {
+      const publicData = (await publicResponse.json()) as MercadoLivreSearchResponse;
+      return publicData.results.map(mapMercadoLivreItem);
+    }
+
+    const details = await publicResponse.text();
+    throw new Error(details || `Mercado Livre API returned ${publicResponse.status}`);
+  }
+
+  const details = await authedResponse.text();
+  throw new Error(details || `Mercado Livre API returned ${authedResponse.status}`);
 }
 
 type ProductSearchResult = {
@@ -101,17 +114,40 @@ export async function getProductById(id: string): Promise<ProductDTO | null> {
     };
   }
 
-  const headers: Record<string, string> = { Accept: "application/json" };
-  const token = await getValidMercadoLivreAccessToken();
-  if (token) headers.Authorization = `Bearer ${token}`;
+  const buildHeaders = async (useAuth: boolean) => {
+    const headers: Record<string, string> = { Accept: "application/json" };
 
-  const response = await fetch(`${mercadoLivreApiUrl}/items/${encodeURIComponent(id)}`, { headers });
-  if (!response.ok) {
-    return null;
+    if (useAuth) {
+      const token = await getValidMercadoLivreAccessToken();
+      if (token) headers.Authorization = `Bearer ${token}`;
+    }
+
+    return headers;
+  };
+
+  const authedResponse = await fetch(`${mercadoLivreApiUrl}/items/${encodeURIComponent(id)}`, {
+    headers: await buildHeaders(true)
+  });
+
+  if (authedResponse.ok) {
+    const item = (await authedResponse.json()) as MercadoLivreItem;
+    return mapMercadoLivreItem(item);
   }
 
-  const item = (await response.json()) as MercadoLivreItem;
-  return mapMercadoLivreItem(item);
+  if (authedResponse.status === 403) {
+    const publicResponse = await fetch(`${mercadoLivreApiUrl}/items/${encodeURIComponent(id)}`, {
+      headers: await buildHeaders(false)
+    });
+
+    if (!publicResponse.ok) {
+      return null;
+    }
+
+    const item = (await publicResponse.json()) as MercadoLivreItem;
+    return mapMercadoLivreItem(item);
+  }
+
+  return null;
 }
 
 export async function upsertProduct(product: ProductDTO): Promise<string> {

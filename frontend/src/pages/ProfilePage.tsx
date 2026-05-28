@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "../contexts/AuthContext";
 import { deleteCurrentUser, getMercadoLivreLoginUrl, getMercadoLivreStatus, updateCurrentUser } from "../services/api";
@@ -16,6 +16,7 @@ export function ProfilePage() {
   const [mlStatus, setMlStatus] = useState<{ configured: boolean; storedInDatabase: boolean; tokenType?: string; userId?: string; expiresAt?: string; updatedAt?: string } | null>(null);
   const [isConnectingMl, setIsConnectingMl] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     setName(user?.name ?? "");
@@ -32,6 +33,21 @@ export function ProfilePage() {
     }
 
     void loadMercadoLivreStatus();
+    const params = new URLSearchParams(location.search);
+    const auto = params.get("autoConnect");
+    if (auto === "1") {
+      // if integration not configured, attempt connect (useful for first admin)
+      void (async () => {
+        try {
+          const status = await getMercadoLivreStatus();
+          if (!status.configured) {
+            await handleConnectMercadoLivre();
+          }
+        } catch {
+          // ignore
+        }
+      })();
+    }
   }, []);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -96,6 +112,8 @@ export function ProfilePage() {
       setIsConnectingMl(false);
     }
   }
+
+  const mercadoLivreActionLabel = mlStatus?.configured ? "Reautorizar Mercado Livre" : "Conectar Mercado Livre";
 
   return (
     <div className="mx-auto max-w-4xl space-y-8">
@@ -181,9 +199,15 @@ export function ProfilePage() {
                 {mlStatus?.configured ? "Ativo" : "Pendente"}
               </span>
             </div>
-            <Button type="button" className="mt-4 w-full bg-violet-600 hover:bg-violet-700" onClick={handleConnectMercadoLivre} disabled={isConnectingMl}>
-              {isConnectingMl ? "Abrindo autenticação..." : "Conectar Mercado Livre"}
-            </Button>
+            {mlStatus?.configured ? (
+              <p className="mt-4 text-sm text-muted-foreground">Integração ativa e gerenciada pelo sistema.</p>
+            ) : user?.role === "ADMIN" ? (
+              <Button type="button" className="mt-4 w-full bg-violet-600 hover:bg-violet-700" onClick={handleConnectMercadoLivre} disabled={isConnectingMl}>
+                {isConnectingMl ? "Abrindo autenticação..." : "Conectar Mercado Livre"}
+              </Button>
+            ) : (
+              <p className="mt-4 text-sm text-muted-foreground">Integração pendente — aguarde a ativação pelo administrador.</p>
+            )}
           </div>
 
           <div className="rounded-xl border border-rose-200 bg-rose-50 p-4">

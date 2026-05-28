@@ -29,7 +29,11 @@ export function RegisterPage() {
       const res = await registerUser(name || undefined, email, password);
       loginWithToken(res.token, res.user);
       toast.success("Conta criada e logado");
-      navigate("/");
+      if (res.isFirstAdmin) {
+        navigate("/profile?autoConnect=1");
+      } else {
+        navigate("/");
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao criar conta");
     } finally {

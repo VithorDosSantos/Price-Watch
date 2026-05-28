@@ -129,13 +129,14 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 
 // Auth helpers
 export async function registerUser(name: string | undefined, email: string, password: string) {
-  return request<{ token: string; user: { id: string; email: string; name?: string; role: string } }>(
-    "/auth/register",
-    {
-      method: "POST",
-      body: JSON.stringify({ name, email, password })
-    }
-  );
+  return request<{
+    token: string;
+    user: { id: string; email: string; name?: string; role: string };
+    isFirstAdmin?: boolean;
+  }>("/auth/register", {
+    method: "POST",
+    body: JSON.stringify({ name, email, password })
+  });
 }
 
 export async function loginUser(email: string, password: string) {

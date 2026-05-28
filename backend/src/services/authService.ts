@@ -26,7 +26,13 @@ export async function registerUser(data: { name?: string; email: string; passwor
 
   const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: "7d" });
 
-  return { token, user: { id: user.id, email: user.email, name: user.name, role: user.role } };
+  const isFirstAdmin = usersCount === 0;
+
+  return {
+    token,
+    user: { id: user.id, email: user.email, name: user.name, role: user.role },
+    isFirstAdmin
+  };
 }
 
 export async function loginUser(email: string, password: string) {
