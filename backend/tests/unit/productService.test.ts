@@ -43,7 +43,10 @@ describe("productService", () => {
               thumbnail: "https://example.com/image.jpg",
               product_link: "https://example.com/produto"
             }
-          ]
+          ],
+          serpapi_pagination: {
+            next_link: "https://serpapi.com/search.json?engine=google_shopping&q=notebook&start=8"
+          }
         }),
         {
           status: 200,
@@ -67,5 +70,38 @@ describe("productService", () => {
       price: 3999,
       productUrl: "https://example.com/produto"
     });
+    expect(result.page).toBe(1);
+    expect(result.limit).toBe(8);
+    expect(result.hasNextPage).toBe(true);
+    expect(result.hasPreviousPage).toBe(false);
+  });
+
+  it("requests the correct SerpApi start offset for later pages", async () => {
+    const fetchMock = vi.mocked(globalThis.fetch);
+
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          shopping_results: [],
+          serpapi_pagination: {
+            previous_link: "https://serpapi.com/search.json?engine=google_shopping&q=notebook&start=0"
+          }
+        }),
+        {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json"
+          }
+        }
+      )
+    );
+
+    const result = await searchProducts("notebook", 2, 8);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(String(fetchMock.mock.calls[0][0])).toContain("start=8");
+    expect(result.page).toBe(2);
+    expect(result.limit).toBe(8);
+    expect(result.hasPreviousPage).toBe(true);
   });
 });

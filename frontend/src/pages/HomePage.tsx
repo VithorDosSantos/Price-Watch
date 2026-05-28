@@ -4,25 +4,35 @@ import { Link, useNavigate } from "react-router-dom";
 import { ProductCard, type ProductCardProps } from "../components/ProductCard";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { listFavorites, mapProductToCard, searchProducts } from "../services/api";
+import { listFavorites, mapProductToCard, searchProducts, type Product } from "../services/api";
+
+const SEARCH_PAGE_SIZE = 8;
 
 export function HomePage() {
   const [query, setQuery] = useState("notebook");
+  const [submittedQuery, setSubmittedQuery] = useState("");
   const [products, setProducts] = useState<ProductCardProps[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [hasPreviousPage, setHasPreviousPage] = useState(false);
   const [feedback, setFeedback] = useState("Digite um produto para começar a busca.");
   const resultsRef = useRef<HTMLElement>(null);
   const navigate = useNavigate();
+  const canPaginate = hasSearched && (hasNextPage || hasPreviousPage || products.length >= SEARCH_PAGE_SIZE);
 
-  async function handleSearch(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  function normalizeProducts(resultProducts: Product[], favorites: string[]) {
+    return resultProducts
+      .slice(0, SEARCH_PAGE_SIZE)
+      .map((product) => ({ ...mapProductToCard(product), isFavorite: favorites.includes(product.id) }));
+  }
+
+  async function loadSearchResults(searchQuery: string, page: number) {
     setIsLoading(true);
-    setHasSearched(true);
-    setFeedback("Buscando preços reais na web...");
 
     try {
-      const result = await searchProducts(query);
+      const result = await searchProducts(searchQuery, { page, limit: SEARCH_PAGE_SIZE });
       let favorites: string[] = [];
 
       try {
@@ -31,7 +41,12 @@ export function HomePage() {
         favorites = [];
       }
 
-      setProducts(result.products.map((product) => ({ ...mapProductToCard(product), isFavorite: favorites.includes(product.id) })));
+      setProducts(normalizeProducts(result.products, favorites));
+      setSubmittedQuery(searchQuery);
+      setCurrentPage(result.page);
+      setHasNextPage(result.hasNextPage);
+      setHasPreviousPage(result.hasPreviousPage);
+      setHasSearched(true);
       setFeedback(
         result.message ??
           (result.products.length > 0
@@ -44,6 +59,12 @@ export function HomePage() {
     } finally {
       setIsLoading(false);
     }
+  }
+
+  async function handleSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setFeedback("Buscando preços reais na web...");
+    await loadSearchResults(query, 1);
 
     window.setTimeout(() => {
       resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -54,9 +75,14 @@ export function HomePage() {
     setIsLoading(true);
 
     try {
-      const result = await searchProducts(query);
+      const result = await searchProducts(query, { page: 1, limit: SEARCH_PAGE_SIZE });
       const favorites = (await listFavorites()).map((item) => item.product.id);
-      setProducts(result.products.map((product) => ({ ...mapProductToCard(product), isFavorite: favorites.includes(product.id) })));
+
+      setProducts(normalizeProducts(result.products, favorites));
+      setSubmittedQuery(query);
+      setCurrentPage(result.page);
+      setHasNextPage(result.hasNextPage);
+      setHasPreviousPage(result.hasPreviousPage);
       setHasSearched(false);
       setFeedback("Sugestões carregadas para você explorar.");
     } catch {
@@ -64,6 +90,17 @@ export function HomePage() {
     } finally {
       setIsLoading(false);
     }
+  }
+
+  async function handlePageChange(nextPage: number) {
+    if (!submittedQuery || isLoading) {
+      return;
+    }
+
+    await loadSearchResults(submittedQuery, nextPage);
+    window.setTimeout(() => {
+      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 80);
   }
 
   return (
@@ -187,6 +224,31 @@ export function HomePage() {
               <ProductCard key={product.id} {...product} isFavorite={product.isFavorite} />
             ))}
           </div>
+
+          {canPaginate && (
+            <div className="flex flex-col items-center justify-between gap-3 rounded-2xl border bg-white p-4 shadow-sm sm:flex-row">
+              <p className="text-sm text-muted-foreground">
+                Página {currentPage} de resultados para "{submittedQuery}"
+              </p>
+              <div className="flex w-full gap-2 sm:w-auto">
+                <Button
+                  variant="outline"
+                  className="flex-1 sm:flex-none"
+                  onClick={() => void handlePageChange(currentPage - 1)}
+                  disabled={!hasPreviousPage || isLoading}
+                >
+                  Anterior
+                </Button>
+                <Button
+                  className="flex-1 bg-violet-600 hover:bg-violet-700 sm:flex-none"
+                  onClick={() => void handlePageChange(currentPage + 1)}
+                  disabled={!hasNextPage || isLoading}
+                >
+                  Próxima
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 

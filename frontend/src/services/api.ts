@@ -22,6 +22,10 @@ export type ProductCardView = {
 export type ProductSearchResponse = {
   products: Product[];
   source: "serpapi" | "mock";
+  page: number;
+  limit: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
   message?: string;
 };
 
@@ -178,8 +182,21 @@ export async function updateUserRole(userId: string, role: "ADMIN" | "USER") {
   });
 }
 
-export async function searchProducts(query: string): Promise<ProductSearchResponse> {
-  return await request<ProductSearchResponse>(`/products/search?q=${encodeURIComponent(query)}`);
+export async function searchProducts(
+  query: string,
+  options?: { page?: number; limit?: number }
+): Promise<ProductSearchResponse> {
+  const searchParams = new URLSearchParams({ q: query });
+
+  if (options?.page) {
+    searchParams.set("page", String(options.page));
+  }
+
+  if (options?.limit) {
+    searchParams.set("limit", String(options.limit));
+  }
+
+  return await request<ProductSearchResponse>(`/products/search?${searchParams.toString()}`);
 }
 
 export function mapProductToCard(product: Product): ProductCardView {

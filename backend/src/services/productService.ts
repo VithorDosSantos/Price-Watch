@@ -18,6 +18,14 @@ type SerpApiSearchResponse = {
   categorized_shopping_results?: Array<{
     shopping_results?: SerpApiShoppingResult[];
   }>;
+  serpapi_pagination?: {
+    next_link?: string;
+    previous_link?: string;
+  };
+  pagination?: {
+    next?: string;
+    previous?: string;
+  };
   error?: string;
 };
 
@@ -40,7 +48,7 @@ export class SerpApiError extends Error {
 }
 
 function getSerpApiBaseUrl() {
-  return process.env.SERPAPI_API_URL ?? "https://serpapi.com/search";
+  return process.env.SERPAPI_API_URL ?? "https://serpapi.com/search.json";
 }
 
 function getSerpApiKey() {
@@ -98,6 +106,14 @@ function collectSerpApiResults(data: SerpApiSearchResponse): SerpApiShoppingResu
   return results;
 }
 
+function hasNextPage(data: SerpApiSearchResponse): boolean {
+  return Boolean(data.serpapi_pagination?.next_link || data.pagination?.next);
+}
+
+function hasPreviousPage(data: SerpApiSearchResponse): boolean {
+  return Boolean(data.serpapi_pagination?.previous_link || data.pagination?.previous);
+}
+
 function mapSerpApiItem(item: SerpApiShoppingResult): ProductDTO {
   const externalId = item.product_id ?? item.product_link ?? item.link ?? item.title;
 
@@ -113,7 +129,7 @@ function mapSerpApiItem(item: SerpApiShoppingResult): ProductDTO {
   };
 }
 
-async function fetchSerpApiSearch(query: string): Promise<Response> {
+async function fetchSerpApiSearch(query: string, start: number): Promise<Response> {
   const apiKey = getSerpApiKey();
 
   if (!apiKey) {
@@ -127,6 +143,10 @@ async function fetchSerpApiSearch(query: string): Promise<Response> {
   url.searchParams.set("hl", "pt-BR");
   url.searchParams.set("api_key", apiKey);
 
+  if (start > 0) {
+    url.searchParams.set("start", String(start));
+  }
+
   return fetch(url.toString(), {
     headers: {
       Accept: "application/json"
@@ -134,12 +154,18 @@ async function fetchSerpApiSearch(query: string): Promise<Response> {
   });
 }
 
-async function searchSerpApi(query: string): Promise<ProductDTO[]> {
-  const response = await fetchSerpApiSearch(query);
+async function searchSerpApi(query: string, page: number, limit: number): Promise<{
+  products: ProductDTO[];
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}> {
+  const start = Math.max(page - 1, 0) * limit;
+  const response = await fetchSerpApiSearch(query, start);
 
   if (!response.ok) {
     const details = await response.text();
-    throw new SerpApiError(response.status, details || `SerpApi retornou ${response.status}`);
+    const errorBody = details.trim() || `SerpApi retornou ${response.status}`;
+    throw new SerpApiError(response.status, errorBody);
   }
 
   const data = (await response.json()) as SerpApiSearchResponse;
@@ -148,25 +174,47 @@ async function searchSerpApi(query: string): Promise<ProductDTO[]> {
     throw new SerpApiError(502, data.error);
   }
 
-  return collectSerpApiResults(data).map(mapSerpApiItem);
+  return {
+    products: collectSerpApiResults(data).slice(0, limit).map(mapSerpApiItem),
+    hasNextPage: hasNextPage(data) || collectSerpApiResults(data).length >= limit,
+    hasPreviousPage: hasPreviousPage(data)
+  };
 }
 
 type ProductSearchResult = {
   source: "serpapi" | "mock";
   products: ProductDTO[];
+  page: number;
+  limit: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
   message?: string;
 };
 
-export async function searchProducts(query: string): Promise<ProductSearchResult> {
+export async function searchProducts(query: string, page = 1, limit = 8): Promise<ProductSearchResult> {
   if (!query.trim()) {
-    return { source: "serpapi", products: [] };
+    return {
+      source: "serpapi",
+      products: [],
+      page: 1,
+      limit,
+      hasNextPage: false,
+      hasPreviousPage: false
+    };
   }
 
-  const products = await searchSerpApi(query);
+  const searchResult = await searchSerpApi(query, page, limit);
 
-  await Promise.allSettled(products.map((product) => upsertProduct(product)));
+  await Promise.allSettled(searchResult.products.map((product) => upsertProduct(product)));
 
-  return { source: "serpapi", products };
+  return {
+    source: "serpapi",
+    products: searchResult.products,
+    page,
+    limit,
+    hasNextPage: searchResult.hasNextPage,
+    hasPreviousPage: searchResult.hasPreviousPage
+  };
 }
 
 export async function getProductById(id: string): Promise<ProductDTO | null> {
