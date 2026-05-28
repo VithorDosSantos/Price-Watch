@@ -91,4 +91,4 @@ Este documento registra o inicio da suite de testes do PriceWatch, cobrindo test
 - Testar protecao de rotas administrativas com JWT.
 - Testar CRUD de lojas por API com usuario administrador.
 - Testar CRUD de historico de precos por API com usuario administrador.
-- Testar integracao de produtos com fallback da API do Mercado Livre.
+- Testar integracao de produtos com SerpApi e persistencia local dos resultados.

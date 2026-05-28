@@ -1,20 +1,24 @@
 import { prisma } from "../prisma/client";
-import { getValidMercadoLivreAccessToken } from "./mercadoLivreAuthService";
 
-type MercadoLivreItem = {
-  id: string;
+type SerpApiShoppingResult = {
   title: string;
-  price: number;
+  product_id?: string;
+  link?: string;
+  product_link?: string;
+  source?: string;
+  price?: string;
+  extracted_price?: number;
   thumbnail?: string;
-  permalink?: string;
-  seller?: {
-    nickname?: string;
-  };
-  category_id?: string;
+  serpapi_thumbnail?: string;
 };
 
-type MercadoLivreSearchResponse = {
-  results: MercadoLivreItem[];
+type SerpApiSearchResponse = {
+  shopping_results?: SerpApiShoppingResult[];
+  inline_shopping_results?: SerpApiShoppingResult[];
+  categorized_shopping_results?: Array<{
+    shopping_results?: SerpApiShoppingResult[];
+  }>;
+  error?: string;
 };
 
 export type ProductDTO = {
@@ -28,91 +32,141 @@ export type ProductDTO = {
   category?: string;
 };
 
-export class MercadoLivreError extends Error {
+export class SerpApiError extends Error {
   constructor(public status: number, public body: string) {
-    super(`MercadoLivreError ${status}`);
-    this.name = "MercadoLivreError";
+    super(`SerpApiError ${status}`);
+    this.name = "SerpApiError";
   }
 }
 
-const mercadoLivreApiUrl = process.env.MERCADO_LIVRE_API_URL ?? "https://api.mercadolibre.com";
-
-async function fetchMercadoLivreSearch(query: string, useAuth: boolean): Promise<Response> {
-  const url = `${mercadoLivreApiUrl}/sites/MLB/search?q=${encodeURIComponent(query)}`;
-  const headers: Record<string, string> = {
-    Accept: "application/json",
-    "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
-    "User-Agent": "PriceWatch/1.0 (+https://price-watch-0uez.onrender.com)"
-  };
-
-  if (useAuth) {
-    const token = await getValidMercadoLivreAccessToken();
-    if (token) headers.Authorization = `Bearer ${token}`;
-  }
-
-  return fetch(url, { headers });
+function getSerpApiBaseUrl() {
+  return process.env.SERPAPI_API_URL ?? "https://serpapi.com/search";
 }
 
-function mapMercadoLivreItem(item: MercadoLivreItem): ProductDTO {
-  return {
-    id: item.id,
-    externalId: item.id,
-    name: item.title,
-    price: item.price,
-    imageUrl: item.thumbnail?.replace("-I.", "-O."),
-    productUrl: item.permalink,
-    storeName: item.seller?.nickname ?? "Mercado Livre",
-    category: item.category_id
-  };
+function getSerpApiKey() {
+  return process.env.SERPAPI_API_KEY ?? "";
 }
 
-async function searchMercadoLivre(query: string): Promise<ProductDTO[]> {
-  const authedResponse = await fetchMercadoLivreSearch(query, true);
-
-  if (authedResponse.ok) {
-    const authedData = (await authedResponse.json()) as MercadoLivreSearchResponse;
-    return authedData.results.map(mapMercadoLivreItem);
+function parsePrice(value?: string): number {
+  if (!value) {
+    return 0;
   }
 
+  const cleaned = value.replace(/[^\d,.-]/g, "").trim();
 
-  // Log response body for diagnosis when authenticated call fails
-  try {
-    const text = await authedResponse.text();
-    console.error("MercadoLivre authed search failed", { status: authedResponse.status, body: text });
-  } catch (e) {
-    console.error("MercadoLivre authed search failed and body could not be read", e);
+  if (!cleaned) {
+    return 0;
   }
 
-  if (authedResponse.status === 403) {
-    const publicResponse = await fetchMercadoLivreSearch(query, false);
+  if (cleaned.includes(",") && cleaned.includes(".")) {
+    const commaIndex = cleaned.lastIndexOf(",");
+    const dotIndex = cleaned.lastIndexOf(".");
 
-    if (publicResponse.ok) {
-      const publicData = (await publicResponse.json()) as MercadoLivreSearchResponse;
-      return publicData.results.map(mapMercadoLivreItem);
+    if (commaIndex > dotIndex) {
+      return Number(cleaned.replace(/\./g, "").replace(",", ".")) || 0;
     }
 
-    const details = await publicResponse.text();
-    console.error("MercadoLivre public search also failed", { status: publicResponse.status, body: details });
-    throw new MercadoLivreError(publicResponse.status, details || `Mercado Livre API returned ${publicResponse.status}`);
+    return Number(cleaned.replace(/,/g, "")) || 0;
   }
 
-  const details = await authedResponse.text();
-  throw new MercadoLivreError(authedResponse.status, details || `Mercado Livre API returned ${authedResponse.status}`);
+  if (cleaned.includes(",")) {
+    return Number(cleaned.replace(/\./g, "").replace(",", ".")) || 0;
+  }
+
+  return Number(cleaned) || 0;
+}
+
+function collectSerpApiResults(data: SerpApiSearchResponse): SerpApiShoppingResult[] {
+  const results: SerpApiShoppingResult[] = [];
+
+  if (Array.isArray(data.shopping_results)) {
+    results.push(...data.shopping_results);
+  }
+
+  if (Array.isArray(data.inline_shopping_results)) {
+    results.push(...data.inline_shopping_results);
+  }
+
+  if (Array.isArray(data.categorized_shopping_results)) {
+    for (const category of data.categorized_shopping_results) {
+      if (Array.isArray(category.shopping_results)) {
+        results.push(...category.shopping_results);
+      }
+    }
+  }
+
+  return results;
+}
+
+function mapSerpApiItem(item: SerpApiShoppingResult): ProductDTO {
+  const externalId = item.product_id ?? item.product_link ?? item.link ?? item.title;
+
+  return {
+    id: externalId,
+    externalId,
+    name: item.title,
+    price: item.extracted_price ?? parsePrice(item.price),
+    imageUrl: item.thumbnail ?? item.serpapi_thumbnail,
+    productUrl: item.link ?? item.product_link,
+    storeName: item.source ?? "SerpApi",
+    category: undefined
+  };
+}
+
+async function fetchSerpApiSearch(query: string): Promise<Response> {
+  const apiKey = getSerpApiKey();
+
+  if (!apiKey) {
+    throw new SerpApiError(500, "SERPAPI_API_KEY não configurada.");
+  }
+
+  const url = new URL(getSerpApiBaseUrl());
+  url.searchParams.set("engine", "google_shopping");
+  url.searchParams.set("q", query);
+  url.searchParams.set("gl", "br");
+  url.searchParams.set("hl", "pt-BR");
+  url.searchParams.set("api_key", apiKey);
+
+  return fetch(url.toString(), {
+    headers: {
+      Accept: "application/json"
+    }
+  });
+}
+
+async function searchSerpApi(query: string): Promise<ProductDTO[]> {
+  const response = await fetchSerpApiSearch(query);
+
+  if (!response.ok) {
+    const details = await response.text();
+    throw new SerpApiError(response.status, details || `SerpApi retornou ${response.status}`);
+  }
+
+  const data = (await response.json()) as SerpApiSearchResponse;
+
+  if (data.error) {
+    throw new SerpApiError(502, data.error);
+  }
+
+  return collectSerpApiResults(data).map(mapSerpApiItem);
 }
 
 type ProductSearchResult = {
-  source: "mercado-livre" | "mock";
+  source: "serpapi" | "mock";
   products: ProductDTO[];
   message?: string;
 };
 
 export async function searchProducts(query: string): Promise<ProductSearchResult> {
   if (!query.trim()) {
-    return { source: "mercado-livre", products: [] };
+    return { source: "serpapi", products: [] };
   }
 
-  const products = await searchMercadoLivre(query);
-  return { source: "mercado-livre", products };
+  const products = await searchSerpApi(query);
+
+  await Promise.allSettled(products.map((product) => upsertProduct(product)));
+
+  return { source: "serpapi", products };
 }
 
 export async function getProductById(id: string): Promise<ProductDTO | null> {
@@ -133,53 +187,6 @@ export async function getProductById(id: string): Promise<ProductDTO | null> {
       storeName: savedProduct.storeName ?? undefined,
       category: savedProduct.category ?? undefined
     };
-  }
-
-  const buildHeaders = async (useAuth: boolean) => {
-    const headers: Record<string, string> = { Accept: "application/json" };
-
-    if (useAuth) {
-      const token = await getValidMercadoLivreAccessToken();
-      if (token) headers.Authorization = `Bearer ${token}`;
-    }
-
-    return headers;
-  };
-
-  const authedResponse = await fetch(`${mercadoLivreApiUrl}/items/${encodeURIComponent(id)}`, {
-    headers: await buildHeaders(true)
-  });
-
-  if (authedResponse.ok) {
-    const item = (await authedResponse.json()) as MercadoLivreItem;
-    return mapMercadoLivreItem(item);
-  }
-
-  try {
-    const text = await authedResponse.text();
-    console.error("MercadoLivre authed item fetch failed", { status: authedResponse.status, body: text });
-  } catch (e) {
-    console.error("MercadoLivre authed item fetch failed and body could not be read", e);
-  }
-
-  if (authedResponse.status === 403) {
-    const publicResponse = await fetch(`${mercadoLivreApiUrl}/items/${encodeURIComponent(id)}`, {
-      headers: await buildHeaders(false)
-    });
-
-    if (!publicResponse.ok) {
-      try {
-        const details = await publicResponse.text();
-        console.error("MercadoLivre public item fetch also failed", { status: publicResponse.status, body: details });
-        throw new MercadoLivreError(publicResponse.status, details || `Mercado Livre API returned ${publicResponse.status}`);
-      } catch (e) {
-        console.error("MercadoLivre public item fetch also failed and body could not be read", e);
-        throw new MercadoLivreError(publicResponse.status, "unreadable body");
-      }
-    }
-
-    const item = (await publicResponse.json()) as MercadoLivreItem;
-    return mapMercadoLivreItem(item);
   }
 
   return null;

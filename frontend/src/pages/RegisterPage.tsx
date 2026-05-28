@@ -30,7 +30,7 @@ export function RegisterPage() {
       loginWithToken(res.token, res.user);
       toast.success("Conta criada e logado");
       if (res.isFirstAdmin) {
-        navigate("/profile?autoConnect=1");
+        navigate("/profile");
       } else {
         navigate("/");
       }

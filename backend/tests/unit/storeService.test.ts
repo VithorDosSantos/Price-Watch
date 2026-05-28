@@ -7,9 +7,9 @@ const originalStore = prisma.store;
 function storeRecord(overrides: Record<string, unknown> = {}) {
   return {
     id: "store-1",
-    name: "Mercado Livre",
-    website: "https://www.mercadolivre.com.br",
-    contactEmail: "contato@mercadolivre.com.br",
+    name: "Marketplace Exemplo",
+    website: "https://marketplace.exemplo.com",
+    contactEmail: "contato@marketplace.exemplo.com",
     isActive: true,
     createdAt: new Date("2026-05-20T10:00:00.000Z"),
     updatedAt: new Date("2026-05-20T10:00:00.000Z"),
@@ -36,7 +36,7 @@ describe("storeService", () => {
     const stores = await listStores();
 
     expect(stores).toHaveLength(1);
-    expect(stores[0].website).toBe("https://www.mercadolivre.com.br");
+    expect(stores[0].website).toBe("https://marketplace.exemplo.com");
   });
 
   it("valida nome e website obrigatorios ao criar loja", async () => {

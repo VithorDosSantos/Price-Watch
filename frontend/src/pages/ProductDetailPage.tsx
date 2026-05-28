@@ -44,14 +44,14 @@ function mapApiProduct(product: Product): ProductDetailsView {
     image: product.imageUrl ?? "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600",
     currentPrice: price,
     originalPrice: Math.round(price * 1.12),
-    store: product.storeName ?? "Mercado Livre",
+    store: product.storeName ?? "Loja parceira",
     category: product.category ?? "Produto",
-    description: "Produto encontrado pela integração do PriceWatch com a API do Mercado Livre.",
+    description: "Produto encontrado pela integração do PriceWatch com a busca em tempo real.",
     productUrl: product.productUrl,
     priceChange: -8.5,
     priceHistory: buildPriceHistory(price),
     stores: [
-      { name: product.storeName ?? "Mercado Livre", price, url: product.productUrl ?? "#" },
+      { name: product.storeName ?? "Loja parceira", price, url: product.productUrl ?? "#" },
       { name: "Loja parceira", price: Math.round(price * 1.04), url: "#" },
       { name: "Marketplace", price: Math.round(price * 1.08), url: "#" }
     ]

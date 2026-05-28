@@ -19,7 +19,7 @@ export function HomePage() {
     event.preventDefault();
     setIsLoading(true);
     setHasSearched(true);
-    setFeedback("Buscando preços reais no Mercado Livre...");
+    setFeedback("Buscando preços reais na web...");
 
     try {
       const result = await searchProducts(query);
@@ -174,7 +174,7 @@ export function HomePage() {
               <p className="mt-2 text-muted-foreground">
                 {hasSearched
                   ? `Resultados para "${query}" exibidos abaixo.`
-                  : "Digite um termo para ver produtos reais do Mercado Livre."}
+                  : "Digite um termo para ver produtos reais da busca integrada."}
               </p>
             </div>
             <Button className="w-full sm:w-auto" variant="outline" onClick={() => void loadShowcase()}>

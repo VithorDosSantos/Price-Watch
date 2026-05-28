@@ -1,7 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("../../src/services/mercadoLivreAuthService", () => ({
-  getValidMercadoLivreAccessToken: vi.fn(async () => "saved-token")
+vi.mock("../../src/prisma/client", () => ({
+  prisma: {
+    product: {
+      upsert: vi.fn(async ({ create }: { create: { externalId: string } }) => ({
+        id: `db-${create.externalId}`,
+        externalId: create.externalId
+      })),
+      findFirst: vi.fn(async () => null)
+    }
+  }
 }));
 
 import { searchProducts } from "../../src/services/productService";
@@ -9,57 +17,55 @@ import { searchProducts } from "../../src/services/productService";
 describe("productService", () => {
   beforeEach(() => {
     vi.stubGlobal("fetch", vi.fn());
+    vi.stubEnv("SERPAPI_API_KEY", "test-key");
+    vi.stubEnv("SERPAPI_API_URL", "https://serpapi.com/search");
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
     vi.clearAllMocks();
   });
 
-  it("retries search without auth when the authenticated request returns 403", async () => {
+  it("maps SerpApi shopping results into the product DTO", async () => {
     const fetchMock = vi.mocked(globalThis.fetch);
 
-    fetchMock
-      .mockResolvedValueOnce(new Response("forbidden", { status: 403 }))
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({
-            results: [
-              {
-                id: "MLB123",
-                title: "Notebook Gamer",
-                price: 3999,
-                seller: { nickname: "Loja Exemplo" },
-                thumbnail: "https://img.mercadolivre.com.br/item-I.jpg",
-                permalink: "https://produto.mercadolivre.com.br/MLB123",
-                category_id: "MLB5678"
-              }
-            ]
-          }),
-          {
-            status: 200,
-            headers: {
-              "Content-Type": "application/json"
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          shopping_results: [
+            {
+              product_id: "123456",
+              title: "Notebook Gamer",
+              source: "Loja Exemplo",
+              extracted_price: 3999,
+              price: "R$ 3.999,00",
+              thumbnail: "https://example.com/image.jpg",
+              product_link: "https://example.com/produto"
             }
+          ]
+        }),
+        {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json"
           }
-        )
-      );
+        }
+      )
+    );
 
     const result = await searchProducts("notebook");
 
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-
-    const firstHeaders = new Headers(fetchMock.mock.calls[0][1]?.headers as HeadersInit);
-    const secondHeaders = new Headers(fetchMock.mock.calls[1][1]?.headers as HeadersInit);
-
-    expect(firstHeaders.get("Authorization")).toBe("Bearer saved-token");
-    expect(secondHeaders.get("Authorization")).toBeNull();
-    expect(result.source).toBe("mercado-livre");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(String(fetchMock.mock.calls[0][0])).toContain("engine=google_shopping");
+    expect(result.source).toBe("serpapi");
     expect(result.products).toHaveLength(1);
     expect(result.products[0]).toMatchObject({
-      id: "MLB123",
+      id: "123456",
       name: "Notebook Gamer",
-      storeName: "Loja Exemplo"
+      storeName: "Loja Exemplo",
+      price: 3999,
+      productUrl: "https://example.com/produto"
     });
   });
 });

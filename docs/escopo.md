@@ -18,8 +18,8 @@ Criar a base inicial do projeto com front-end, back-end, modelagem de banco, doc
 - Página de alertas de preço.
 - Dashboard simples com produtos monitorados.
 - API REST com rotas de saúde, produtos, favoritos e alertas.
-- Integração com a API do Mercado Livre.
-- Fallback para dados mockados quando a API externa ou local estiver indisponível.
+- Integração com SerpApi Google Shopping.
+- Persistência dos produtos retornados para suportar detalhes, favoritos e alertas.
 - Modelagem inicial do banco PostgreSQL com Prisma.
 
 ## Fora do Escopo da Sprint 1
@@ -37,6 +37,6 @@ Criar a base inicial do projeto com front-end, back-end, modelagem de banco, doc
 - O README deve conter instruções de instalação e execução.
 - O front-end deve ser navegável.
 - O back-end deve responder pelo menos a rota `GET /health`.
-- A busca deve tentar consultar a API do Mercado Livre.
+- A busca deve consultar a SerpApi.
 - A modelagem do banco deve estar documentada.
 - Os casos de uso devem estar descritos.

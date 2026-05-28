@@ -7,7 +7,7 @@ export async function searchProductsController(request: Request, response: Respo
     const result = await searchProducts(query);
     return response.json(result);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Erro ao consultar Mercado Livre";
+    const message = err instanceof Error ? err.message : "Erro ao consultar produtos";
     return response.status(502).json({ message });
   }
 }

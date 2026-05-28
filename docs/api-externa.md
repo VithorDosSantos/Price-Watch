@@ -1,50 +1,44 @@
-# API Externa: Mercado Livre
+# API Externa: SerpApi Google Shopping
 
 ## API Escolhida
 
-A API externa escolhida para a Sprint 1 foi a API pública do Mercado Livre.
+A busca externa do PriceWatch usa a SerpApi com o engine `google_shopping`.
 
-Endpoint principal usado:
+Endpoint principal:
 
 ```http
-GET https://api.mercadolibre.com/sites/MLB/search?q=termo
+GET https://serpapi.com/search?engine=google_shopping&q=termo&gl=br&hl=pt-BR&api_key=SUA_CHAVE
 ```
 
 ## Justificativa
 
-O Mercado Livre foi escolhido porque possui grande volume de produtos no mercado brasileiro, fornece dados reais e permite consultas públicas de busca sem autenticação para o escopo inicial do projeto.
+A SerpApi fornece resultados de shopping do Google com dados reais de preço, loja, imagem e link público, sem depender do fluxo OAuth que estava bloqueando a busca anterior.
 
-## Dados Utilizados
+## Campos Mapeados
 
-A integração inicial usa os seguintes campos:
+O back-end usa principalmente:
 
-- `id`: identificador externo do produto.
-- `title`: nome do produto.
-- `price`: preço atual.
-- `thumbnail`: imagem do produto.
-- `permalink`: link público do produto.
-- `seller.nickname`: loja ou vendedor.
-- `category_id`: categoria informada pela plataforma.
+- `shopping_results`.
+- `title`.
+- `product_id`.
+- `link` e `product_link`.
+- `price` e `extracted_price`.
+- `thumbnail` e `serpapi_thumbnail`.
+- `source`.
 
-## Estratégia de Fallback
+## Estratégia de Persistência
 
-Para garantir que a Sprint 1 continue apresentável mesmo sem internet ou com instabilidade na API externa, o back-end retorna produtos mockados quando:
-
-- A API do Mercado Livre falha.
-- A API retorna erro HTTP.
-- A busca não retorna resultados.
+Os resultados retornados pela busca são convertidos para o modelo interno `Product` e salvos no banco local. Isso permite abrir detalhes, criar favoritos e registrar alertas sem depender de uma nova consulta externa no clique seguinte.
 
 ## Limitações Conhecidas
 
 - Os preços representam o momento da consulta.
-- A categoria pode vir como identificador da plataforma.
-- Não há autenticação OAuth nesta sprint.
-- O histórico de preços ainda não é coletado automaticamente.
+- A disponibilidade das ofertas pode mudar depois da persistência local.
+- A busca depende de `SERPAPI_API_KEY` válido.
 
 ## Evoluções Futuras
 
-- Consultar detalhes completos do produto.
-- Normalizar categorias.
-- Criar rotina periódica de captura de preço.
-- Persistir variações em `PriceHistory`.
-- Aplicar regras de alerta sobre preços capturados.
+- Paginação de resultados.
+- Filtros adicionais do shopping.
+- Normalização melhor de imagens e preços.
+- Cache por consulta para reduzir chamadas externas.

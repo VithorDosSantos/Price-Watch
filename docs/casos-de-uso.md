@@ -8,8 +8,8 @@ Este documento usa um padrão único com ator, pré-condições, fluxo principal
 - Pré-condições: O sistema está disponível e o usuário está na página inicial.
 - Fluxo principal:
 	1. O usuário informa um termo de busca.
-	2. O sistema consulta a API do Mercado Livre.
-	3. Se houver falha externa, o sistema utiliza dados mockados.
+	2. O sistema consulta a SerpApi Google Shopping.
+	3. O sistema salva os produtos retornados no banco local.
 	4. O sistema exibe os produtos encontrados.
 - Fluxos alternativos:
 	- A1: Se a busca vier vazia, o sistema mantém a vitrine inicial.

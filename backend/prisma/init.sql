@@ -62,18 +62,6 @@ CREATE TABLE IF NOT EXISTS "PriceHistoryEntry" (
   "capturedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS "ExternalApiCredential" (
-  "id" TEXT PRIMARY KEY,
-  "provider" TEXT NOT NULL UNIQUE,
-  "accessToken" TEXT NOT NULL,
-  "refreshToken" TEXT,
-  "tokenType" TEXT,
-  "userId" TEXT,
-  "expiresAt" TIMESTAMP(3),
-  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
 CREATE INDEX IF NOT EXISTS "PriceHistory_productId_idx" ON "PriceHistory"("productId");
 CREATE INDEX IF NOT EXISTS "Favorite_productId_idx" ON "Favorite"("productId");
 CREATE INDEX IF NOT EXISTS "PriceAlert_productId_idx" ON "PriceAlert"("productId");

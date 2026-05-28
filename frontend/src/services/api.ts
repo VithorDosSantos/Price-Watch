@@ -21,7 +21,7 @@ export type ProductCardView = {
 
 export type ProductSearchResponse = {
   products: Product[];
-  source: "mercado-livre" | "mock";
+  source: "serpapi" | "mock";
   message?: string;
 };
 
@@ -153,21 +153,6 @@ export async function getCurrentUser() {
   return request<{ user: { id: string; email: string; name?: string; role: string } }>("/auth/me");
 }
 
-export async function getMercadoLivreLoginUrl() {
-  return request<{ url: string }>("/auth/login/url");
-}
-
-export async function getMercadoLivreStatus() {
-  return request<{
-    configured: boolean;
-    storedInDatabase: boolean;
-    tokenType?: string;
-    userId?: string;
-    expiresAt?: string;
-    updatedAt?: string;
-  }>("/auth/mercadolivre/status");
-}
-
 export async function updateCurrentUser(input: { name?: string; password?: string }) {
   return request<{ user: { id: string; email: string; name?: string; role: string } }>("/auth/me", {
     method: "PATCH",
@@ -206,7 +191,7 @@ export function mapProductToCard(product: Product): ProductCardView {
     image: product.imageUrl ?? "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600",
     currentPrice: price,
     originalPrice: Math.round(price * 1.12),
-    store: product.storeName ?? "Mercado Livre",
+    store: product.storeName ?? "Loja parceira",
     priceChange: -8.5
   };
 }
