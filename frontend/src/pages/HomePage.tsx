@@ -44,8 +44,8 @@ export function HomePage() {
       setProducts(normalizeProducts(result.products, favorites));
       setSubmittedQuery(searchQuery);
       setCurrentPage(result.page);
-      setHasNextPage(result.hasNextPage);
-      setHasPreviousPage(result.hasPreviousPage);
+      setHasNextPage(result.hasNextPage || result.products.length >= SEARCH_PAGE_SIZE);
+      setHasPreviousPage(result.page > 1 || result.hasPreviousPage);
       setHasSearched(true);
       setFeedback(
         result.message ??
@@ -81,8 +81,8 @@ export function HomePage() {
       setProducts(normalizeProducts(result.products, favorites));
       setSubmittedQuery(query);
       setCurrentPage(result.page);
-      setHasNextPage(result.hasNextPage);
-      setHasPreviousPage(result.hasPreviousPage);
+      setHasNextPage(result.hasNextPage || result.products.length >= SEARCH_PAGE_SIZE);
+      setHasPreviousPage(result.page > 1 || result.hasPreviousPage);
       setHasSearched(false);
       setFeedback("Sugestões carregadas para você explorar.");
     } catch {
@@ -235,14 +235,14 @@ export function HomePage() {
                   variant="outline"
                   className="flex-1 sm:flex-none"
                   onClick={() => void handlePageChange(currentPage - 1)}
-                  disabled={!hasPreviousPage || isLoading}
+                  disabled={(currentPage <= 1 && !hasPreviousPage) || isLoading}
                 >
                   Anterior
                 </Button>
                 <Button
                   className="flex-1 bg-violet-600 hover:bg-violet-700 sm:flex-none"
                   onClick={() => void handlePageChange(currentPage + 1)}
-                  disabled={!hasNextPage || isLoading}
+                  disabled={(products.length < SEARCH_PAGE_SIZE && !hasNextPage) || isLoading}
                 >
                   Próxima
                 </Button>
