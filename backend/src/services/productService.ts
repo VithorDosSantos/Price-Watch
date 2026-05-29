@@ -84,14 +84,14 @@ function parsePrice(value?: string): number {
     const dotIndex = cleaned.lastIndexOf(".");
 
     if (commaIndex > dotIndex) {
-      return Number(cleaned.replace(/\./g, "").replace(",", ".")) || 0;
+      return Number(cleaned.replaceAll(".", "").replace(",", ".")) || 0;
     }
 
-    return Number(cleaned.replace(/,/g, "")) || 0;
+    return Number(cleaned.replaceAll(",", "")) || 0;
   }
 
   if (cleaned.includes(",")) {
-    return Number(cleaned.replace(/\./g, "").replace(",", ".")) || 0;
+    return Number(cleaned.replaceAll(".", "").replace(",", ".")) || 0;
   }
 
   return Number(cleaned) || 0;

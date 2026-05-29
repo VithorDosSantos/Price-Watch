@@ -12,6 +12,8 @@ import { userRoutes } from "./routes/userRoutes";
 
 export const app = express();
 
+app.disable("x-powered-by");
+
 const allowedOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(",")
   : ["http://localhost:5173"];

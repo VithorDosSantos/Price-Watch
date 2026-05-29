@@ -213,7 +213,7 @@ export function HomePage() {
       <section className="container px-4 py-12 sm:py-16 lg:px-8 lg:py-20">
         <div className="mx-auto max-w-3xl space-y-6 text-center">
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-6xl">
-            Monitore preços e
+            {"Monitore preços e "}
             <span className="block bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
               economize dinheiro
             </span>
