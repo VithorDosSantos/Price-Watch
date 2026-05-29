@@ -15,11 +15,11 @@ function buildToken(userId = "user-1", role = "USER") {
 afterEach(() => {
   Object.defineProperty(prisma, "priceAlert", {
     value: originalAlert,
-    configurable: true
+    configurable: true,
   });
   Object.defineProperty(prisma, "product", {
     value: originalProduct,
-    configurable: true
+    configurable: true,
   });
 });
 
@@ -49,12 +49,12 @@ describe("alert routes", () => {
               imageUrl: null,
               productUrl: null,
               storeName: "Loja",
-              category: null
-            }
-          }
-        ]
+              category: null,
+            },
+          },
+        ],
       },
-      configurable: true
+      configurable: true,
     });
 
     const token = buildToken("user-1");
@@ -78,11 +78,11 @@ describe("alert routes", () => {
           imageUrl: null,
           productUrl: null,
           storeName: "Loja",
-          category: null
+          category: null,
         }),
-        upsert: async () => ({ id: "prod-1", externalId: "ext-1" })
+        upsert: async () => ({ id: "prod-1", externalId: "ext-1" }),
       },
-      configurable: true
+      configurable: true,
     });
 
     Object.defineProperty(prisma, "priceAlert", {
@@ -102,18 +102,22 @@ describe("alert routes", () => {
             imageUrl: null,
             productUrl: null,
             storeName: "Loja",
-            category: null
-          }
-        })
+            category: null,
+          },
+        }),
       },
-      configurable: true
+      configurable: true,
     });
 
     const token = buildToken("user-1");
     const response = await request(app)
       .post("/alerts")
       .set("Authorization", `Bearer ${token}`)
-      .send({ productId: "prod-1", targetPrice: 2999, email: "user@example.com" });
+      .send({
+        productId: "prod-1",
+        targetPrice: 2999,
+        email: "user@example.com",
+      });
 
     expect(response.status).toBe(201);
     expect(response.body.id).toBe("alert-1");
@@ -127,7 +131,7 @@ describe("alert routes", () => {
           userId: "user-1",
           targetPrice: 2999,
           email: "user@example.com",
-          isActive: true
+          isActive: true,
         }),
         update: async () => ({
           id: "alert-1",
@@ -144,11 +148,11 @@ describe("alert routes", () => {
             imageUrl: null,
             productUrl: null,
             storeName: "Loja",
-            category: null
-          }
-        })
+            category: null,
+          },
+        }),
       },
-      configurable: true
+      configurable: true,
     });
 
     const token = buildToken("user-1");
@@ -168,11 +172,11 @@ describe("alert routes", () => {
         findFirst: async () => ({
           id: "alert-1",
           userId: "user-1",
-          product: { id: "prod-1" }
+          product: { id: "prod-1" },
         }),
-        delete: async () => ({ id: "alert-1" })
+        delete: async () => ({ id: "alert-1" }),
       },
-      configurable: true
+      configurable: true,
     });
 
     const token = buildToken("user-1");

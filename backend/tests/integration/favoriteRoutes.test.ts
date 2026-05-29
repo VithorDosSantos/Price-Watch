@@ -15,11 +15,11 @@ function buildToken(userId = "user-1", role = "USER") {
 afterEach(() => {
   Object.defineProperty(prisma, "favorite", {
     value: originalFavorite,
-    configurable: true
+    configurable: true,
   });
   Object.defineProperty(prisma, "product", {
     value: originalProduct,
-    configurable: true
+    configurable: true,
   });
 });
 
@@ -47,12 +47,12 @@ describe("favorite routes", () => {
               imageUrl: null,
               productUrl: null,
               storeName: "Loja",
-              category: null
-            }
-          }
-        ]
+              category: null,
+            },
+          },
+        ],
       },
-      configurable: true
+      configurable: true,
     });
 
     const token = buildToken("user-1");
@@ -76,11 +76,11 @@ describe("favorite routes", () => {
           imageUrl: null,
           productUrl: null,
           storeName: "Loja",
-          category: null
+          category: null,
         }),
-        upsert: async () => ({ id: "prod-1", externalId: "ext-1" })
+        upsert: async () => ({ id: "prod-1", externalId: "ext-1" }),
       },
-      configurable: true
+      configurable: true,
     });
 
     Object.defineProperty(prisma, "favorite", {
@@ -98,11 +98,11 @@ describe("favorite routes", () => {
             imageUrl: null,
             productUrl: null,
             storeName: "Loja",
-            category: null
-          }
-        })
+            category: null,
+          },
+        }),
       },
-      configurable: true
+      configurable: true,
     });
 
     const token = buildToken("user-1");
@@ -121,11 +121,11 @@ describe("favorite routes", () => {
         findFirst: async () => ({
           id: "fav-1",
           userId: "user-1",
-          product: { id: "prod-1" }
+          product: { id: "prod-1" },
         }),
-        delete: async () => ({ id: "fav-1" })
+        delete: async () => ({ id: "fav-1" }),
       },
-      configurable: true
+      configurable: true,
     });
 
     const token = buildToken("user-1");
