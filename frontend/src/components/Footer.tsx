@@ -18,24 +18,27 @@ export function Footer() {
               Monitore preços e economize dinheiro nas suas compras online.
             </p>
             <div className="flex gap-3">
-              <a
-                href="#"
+              <button
+                type="button"
                 className="flex h-9 w-9 items-center justify-center rounded-lg border hover:bg-gray-100 transition-colors"
+                aria-label="GitHub"
               >
                 <Github className="h-4 w-4" />
-              </a>
-              <a
-                href="#"
+              </button>
+              <button
+                type="button"
                 className="flex h-9 w-9 items-center justify-center rounded-lg border hover:bg-gray-100 transition-colors"
+                aria-label="Twitter"
               >
                 <Twitter className="h-4 w-4" />
-              </a>
-              <a
-                href="#"
+              </button>
+              <button
+                type="button"
                 className="flex h-9 w-9 items-center justify-center rounded-lg border hover:bg-gray-100 transition-colors"
+                aria-label="Email"
               >
                 <Mail className="h-4 w-4" />
-              </a>
+              </button>
             </div>
           </div>
 
@@ -59,9 +62,9 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <a href="#" className="hover:text-foreground transition-colors">
+                <span className="hover:text-foreground transition-colors">
                   Extensão Chrome
-                </a>
+                </span>
               </li>
             </ul>
           </div>
@@ -71,24 +74,24 @@ export function Footer() {
             <h3 className="font-semibold mb-4">Empresa</h3>
             <ul className="space-y-3 text-sm text-muted-foreground">
               <li>
-                <a href="#" className="hover:text-foreground transition-colors">
+                <span className="hover:text-foreground transition-colors">
                   Sobre
-                </a>
+                </span>
               </li>
               <li>
-                <a href="#" className="hover:text-foreground transition-colors">
+                <span className="hover:text-foreground transition-colors">
                   Blog
-                </a>
+                </span>
               </li>
               <li>
-                <a href="#" className="hover:text-foreground transition-colors">
+                <span className="hover:text-foreground transition-colors">
                   Carreiras
-                </a>
+                </span>
               </li>
               <li>
-                <a href="#" className="hover:text-foreground transition-colors">
+                <span className="hover:text-foreground transition-colors">
                   Contato
-                </a>
+                </span>
               </li>
             </ul>
           </div>
@@ -98,24 +101,24 @@ export function Footer() {
             <h3 className="font-semibold mb-4">Legal</h3>
             <ul className="space-y-3 text-sm text-muted-foreground">
               <li>
-                <a href="#" className="hover:text-foreground transition-colors">
+                <span className="hover:text-foreground transition-colors">
                   Privacidade
-                </a>
+                </span>
               </li>
               <li>
-                <a href="#" className="hover:text-foreground transition-colors">
+                <span className="hover:text-foreground transition-colors">
                   Termos de Uso
-                </a>
+                </span>
               </li>
               <li>
-                <a href="#" className="hover:text-foreground transition-colors">
+                <span className="hover:text-foreground transition-colors">
                   Cookies
-                </a>
+                </span>
               </li>
               <li>
-                <a href="#" className="hover:text-foreground transition-colors">
+                <span className="hover:text-foreground transition-colors">
                   Licenças
-                </a>
+                </span>
               </li>
             </ul>
           </div>

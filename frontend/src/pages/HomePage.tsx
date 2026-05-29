@@ -21,6 +21,49 @@ import {
 
 const SEARCH_PAGE_SIZE = 8;
 
+function buildPageButtons(page: number, totalPages?: number): number[] {
+  if (!totalPages) {
+    const buttons = new Set<number>();
+    buttons.add(1);
+    buttons.add(page);
+    if (page > 1) buttons.add(page - 1);
+    buttons.add(page + 1);
+    buttons.add(page + 2);
+    return Array.from(buttons)
+      .filter((value) => value > 0)
+      .sort((a, b) => a - b);
+  }
+
+  if (totalPages <= 8) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  const buttons = new Set<number>();
+  buttons.add(1);
+  buttons.add(2);
+  buttons.add(totalPages - 1);
+  buttons.add(totalPages);
+
+  for (let delta = -2; delta <= 2; delta += 1) {
+    const candidate = page + delta;
+    if (candidate > 2 && candidate < totalPages - 1) {
+      buttons.add(candidate);
+    }
+  }
+
+  return Array.from(buttons).sort((a, b) => a - b);
+}
+
+function buildFeedbackMessage(result: { products: Product[]; totalResults?: number }) {
+  if (result.products.length === 0) {
+    return "Nenhum produto encontrado para essa busca.";
+  }
+  if (result.totalResults) {
+    return `Mostrando ${result.products.length} de ${result.totalResults} resultados.`;
+  }
+  return `Mostrando ${result.products.length} resultado(s) nesta página.`;
+}
+
 export function HomePage() {
   const [query, setQuery] = useState("notebook");
   const [submittedQuery, setSubmittedQuery] = useState("");
@@ -40,39 +83,6 @@ export function HomePage() {
   const canPaginate =
     hasSearched &&
     (hasNextPage || hasPreviousPage || products.length >= SEARCH_PAGE_SIZE);
-
-  function buildPageButtons(page: number, totalPages?: number): number[] {
-    if (!totalPages) {
-      const buttons = new Set<number>();
-      buttons.add(1);
-      buttons.add(page);
-      if (page > 1) buttons.add(page - 1);
-      buttons.add(page + 1);
-      buttons.add(page + 2);
-      return Array.from(buttons)
-        .filter((value) => value > 0)
-        .sort((a, b) => a - b);
-    }
-
-    if (totalPages <= 8) {
-      return Array.from({ length: totalPages }, (_, index) => index + 1);
-    }
-
-    const buttons = new Set<number>();
-    buttons.add(1);
-    buttons.add(2);
-    buttons.add(totalPages - 1);
-    buttons.add(totalPages);
-
-    for (let delta = -2; delta <= 2; delta += 1) {
-      const candidate = page + delta;
-      if (candidate > 2 && candidate < totalPages - 1) {
-        buttons.add(candidate);
-      }
-    }
-
-    return Array.from(buttons).sort((a, b) => a - b);
-  }
 
   function normalizeProducts(
     resultProducts: Product[],
@@ -115,14 +125,8 @@ export function HomePage() {
       );
       setHasPreviousPage(result.page > 1 || result.hasPreviousPage);
       setHasSearched(true);
-      setFeedback(
-        result.message ??
-          (result.products.length > 0
-            ? result.totalResults
-              ? `Mostrando ${result.products.length} de ${result.totalResults} resultados.`
-              : `Mostrando ${result.products.length} resultado(s) nesta página.`
-            : "Nenhum produto encontrado para essa busca."),
-      );
+      const feedbackMessage = result.message ?? buildFeedbackMessage(result);
+      setFeedback(feedbackMessage);
     } catch {
       setProducts([]);
       setFeedback(
@@ -288,8 +292,7 @@ export function HomePage() {
           {canPaginate && (
             <div className="flex flex-col items-center justify-between gap-3 rounded-2xl border bg-white p-4 shadow-sm sm:flex-row">
               <p className="text-sm text-muted-foreground">
-                Página {currentPage}
-                {totalPages ? ` de ${totalPages}` : ""} para "{submittedQuery}"
+                {`Página ${currentPage}${totalPages ? ` de ${totalPages}` : ""} para "${submittedQuery}"`}
               </p>
               <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
                 <Button

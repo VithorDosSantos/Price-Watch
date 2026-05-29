@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_DB: pricewatch
       POSTGRES_USER: pricewatch
-      POSTGRES_PASSWORD: pricewatch
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pricewatch}
     ports:
       - "5433:5432"
     volumes:

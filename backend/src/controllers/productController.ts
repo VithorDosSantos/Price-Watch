@@ -63,6 +63,15 @@ export async function getProductDetailsController(
   }
 }
 
+function optionalNullableString(
+  value: unknown,
+  trim = false,
+): string | null | undefined {
+  if (value === undefined) return undefined;
+  if (!value) return null;
+  return trim ? String(value).trim() : String(value);
+}
+
 export async function updateProductController(
   request: Request,
   response: Response,
@@ -89,30 +98,10 @@ export async function updateProductController(
     const updated = await updateProduct(request.params.id, {
       name: name !== undefined ? String(name).trim() : undefined,
       price: parsedPrice,
-      imageUrl:
-        imageUrl !== undefined
-          ? imageUrl
-            ? String(imageUrl)
-            : null
-          : undefined,
-      productUrl:
-        productUrl !== undefined
-          ? productUrl
-            ? String(productUrl)
-            : null
-          : undefined,
-      storeName:
-        storeName !== undefined
-          ? storeName
-            ? String(storeName).trim()
-            : null
-          : undefined,
-      category:
-        category !== undefined
-          ? category
-            ? String(category).trim()
-            : null
-          : undefined,
+      imageUrl: optionalNullableString(imageUrl),
+      productUrl: optionalNullableString(productUrl),
+      storeName: optionalNullableString(storeName, true),
+      category: optionalNullableString(category, true),
     });
 
     if (!updated) {

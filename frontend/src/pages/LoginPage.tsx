@@ -61,8 +61,9 @@ export function LoginPage() {
 
             <form className="space-y-4" onSubmit={handleLogin}>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Email</label>
+                <label htmlFor="login-email" className="text-sm font-medium text-slate-700">Email</label>
                 <Input
+                  id="login-email"
                   type="email"
                   placeholder="email@exemplo.com"
                   value={email}
@@ -73,12 +74,13 @@ export function LoginPage() {
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-3">
-                  <label className="text-sm font-medium text-slate-700">Senha</label>
+                  <label htmlFor="login-password" className="text-sm font-medium text-slate-700">Senha</label>
                   <a href="/register" className="text-sm font-medium text-violet-600 hover:text-violet-700">
                     Criar conta
                   </a>
                 </div>
                 <Input
+                  id="login-password"
                   type="password"
                   placeholder="Sua senha"
                   value={password}

@@ -33,6 +33,20 @@ import { toast } from "sonner";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 
+function getProductName(alert: any) {
+  return (
+    alert.product?.name ?? alert.product?.productName ?? "Produto sem nome"
+  );
+}
+
+function getProductPrice(alert: any) {
+  return Number(alert.product?.price ?? alert.product?.currentPrice ?? 0);
+}
+
+function getTargetPrice(alert: any) {
+  return Number(alert.targetPrice ?? 0);
+}
+
 export function AlertsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -85,20 +99,6 @@ export function AlertsPage() {
           : "Não foi possível remover o alerta.",
       );
     }
-  }
-
-  function getProductName(alert: any) {
-    return (
-      alert.product?.name ?? alert.product?.productName ?? "Produto sem nome"
-    );
-  }
-
-  function getProductPrice(alert: any) {
-    return Number(alert.product?.price ?? alert.product?.currentPrice ?? 0);
-  }
-
-  function getTargetPrice(alert: any) {
-    return Number(alert.targetPrice ?? 0);
   }
 
   const filteredAlerts = alerts.filter((alert) =>

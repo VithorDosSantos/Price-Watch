@@ -1,2 +1,2 @@
-DELETE FROM "Favorite";
-DELETE FROM "PriceAlert";
+DELETE FROM "Favorite" WHERE "userId" IS NOT NULL;
+DELETE FROM "PriceAlert" WHERE "userId" IS NOT NULL;

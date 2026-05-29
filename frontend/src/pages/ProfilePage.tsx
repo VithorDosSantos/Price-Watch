@@ -86,24 +86,24 @@ export function ProfilePage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">Nome</label>
-            <Input value={name} onChange={(event) => setName(event.target.value)} placeholder="Seu nome" className="h-12" />
+            <label htmlFor="profile-name" className="text-sm font-medium text-slate-700">Nome</label>
+            <Input id="profile-name" value={name} onChange={(event) => setName(event.target.value)} placeholder="Seu nome" className="h-12" />
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">Email</label>
-            <Input value={user?.email ?? ""} disabled className="h-12 bg-slate-100" />
+            <label htmlFor="profile-email" className="text-sm font-medium text-slate-700">Email</label>
+            <Input id="profile-email" value={user?.email ?? ""} disabled className="h-12 bg-slate-100" />
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Nova senha</label>
-              <Input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Deixe em branco para manter" className="h-12" />
+              <label htmlFor="profile-password" className="text-sm font-medium text-slate-700">Nova senha</label>
+              <Input id="profile-password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Deixe em branco para manter" className="h-12" />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Confirmar nova senha</label>
-              <Input type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Repita a nova senha" className="h-12" />
+              <label htmlFor="profile-confirm-password" className="text-sm font-medium text-slate-700">Confirmar nova senha</label>
+              <Input id="profile-confirm-password" type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Repita a nova senha" className="h-12" />
             </div>
           </div>
 

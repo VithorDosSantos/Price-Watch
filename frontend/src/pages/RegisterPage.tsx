@@ -73,8 +73,9 @@ export function RegisterPage() {
 
             <form className="space-y-4" onSubmit={handleRegister}>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Nome</label>
+                <label htmlFor="register-name" className="text-sm font-medium text-slate-700">Nome</label>
                 <Input
+                  id="register-name"
                   placeholder="Seu nome"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -83,8 +84,9 @@ export function RegisterPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Email</label>
+                <label htmlFor="register-email" className="text-sm font-medium text-slate-700">Email</label>
                 <Input
+                  id="register-email"
                   type="email"
                   placeholder="email@exemplo.com"
                   value={email}
@@ -95,8 +97,9 @@ export function RegisterPage() {
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700">Senha</label>
+                  <label htmlFor="register-password" className="text-sm font-medium text-slate-700">Senha</label>
                   <Input
+                    id="register-password"
                     type="password"
                     placeholder="Crie uma senha"
                     value={password}
@@ -106,8 +109,9 @@ export function RegisterPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700">Confirmar senha</label>
+                  <label htmlFor="register-confirm-password" className="text-sm font-medium text-slate-700">Confirmar senha</label>
                   <Input
+                    id="register-confirm-password"
                     type="password"
                     placeholder="Repita a senha"
                     value={confirmPassword}
