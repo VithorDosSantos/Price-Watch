@@ -65,7 +65,7 @@ function buildFeedbackMessage(result: { products: Product[]; totalResults?: numb
 }
 
 export function HomePage() {
-  const [query, setQuery] = useState("notebook");
+  const [query, setQuery] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState("");
   const [products, setProducts] = useState<ProductCardProps[]>([]);
   const [isLoading, setIsLoading] = useState(false);

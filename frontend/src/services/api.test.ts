@@ -92,8 +92,8 @@ describe("mapProductToCard", () => {
       externalId: "ext-1",
       name: "Notebook",
       price: 3000,
-      imageUrl: "http://img.com/nb.jpg",
-      productUrl: "http://store.com/nb",
+      imageUrl: "https://img.com/nb.jpg",
+      productUrl: "https://store.com/nb",
       storeName: "TechStore",
       category: "Electronics",
     };
@@ -103,7 +103,7 @@ describe("mapProductToCard", () => {
     expect(card.id).toBe("1");
     expect(card.name).toBe("Notebook");
     expect(card.currentPrice).toBe(3000);
-    expect(card.image).toBe("http://img.com/nb.jpg");
+    expect(card.image).toBe("https://img.com/nb.jpg");
     expect(card.store).toBe("TechStore");
     expect(card.originalPrice).toBe(Math.round(3000 * 1.12));
   });
@@ -373,7 +373,7 @@ describe("Stores API", () => {
     const store = { id: "s1", name: "New Store" };
     mockFetch.mockReturnValueOnce(jsonResponse(store));
 
-    const result = await createStore({ name: "New Store", website: "http://s.com", contactEmail: "s@s.com" });
+    const result = await createStore({ name: "New Store", website: "https://s.com", contactEmail: "s@s.com" });
 
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/stores"),
