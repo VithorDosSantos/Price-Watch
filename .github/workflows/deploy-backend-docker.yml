@@ -6,12 +6,15 @@ on:
       - main
     paths:
       - "backend/**"
+      - "frontend/**"
+      - "sonar-project.properties"
       - ".github/workflows/deploy-backend-docker.yml"
   pull_request:
     branches:
       - main
     paths:
       - "backend/**"
+      - "frontend/**"
   workflow_dispatch:
 
 jobs:
@@ -62,6 +65,7 @@ jobs:
     name: SonarCloud Analysis
     runs-on: ubuntu-latest
     needs: test-and-coverage
+    if: ${{ secrets.SONAR_TOKEN != '' }}
     continue-on-error: true
 
     steps:
@@ -77,14 +81,22 @@ jobs:
           cache: "npm"
           cache-dependency-path: "backend/package-lock.json"
 
-      - name: Install dependencies
+      - name: Install backend dependencies
         run: cd backend && npm ci
 
-      - name: Run tests with coverage
+      - name: Install frontend dependencies
+        run: cd frontend && npm ci
+
+      - name: Run backend tests with coverage
         run: cd backend && npm run coverage
 
+      - name: Run frontend tests with coverage
+        run: cd frontend && npm run coverage
+
       - name: Fix lcov paths for SonarCloud
-        run: sed -i "s|SF:$(pwd)/|SF:|g" backend/coverage/lcov.info
+        run: |
+          sed -i "s|SF:$(pwd)/|SF:|g" backend/coverage/lcov.info
+          sed -i "s|SF:$(pwd)/|SF:|g" frontend/coverage/lcov.info
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@ba3875ecf642b2129de2b589510c81a8b53dbf4e # master
