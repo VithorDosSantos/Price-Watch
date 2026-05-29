@@ -9,7 +9,7 @@ vi.mock("../services/api", () => ({
   updatePriceHistory: vi.fn(),
   deletePriceHistory: vi.fn(),
   setAuthToken: vi.fn(),
-  getCurrentUser: vi.fn(),
+  getCurrentUser: vi.fn()
 }));
 
 import { listPriceHistory } from "../services/api";
@@ -29,7 +29,14 @@ describe("PriceHistoryPage", () => {
 
   it("renders price history list", async () => {
     vi.mocked(listPriceHistory).mockResolvedValue([
-      { id: "ph1", productId: "p1", oldPrice: 99.9, newPrice: 89.9, recordedAt: "2024-01-01", productName: "Test" },
+      {
+        id: "ph1",
+        productId: "p1",
+        oldPrice: 99.9,
+        newPrice: 89.9,
+        recordedAt: "2024-01-01",
+        productName: "Test"
+      }
     ]);
     render(
       <MemoryRouter>

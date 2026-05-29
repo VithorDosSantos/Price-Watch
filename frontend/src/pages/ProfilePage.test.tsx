@@ -17,15 +17,15 @@ vi.mock("../contexts/AuthContext", () => ({
     user: { id: "u1", email: "a@b.com", name: "Test", role: "USER" },
     loading: false,
     logout: mockLogout,
-    loginWithToken: mockLoginWithToken,
-  }),
+    loginWithToken: mockLoginWithToken
+  })
 }));
 
 vi.mock("../services/api", () => ({
   updateCurrentUser: vi.fn(),
   deleteCurrentUser: vi.fn(),
   setAuthToken: vi.fn(),
-  getCurrentUser: vi.fn(),
+  getCurrentUser: vi.fn()
 }));
 
 import { updateCurrentUser, deleteCurrentUser } from "../services/api";
@@ -43,7 +43,9 @@ describe("ProfilePage", () => {
   });
 
   it("submits profile update", async () => {
-    vi.mocked(updateCurrentUser).mockResolvedValue({ user: { id: "u1", email: "a@b.com", name: "New", role: "USER" } });
+    vi.mocked(updateCurrentUser).mockResolvedValue({
+      user: { id: "u1", email: "a@b.com", name: "New", role: "USER" }
+    });
     render(
       <MemoryRouter>
         <ProfilePage />
@@ -61,7 +63,9 @@ describe("ProfilePage", () => {
 
   it("deletes account with confirmation", async () => {
     vi.spyOn(globalThis, "confirm").mockReturnValue(true);
-    vi.mocked(deleteCurrentUser).mockResolvedValue(undefined as Awaited<ReturnType<typeof deleteCurrentUser>>);
+    vi.mocked(deleteCurrentUser).mockResolvedValue(
+      undefined as Awaited<ReturnType<typeof deleteCurrentUser>>
+    );
 
     render(
       <MemoryRouter>

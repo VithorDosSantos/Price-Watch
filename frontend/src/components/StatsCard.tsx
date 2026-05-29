@@ -10,7 +10,13 @@ interface StatsCardProps {
   changeLabel?: string;
 }
 
-export function StatsCard({ title, value, icon: Icon, change, changeLabel }: Readonly<StatsCardProps>) {
+export function StatsCard({
+  title,
+  value,
+  icon: Icon,
+  change,
+  changeLabel
+}: Readonly<StatsCardProps>) {
   return (
     <Card className="p-6">
       <div className="flex items-start justify-between">

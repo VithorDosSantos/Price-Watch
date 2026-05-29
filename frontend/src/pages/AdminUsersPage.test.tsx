@@ -7,7 +7,7 @@ vi.mock("../services/api", () => ({
   getUsers: vi.fn(),
   updateUserRole: vi.fn(),
   setAuthToken: vi.fn(),
-  getCurrentUser: vi.fn(),
+  getCurrentUser: vi.fn()
 }));
 
 import { getUsers, updateUserRole } from "../services/api";
@@ -19,8 +19,8 @@ describe("AdminUsersPage", () => {
     vi.mocked(getUsers).mockResolvedValue({
       users: [
         { id: "1", email: "a@b.com", name: "Alice", role: "USER" },
-        { id: "2", email: "c@d.com", name: "Bob", role: "ADMIN" },
-      ],
+        { id: "2", email: "c@d.com", name: "Bob", role: "ADMIN" }
+      ]
     });
 
     render(
@@ -37,10 +37,10 @@ describe("AdminUsersPage", () => {
 
   it("promotes user to admin", async () => {
     vi.mocked(getUsers).mockResolvedValue({
-      users: [{ id: "1", email: "a@b.com", name: "Alice", role: "USER" }],
+      users: [{ id: "1", email: "a@b.com", name: "Alice", role: "USER" }]
     });
     vi.mocked(updateUserRole).mockResolvedValue({
-      user: { id: "1", email: "a@b.com", name: "Alice", role: "ADMIN" },
+      user: { id: "1", email: "a@b.com", name: "Alice", role: "ADMIN" }
     });
 
     render(

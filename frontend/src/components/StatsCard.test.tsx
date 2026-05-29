@@ -11,7 +11,9 @@ describe("StatsCard", () => {
   });
 
   it("renders with change badge", () => {
-    render(<StatsCard title="Price" value="R$ 10" icon={Package} change={-5} changeLabel="vs ontem" />);
+    render(
+      <StatsCard title="Price" value="R$ 10" icon={Package} change={-5} changeLabel="vs ontem" />
+    );
     expect(screen.getByText("Price")).toBeInTheDocument();
     expect(screen.getByText("vs ontem")).toBeInTheDocument();
   });

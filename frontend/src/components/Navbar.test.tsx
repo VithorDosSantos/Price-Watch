@@ -4,7 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import { Navbar } from "./Navbar";
 
 vi.mock("../contexts/AuthContext", () => ({
-  useAuth: () => ({ user: null, loading: false, logout: vi.fn(), loginWithToken: vi.fn() }),
+  useAuth: () => ({ user: null, loading: false, logout: vi.fn(), loginWithToken: vi.fn() })
 }));
 
 describe("Navbar", () => {

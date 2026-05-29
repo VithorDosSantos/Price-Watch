@@ -9,7 +9,7 @@ vi.mock("../services/api", () => ({
   updateStore: vi.fn(),
   deleteStore: vi.fn(),
   setAuthToken: vi.fn(),
-  getCurrentUser: vi.fn(),
+  getCurrentUser: vi.fn()
 }));
 
 import { listStores } from "../services/api";
@@ -29,7 +29,7 @@ describe("StoresPage", () => {
 
   it("renders stores list", async () => {
     vi.mocked(listStores).mockResolvedValue([
-      { id: "s1", name: "Amazon", url: "https://amazon.com", isActive: true },
+      { id: "s1", name: "Amazon", url: "https://amazon.com", isActive: true }
     ]);
     render(
       <MemoryRouter>

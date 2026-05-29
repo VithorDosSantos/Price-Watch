@@ -12,13 +12,18 @@ vi.mock("react-router-dom", async () => {
 });
 
 vi.mock("../contexts/AuthContext", () => ({
-  useAuth: () => ({ loginWithToken: mockLoginWithToken, user: null, loading: false, logout: vi.fn() }),
+  useAuth: () => ({
+    loginWithToken: mockLoginWithToken,
+    user: null,
+    loading: false,
+    logout: vi.fn()
+  })
 }));
 
 vi.mock("../services/api", () => ({
   registerUser: vi.fn(),
   setAuthToken: vi.fn(),
-  getCurrentUser: vi.fn(),
+  getCurrentUser: vi.fn()
 }));
 
 import { registerUser } from "../services/api";
@@ -43,7 +48,10 @@ describe("RegisterPage", () => {
   });
 
   it("submits registration", async () => {
-    vi.mocked(registerUser).mockResolvedValue({ token: "t", user: { id: "u1", email: "a@b.com", role: "USER" } } as ReturnType<typeof registerUser> extends Promise<infer R> ? R : never);
+    vi.mocked(registerUser).mockResolvedValue({
+      token: "t",
+      user: { id: "u1", email: "a@b.com", role: "USER" }
+    } as ReturnType<typeof registerUser> extends Promise<infer R> ? R : never);
     renderPage();
 
     fireEvent.change(screen.getByLabelText("Nome"), { target: { value: "Test" } });

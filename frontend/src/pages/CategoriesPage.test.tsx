@@ -9,7 +9,7 @@ vi.mock("../services/api", () => ({
   updateCategory: vi.fn(),
   deleteCategory: vi.fn(),
   setAuthToken: vi.fn(),
-  getCurrentUser: vi.fn(),
+  getCurrentUser: vi.fn()
 }));
 
 import { listCategories } from "../services/api";
@@ -29,7 +29,7 @@ describe("CategoriesPage", () => {
 
   it("renders categories list", async () => {
     vi.mocked(listCategories).mockResolvedValue([
-      { id: "c1", name: "Eletrônicos", description: "Desc", isActive: true },
+      { id: "c1", name: "Eletrônicos", description: "Desc", isActive: true }
     ]);
     render(
       <MemoryRouter>

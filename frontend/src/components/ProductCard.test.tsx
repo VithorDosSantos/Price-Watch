@@ -4,7 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import { ProductCard } from "./ProductCard";
 
 vi.mock("../contexts/AuthContext", () => ({
-  useAuth: () => ({ user: null, loading: false, logout: vi.fn(), loginWithToken: vi.fn() }),
+  useAuth: () => ({ user: null, loading: false, logout: vi.fn(), loginWithToken: vi.fn() })
 }));
 
 describe("ProductCard", () => {
@@ -13,7 +13,7 @@ describe("ProductCard", () => {
     name: "Test Product",
     image: "https://example.com/img.jpg",
     currentPrice: 99.9,
-    store: "Amazon",
+    store: "Amazon"
   };
 
   it("renders product name", () => {

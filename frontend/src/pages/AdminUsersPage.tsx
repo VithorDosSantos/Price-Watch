@@ -5,7 +5,9 @@ import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 
 export function AdminUsersPage() {
-  const [users, setUsers] = useState<Array<{ id: string; email: string; name?: string; role: string }>>([]);
+  const [users, setUsers] = useState<
+    Array<{ id: string; email: string; name?: string; role: string }>
+  >([]);
   const [loading, setLoading] = useState(false);
 
   async function load() {

@@ -11,14 +11,19 @@ vi.mock("../services/api", () => ({
     name: p.name,
     image: "",
     currentPrice: 0,
-    store: "",
+    store: ""
   })),
   setAuthToken: vi.fn(),
-  getCurrentUser: vi.fn(),
+  getCurrentUser: vi.fn()
 }));
 
 vi.mock("../contexts/AuthContext", () => ({
-  useAuth: () => ({ user: { id: "u1", email: "a@b.com", role: "USER" }, loading: false, logout: vi.fn(), loginWithToken: vi.fn() }),
+  useAuth: () => ({
+    user: { id: "u1", email: "a@b.com", role: "USER" },
+    loading: false,
+    logout: vi.fn(),
+    loginWithToken: vi.fn()
+  })
 }));
 
 beforeEach(() => vi.clearAllMocks());

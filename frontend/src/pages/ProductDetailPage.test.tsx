@@ -11,11 +11,16 @@ vi.mock("../services/api", () => ({
   listFavorites: vi.fn().mockResolvedValue([]),
   createAlert: vi.fn(),
   setAuthToken: vi.fn(),
-  getCurrentUser: vi.fn(),
+  getCurrentUser: vi.fn()
 }));
 
 vi.mock("../contexts/AuthContext", () => ({
-  useAuth: () => ({ user: { id: "u1", email: "a@b.com", role: "USER" }, loading: false, logout: vi.fn(), loginWithToken: vi.fn() }),
+  useAuth: () => ({
+    user: { id: "u1", email: "a@b.com", role: "USER" },
+    loading: false,
+    logout: vi.fn(),
+    loginWithToken: vi.fn()
+  })
 }));
 
 vi.mock("recharts", () => ({
@@ -25,7 +30,7 @@ vi.mock("recharts", () => ({
   XAxis: () => <div />,
   YAxis: () => <div />,
   CartesianGrid: () => <div />,
-  Tooltip: () => <div />,
+  Tooltip: () => <div />
 }));
 
 import { getProduct } from "../services/api";
@@ -41,7 +46,7 @@ describe("ProductDetailPage", () => {
       imageUrl: "https://example.com/img.jpg",
       url: "https://example.com/product",
       storeName: "Amazon",
-      priceHistory: [],
+      priceHistory: []
     });
 
     render(
