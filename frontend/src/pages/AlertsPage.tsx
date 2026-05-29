@@ -1,4 +1,3 @@
-import { /* useState removed here to avoid duplicate import */ } from "react";
 import { Bell, Plus, Trash2, Search } from "lucide-react";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -23,29 +22,75 @@ import {
   TableHeader,
   TableRow,
 } from "../components/ui/table";
-import { listAlerts, createAlert } from "../services/api";
+import {
+  createAlert,
+  deleteAlert,
+  listAlerts,
+  updateAlert,
+} from "../services/api";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useAuth } from "../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 export function AlertsPage() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [alerts, setAlerts] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    async function load() {
-      try {
-        const res = await listAlerts();
-        setAlerts(res);
-      } catch (err) {
-        setAlerts([]);
-      }
+    void refreshAlerts();
+  }, [user?.id]);
+
+  async function refreshAlerts() {
+    if (!user) {
+      setAlerts([]);
+      return;
     }
 
-    void load();
-  }, []);
+    try {
+      const res = await listAlerts();
+      setAlerts(res);
+    } catch (err) {
+      setAlerts([]);
+    }
+  }
+
+  async function handleToggleAlert(alertId: string, isActive: boolean) {
+    try {
+      const updated = await updateAlert(alertId, { isActive });
+      setAlerts((prev) =>
+        prev.map((alert) => (alert.id === alertId ? updated : alert)),
+      );
+      toast.success(isActive ? "Alerta ativado" : "Alerta desativado");
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Não foi possível atualizar o alerta.",
+      );
+    }
+  }
+
+  async function handleDeleteAlert(alertId: string) {
+    try {
+      await deleteAlert(alertId);
+      setAlerts((prev) => prev.filter((alert) => alert.id !== alertId));
+      toast.success("Alerta removido");
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Não foi possível remover o alerta.",
+      );
+    }
+  }
 
   function getProductName(alert: any) {
-    return alert.product?.name ?? alert.product?.productName ?? "Produto sem nome";
+    return (
+      alert.product?.name ?? alert.product?.productName ?? "Produto sem nome"
+    );
   }
 
   function getProductPrice(alert: any) {
@@ -57,7 +102,7 @@ export function AlertsPage() {
   }
 
   const filteredAlerts = alerts.filter((alert) =>
-    getProductName(alert).toLowerCase().includes(searchQuery.toLowerCase())
+    getProductName(alert).toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const activeAlerts = alerts.filter((a) => a.isActive ?? true).length;
@@ -66,8 +111,12 @@ export function AlertsPage() {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Alertas</h1>
-          <p className="text-sm md:text-base text-muted-foreground mt-2">Crie avisos para saber quando um produto ficar mais barato.</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+            Alertas
+          </h1>
+          <p className="text-sm md:text-base text-muted-foreground mt-2">
+            Crie avisos para saber quando um produto ficar mais barato.
+          </p>
         </div>
 
         <Dialog>
@@ -80,7 +129,10 @@ export function AlertsPage() {
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>Criar alerta</DialogTitle>
-              <DialogDescription>Defina o preço que você quer pagar e receba um aviso quando ele chegar lá.</DialogDescription>
+              <DialogDescription>
+                Defina o preço que você quer pagar e receba um aviso quando ele
+                chegar lá.
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
@@ -92,11 +144,7 @@ export function AlertsPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="price">Preço que você quer pagar (R$)</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  placeholder="0,00"
-                />
+                <Input id="price" type="number" placeholder="0,00" />
               </div>
             </div>
             <DialogFooter>
@@ -104,15 +152,25 @@ export function AlertsPage() {
                 type="submit"
                 className="bg-violet-600 hover:bg-violet-700"
                 onClick={async () => {
-                  const productInput = (document.getElementById("product") as HTMLInputElement).value;
-                  const priceInput = Number((document.getElementById("price") as HTMLInputElement).value || 0);
+                  const productInput = (
+                    document.getElementById("product") as HTMLInputElement
+                  ).value;
+                  const priceInput = Number(
+                    (document.getElementById("price") as HTMLInputElement)
+                      .value || 0,
+                  );
+                  if (!user) {
+                    toast.error("Faça login para criar alertas.");
+                    navigate("/login");
+                    return;
+                  }
                   try {
-                    await createAlert(productInput, priceInput, "user@example.com");
+                    await createAlert(productInput, priceInput, user.email);
                     toast.success("Alerta criado com sucesso!", {
-                      description: "Você será notificado quando o preço atingir o valor desejado."
+                      description:
+                        "Você será notificado quando o preço atingir o valor desejado.",
                     });
-                    const res = await listAlerts();
-                    setAlerts(res);
+                    await refreshAlerts();
                   } catch (err) {
                     toast.error("Erro ao criar alerta");
                   }
@@ -169,7 +227,7 @@ export function AlertsPage() {
       <Card className="p-6">
         <div className="relative mb-6">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
+          <Input
             type="search"
             placeholder="Buscar por produto"
             className="pl-10"
@@ -210,7 +268,8 @@ export function AlertsPage() {
                     const currentPrice = getProductPrice(alert);
                     const targetPrice = getTargetPrice(alert);
                     const difference = currentPrice - targetPrice;
-                    const percentDiff = currentPrice > 0 ? (difference / currentPrice) * 100 : 0;
+                    const percentDiff =
+                      currentPrice > 0 ? (difference / currentPrice) * 100 : 0;
 
                     return (
                       <TableRow key={alert.id}>
@@ -232,16 +291,35 @@ export function AlertsPage() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={alert.isActive ? "default" : "secondary"} className={alert.isActive ? "bg-green-600" : ""}>
+                          <Badge
+                            variant={alert.isActive ? "default" : "secondary"}
+                            className={alert.isActive ? "bg-green-600" : ""}
+                          >
                             {alert.isActive ? "Ativo" : "Inativo"}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {new Date(alert.createdAt).toLocaleDateString("pt-BR")}
+                          {new Date(alert.createdAt).toLocaleDateString(
+                            "pt-BR",
+                          )}
                         </TableCell>
                         <TableCell className="text-right">
-                          {/* No delete/toggle API available server-side; actions disabled */}
-                          <span className="text-xs text-muted-foreground">Sem ações</span>
+                          <div className="flex items-center justify-end gap-3">
+                            <Switch
+                              checked={alert.isActive ?? true}
+                              onCheckedChange={(checked) =>
+                                void handleToggleAlert(alert.id, checked)
+                              }
+                            />
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => void handleDeleteAlert(alert.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
@@ -257,33 +335,69 @@ export function AlertsPage() {
                 const currentPrice = getProductPrice(alert);
                 const targetPrice = getTargetPrice(alert);
                 const difference = currentPrice - targetPrice;
-                const percentDiff = currentPrice > 0 ? (difference / currentPrice) * 100 : 0;
+                const percentDiff =
+                  currentPrice > 0 ? (difference / currentPrice) * 100 : 0;
 
                 return (
                   <Card key={alert.id} className="p-4">
                     <div className="space-y-3">
                       <div className="flex items-start justify-between gap-2">
-                        <h3 className="font-medium text-sm line-clamp-2 flex-1">{productName}</h3>
-                        <span className="text-xs text-muted-foreground">Sem ações</span>
+                        <h3 className="font-medium text-sm line-clamp-2 flex-1">
+                          {productName}
+                        </h3>
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => void handleDeleteAlert(alert.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
 
                       <div className="grid grid-cols-2 gap-3 text-sm">
                         <div>
-                          <p className="text-muted-foreground text-xs">Preço Alvo</p>
-                          <p className="font-bold text-green-600">R$ {targetPrice.toLocaleString("pt-BR")}</p>
+                          <p className="text-muted-foreground text-xs">
+                            Preço Alvo
+                          </p>
+                          <p className="font-bold text-green-600">
+                            R$ {targetPrice.toLocaleString("pt-BR")}
+                          </p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground text-xs">Preço Atual</p>
-                          <p className="font-semibold">R$ {currentPrice.toLocaleString("pt-BR")}</p>
-                          <p className="text-xs text-muted-foreground">{difference > 0 ? "+" : ""}{percentDiff.toFixed(1)}% do alvo</p>
+                          <p className="text-muted-foreground text-xs">
+                            Preço Atual
+                          </p>
+                          <p className="font-semibold">
+                            R$ {currentPrice.toLocaleString("pt-BR")}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {difference > 0 ? "+" : ""}
+                            {percentDiff.toFixed(1)}% do alvo
+                          </p>
                         </div>
                       </div>
 
                       <div className="flex items-center justify-between pt-2 border-t">
-                        <div>
-                          <Badge variant={alert.isActive ? "default" : "secondary"} className={alert.isActive ? "bg-green-600" : ""}>{alert.isActive ? "Ativo" : "Inativo"}</Badge>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={alert.isActive ?? true}
+                            onCheckedChange={(checked) =>
+                              void handleToggleAlert(alert.id, checked)
+                            }
+                          />
+                          <Badge
+                            variant={alert.isActive ? "default" : "secondary"}
+                            className={alert.isActive ? "bg-green-600" : ""}
+                          >
+                            {alert.isActive ? "Ativo" : "Inativo"}
+                          </Badge>
                         </div>
-                        <p className="text-xs text-muted-foreground">{new Date(alert.createdAt).toLocaleDateString("pt-BR")}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(alert.createdAt).toLocaleDateString(
+                            "pt-BR",
+                          )}
+                        </p>
                       </div>
                     </div>
                   </Card>

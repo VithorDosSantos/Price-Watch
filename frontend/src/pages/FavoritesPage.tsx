@@ -22,11 +22,17 @@ export function FavoritesPage() {
     void load();
   }, []);
 
+  function handleFavoriteRemoved(favoriteId: string) {
+    setFavorites((prev) => prev.filter((fav) => fav.id !== favoriteId));
+  }
+
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Favoritos</h1>
-        <p className="text-muted-foreground mt-2">Veja os produtos que você salvou para acompanhar depois.</p>
+        <p className="text-muted-foreground mt-2">
+          Veja os produtos que você salvou para acompanhar depois.
+        </p>
       </div>
 
       {favorites.length === 0 ? (
@@ -40,7 +46,13 @@ export function FavoritesPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {favorites.map((fav) => (
-            <ProductCard key={fav.id} {...mapProductToCard(fav.product)} isFavorite={true} />
+            <ProductCard
+              key={fav.id}
+              {...mapProductToCard(fav.product)}
+              isFavorite={true}
+              favoriteId={fav.id}
+              onFavoriteRemoved={handleFavoriteRemoved}
+            />
           ))}
         </div>
       )}

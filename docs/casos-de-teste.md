@@ -85,9 +85,65 @@ Este documento registra o inicio da suite de testes do PriceWatch, cobrindo test
 - Resultado esperado: HTTP 200 com array de categorias.
 - Status: Automatizado.
 
+## CT10 - Favoritos exigem autenticacao
+
+- Tipo: Integracao
+- Arquivo automatizado: `backend/tests/integration/favoriteRoutes.test.ts`
+- Objetivo: impedir acesso a favoritos sem token JWT.
+- Resultado esperado: HTTP 401.
+- Status: Automatizado.
+
+## CT11 - Listar Favoritos por Usuario
+
+- Tipo: Integracao
+- Arquivo automatizado: `backend/tests/integration/favoriteRoutes.test.ts`
+- Objetivo: garantir que apenas favoritos do usuario autenticado sejam retornados.
+- Resultado esperado: HTTP 200 com lista apenas do usuario.
+- Status: Automatizado.
+
+## CT12 - Criar Favorito por Usuario
+
+- Tipo: Integracao
+- Arquivo automatizado: `backend/tests/integration/favoriteRoutes.test.ts`
+- Objetivo: criar favorito associado ao usuario autenticado.
+- Resultado esperado: HTTP 201 com objeto favorito.
+- Status: Automatizado.
+
+## CT13 - Alertas exigem autenticacao
+
+- Tipo: Integracao
+- Arquivo automatizado: `backend/tests/integration/alertRoutes.test.ts`
+- Objetivo: impedir acesso a alertas sem token JWT.
+- Resultado esperado: HTTP 401.
+- Status: Automatizado.
+
+## CT14 - Criar Alerta por Usuario
+
+- Tipo: Integracao
+- Arquivo automatizado: `backend/tests/integration/alertRoutes.test.ts`
+- Objetivo: criar alerta associado ao usuario autenticado.
+- Resultado esperado: HTTP 201 com objeto alerta.
+- Status: Automatizado.
+
+## CT15 - Atualizar Alerta por Usuario
+
+- Tipo: Integracao
+- Arquivo automatizado: `backend/tests/integration/alertRoutes.test.ts`
+- Objetivo: atualizar alerta existente do usuario autenticado.
+- Resultado esperado: HTTP 200 com dados atualizados.
+- Status: Automatizado.
+
+## CT16 - Remover Alerta por Usuario
+
+- Tipo: Integracao
+- Arquivo automatizado: `backend/tests/integration/alertRoutes.test.ts`
+- Objetivo: remover alerta do usuario autenticado.
+- Resultado esperado: HTTP 204.
+- Status: Automatizado.
+
 ## Casos Pendentes
 
-- Testar autenticacao local: registro, login e `/auth/me`.
+- Testar autenticacao local: login e `/auth/me`.
 - Testar protecao de rotas administrativas com JWT.
 - Testar CRUD de lojas por API com usuario administrador.
 - Testar CRUD de historico de precos por API com usuario administrador.

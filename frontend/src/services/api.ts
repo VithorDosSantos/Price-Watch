@@ -107,12 +107,14 @@ export function setAuthToken(token: string | null) {
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
   if (authToken) headers.Authorization = `Bearer ${authToken}`;
 
   const response = await fetch(`${API_URL}${path}`, {
     headers,
-    ...options
+    ...options,
   });
 
   if (!response.ok) {
@@ -134,59 +136,80 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 // Auth helpers
-export async function registerUser(name: string | undefined, email: string, password: string) {
+export async function registerUser(
+  name: string | undefined,
+  email: string,
+  password: string,
+) {
   return request<{
     token: string;
     user: { id: string; email: string; name?: string; role: string };
     isFirstAdmin?: boolean;
   }>("/auth/register", {
     method: "POST",
-    body: JSON.stringify({ name, email, password })
+    body: JSON.stringify({ name, email, password }),
   });
 }
 
 export async function loginUser(email: string, password: string) {
-  return request<{ token: string; user: { id: string; email: string; name?: string; role: string } }>(
-    "/auth/login/local",
-    {
-      method: "POST",
-      body: JSON.stringify({ email, password })
-    }
-  );
+  return request<{
+    token: string;
+    user: { id: string; email: string; name?: string; role: string };
+  }>("/auth/login/local", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
 }
 
 export async function getCurrentUser() {
-  return request<{ user: { id: string; email: string; name?: string; role: string } }>("/auth/me");
+  return request<{
+    user: { id: string; email: string; name?: string; role: string };
+  }>("/auth/me");
 }
 
-export async function updateCurrentUser(input: { name?: string; password?: string }) {
-  return request<{ user: { id: string; email: string; name?: string; role: string } }>("/auth/me", {
+export async function updateCurrentUser(input: {
+  name?: string;
+  password?: string;
+}) {
+  return request<{
+    user: { id: string; email: string; name?: string; role: string };
+  }>("/auth/me", {
     method: "PATCH",
-    body: JSON.stringify(input)
+    body: JSON.stringify(input),
   });
 }
 
 export async function deleteCurrentUser() {
   return request<void>("/auth/me", {
-    method: "DELETE"
+    method: "DELETE",
   });
 }
 
 // Admin user management
 export async function getUsers() {
-  return request<{ users: Array<{ id: string; email: string; name?: string; role: string; createdAt: string }> }>("/users");
+  return request<{
+    users: Array<{
+      id: string;
+      email: string;
+      name?: string;
+      role: string;
+      createdAt: string;
+    }>;
+  }>("/users");
 }
 
 export async function updateUserRole(userId: string, role: "ADMIN" | "USER") {
-  return request<{ user: { id: string; email: string; name?: string; role: string } }>(`/users/${userId}/role`, {
+  return request<{
+    user: { id: string; email: string; name?: string; role: string };
+  }>(`/users/${userId}/role`, {
     method: "PATCH",
-    body: JSON.stringify({ role })
+    body: JSON.stringify({ role }),
   });
 }
 
 export async function searchProducts(
   query: string,
-  options?: { page?: number; limit?: number }
+  options?: { page?: number; limit?: number },
 ): Promise<ProductSearchResponse> {
   const searchParams = new URLSearchParams({ q: query });
 
@@ -198,7 +221,9 @@ export async function searchProducts(
     searchParams.set("limit", String(options.limit));
   }
 
-  return await request<ProductSearchResponse>(`/products/search?${searchParams.toString()}`);
+  return await request<ProductSearchResponse>(
+    `/products/search?${searchParams.toString()}`,
+  );
 }
 
 export function mapProductToCard(product: Product): ProductCardView {
@@ -207,11 +232,13 @@ export function mapProductToCard(product: Product): ProductCardView {
   return {
     id: product.id,
     name: product.name ?? "Produto sem nome",
-    image: product.imageUrl ?? "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600",
+    image:
+      product.imageUrl ??
+      "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600",
     currentPrice: price,
     originalPrice: Math.round(price * 1.12),
     store: product.storeName ?? "Loja parceira",
-    priceChange: -8.5
+    priceChange: -8.5,
   };
 }
 
@@ -219,10 +246,38 @@ export async function getProduct(id: string): Promise<Product | undefined> {
   return await request<Product>(`/products/${id}`);
 }
 
+export type UpdateProductInput = {
+  name?: string;
+  price?: number;
+  imageUrl?: string | null;
+  productUrl?: string | null;
+  storeName?: string | null;
+  category?: string | null;
+};
+
+export async function updateProduct(id: string, input: UpdateProductInput) {
+  return request<Product>(`/products/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function deleteProduct(id: string) {
+  return request<void>(`/products/${id}`, {
+    method: "DELETE",
+  });
+}
+
 export async function favoriteProduct(productId: string) {
   return request<Favorite>("/favorites", {
     method: "POST",
-    body: JSON.stringify({ productId, userName: "Aluno PriceWatch" })
+    body: JSON.stringify({ productId, userName: "Aluno PriceWatch" }),
+  });
+}
+
+export async function deleteFavorite(favoriteId: string) {
+  return request<void>(`/favorites/${favoriteId}`, {
+    method: "DELETE",
   });
 }
 
@@ -230,10 +285,30 @@ export async function listFavorites(): Promise<Favorite[]> {
   return await request<Favorite[]>("/favorites");
 }
 
-export async function createAlert(productId: string, targetPrice: number, email: string) {
+export async function createAlert(
+  productId: string,
+  targetPrice: number,
+  email: string,
+) {
   return request<PriceAlert>("/alerts", {
     method: "POST",
-    body: JSON.stringify({ productId, targetPrice, email })
+    body: JSON.stringify({ productId, targetPrice, email }),
+  });
+}
+
+export async function updateAlert(
+  id: string,
+  input: { targetPrice?: number; email?: string; isActive?: boolean },
+) {
+  return request<PriceAlert>(`/alerts/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function deleteAlert(id: string) {
+  return request<void>(`/alerts/${id}`, {
+    method: "DELETE",
   });
 }
 
@@ -248,20 +323,20 @@ export async function listStores(): Promise<StoreRecord[]> {
 export async function createStore(input: StoreInput) {
   return request<StoreRecord>("/stores", {
     method: "POST",
-    body: JSON.stringify(input)
+    body: JSON.stringify(input),
   });
 }
 
 export async function updateStore(id: string, input: Partial<StoreInput>) {
   return request<StoreRecord>(`/stores/${id}`, {
     method: "PUT",
-    body: JSON.stringify(input)
+    body: JSON.stringify(input),
   });
 }
 
 export async function deleteStore(id: string) {
   return request<void>(`/stores/${id}`, {
-    method: "DELETE"
+    method: "DELETE",
   });
 }
 
@@ -272,20 +347,23 @@ export async function listCategories(): Promise<CategoryRecord[]> {
 export async function createCategory(input: CategoryInput) {
   return request<CategoryRecord>("/categories", {
     method: "POST",
-    body: JSON.stringify(input)
+    body: JSON.stringify(input),
   });
 }
 
-export async function updateCategory(id: string, input: Partial<CategoryInput>) {
+export async function updateCategory(
+  id: string,
+  input: Partial<CategoryInput>,
+) {
   return request<CategoryRecord>(`/categories/${id}`, {
     method: "PUT",
-    body: JSON.stringify(input)
+    body: JSON.stringify(input),
   });
 }
 
 export async function deleteCategory(id: string) {
   return request<void>(`/categories/${id}`, {
-    method: "DELETE"
+    method: "DELETE",
   });
 }
 
@@ -296,19 +374,22 @@ export async function listPriceHistory(): Promise<PriceHistoryRecord[]> {
 export async function createPriceHistory(input: PriceHistoryInput) {
   return request<PriceHistoryRecord>("/price-history", {
     method: "POST",
-    body: JSON.stringify(input)
+    body: JSON.stringify(input),
   });
 }
 
-export async function updatePriceHistory(id: string, input: Partial<PriceHistoryInput>) {
+export async function updatePriceHistory(
+  id: string,
+  input: Partial<PriceHistoryInput>,
+) {
   return request<PriceHistoryRecord>(`/price-history/${id}`, {
     method: "PUT",
-    body: JSON.stringify(input)
+    body: JSON.stringify(input),
   });
 }
 
 export async function deletePriceHistory(id: string) {
   return request<void>(`/price-history/${id}`, {
-    method: "DELETE"
+    method: "DELETE",
   });
 }

@@ -1,14 +1,48 @@
-import { ArrowLeft, Bell, ExternalLink, Heart, TrendingDown } from "lucide-react";
+import {
+  ArrowLeft,
+  Bell,
+  ExternalLink,
+  Heart,
+  TrendingDown,
+} from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { PriceBadge } from "../components/PriceBadge";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../components/ui/dialog";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
 import { Separator } from "../components/ui/separator";
-import { getProduct, type Product } from "../services/api";
+import {
+  createAlert,
+  deleteFavorite,
+  deleteProduct,
+  favoriteProduct,
+  getProduct,
+  listFavorites,
+  updateProduct,
+  type Product,
+} from "../services/api";
 import { toast } from "sonner";
+import { useAuth } from "../contexts/AuthContext";
 
 type ProductDetailsView = {
   id: string;
@@ -31,7 +65,7 @@ function buildPriceHistory(price: number) {
     { date: "2026-04-21", price: Math.round(price * 1.1) },
     { date: "2026-04-28", price: Math.round(price * 1.06) },
     { date: "2026-05-05", price: Math.round(price * 1.03) },
-    { date: "2026-05-12", price }
+    { date: "2026-05-12", price },
   ];
 }
 
@@ -41,30 +75,47 @@ function mapApiProduct(product: Product): ProductDetailsView {
   return {
     id: product.id,
     name: product.name,
-    image: product.imageUrl ?? "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600",
+    image:
+      product.imageUrl ??
+      "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600",
     currentPrice: price,
     originalPrice: Math.round(price * 1.12),
     store: product.storeName ?? "Loja parceira",
     category: product.category ?? "Produto",
-    description: "Produto encontrado pela integração do PriceWatch com a busca em tempo real.",
+    description:
+      "Produto encontrado pela integração do PriceWatch com a busca em tempo real.",
     productUrl: product.productUrl,
     priceChange: -8.5,
     priceHistory: buildPriceHistory(price),
     stores: [
-      { name: product.storeName ?? "Loja parceira", price, url: product.productUrl ?? "#" },
+      {
+        name: product.storeName ?? "Loja parceira",
+        price,
+        url: product.productUrl ?? "#",
+      },
       { name: "Loja parceira", price: Math.round(price * 1.04), url: "#" },
-      { name: "Marketplace", price: Math.round(price * 1.08), url: "#" }
-    ]
+      { name: "Marketplace", price: Math.round(price * 1.08), url: "#" },
+    ],
   };
 }
 
-
-
 export function ProductDetailPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [product, setProduct] = useState<ProductDetailsView | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteId, setFavoriteId] = useState<string | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [formValues, setFormValues] = useState({
+    name: "",
+    price: "",
+    category: "",
+    storeName: "",
+    productUrl: "",
+    imageUrl: "",
+  });
 
   useEffect(() => {
     async function loadProduct() {
@@ -76,6 +127,19 @@ export function ProductDetailPage() {
       try {
         const apiProduct = await getProduct(id);
         setProduct(apiProduct ? mapApiProduct(apiProduct) : null);
+        if (apiProduct) {
+          try {
+            const favorites = await listFavorites();
+            const match = favorites.find(
+              (fav) => fav.product.id === apiProduct.id,
+            );
+            setIsFavorite(Boolean(match));
+            setFavoriteId(match?.id ?? null);
+          } catch {
+            setIsFavorite(false);
+            setFavoriteId(null);
+          }
+        }
       } catch {
         setProduct(null);
       } finally {
@@ -84,7 +148,22 @@ export function ProductDetailPage() {
     }
 
     void loadProduct();
-  }, [id]);
+  }, [id, user?.id]);
+
+  useEffect(() => {
+    if (!product) {
+      return;
+    }
+
+    setFormValues({
+      name: product.name ?? "",
+      price: String(product.currentPrice ?? ""),
+      category: product.category ?? "",
+      storeName: product.store ?? "",
+      productUrl: product.productUrl ?? "",
+      imageUrl: product.image ?? "",
+    });
+  }, [product]);
 
   if (isLoading) {
     return (
@@ -105,28 +184,135 @@ export function ProductDetailPage() {
     );
   }
 
-  const lowestPrice = Math.min(...product.priceHistory.map((history) => history.price));
-  const highestPrice = Math.max(...product.priceHistory.map((history) => history.price));
+  const lowestPrice = Math.min(
+    ...product.priceHistory.map((history) => history.price),
+  );
+  const highestPrice = Math.max(
+    ...product.priceHistory.map((history) => history.price),
+  );
   const productName = product.name;
 
-  function handleCreateAlert() {
-    toast.success("Alerta criado com sucesso!", {
-      description: `Você será notificado quando o preço de "${productName}" mudar.`
-    });
+  async function handleCreateAlert() {
+    if (!user) {
+      toast.error("Faça login para criar alertas.");
+      navigate("/login");
+      return;
+    }
+
+    if (!product) {
+      return;
+    }
+
+    try {
+      await createAlert(product.id, product.currentPrice, user.email);
+      toast.success("Alerta criado com sucesso!", {
+        description: `Você será notificado quando o preço de "${productName}" mudar.`,
+      });
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Não foi possível criar o alerta.",
+      );
+    }
   }
 
-  function handleToggleFavorite() {
-    setIsFavorite(!isFavorite);
-    toast.success(isFavorite ? "Removido dos favoritos" : "Adicionado aos favoritos!", {
-      description: isFavorite
-        ? "O produto foi removido da sua lista de favoritos."
-        : "O produto foi adicionado à sua lista de favoritos."
-    });
+  function handleFormChange(field: keyof typeof formValues, value: string) {
+    setFormValues((prev) => ({ ...prev, [field]: value }));
+  }
+
+  async function handleUpdateProduct() {
+    if (!product) {
+      return;
+    }
+
+    const priceValue = Number(formValues.price);
+
+    if (!Number.isFinite(priceValue) || priceValue <= 0) {
+      toast.error("Informe um preco valido.");
+      return;
+    }
+
+    try {
+      const updated = await updateProduct(product.id, {
+        name: formValues.name.trim(),
+        price: priceValue,
+        category: formValues.category.trim() || null,
+        storeName: formValues.storeName.trim() || null,
+        productUrl: formValues.productUrl.trim() || null,
+        imageUrl: formValues.imageUrl.trim() || null,
+      });
+
+      setProduct(mapApiProduct(updated as Product));
+      setEditOpen(false);
+      toast.success("Produto atualizado.");
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Nao foi possivel atualizar o produto.",
+      );
+    }
+  }
+
+  async function handleDeleteProduct() {
+    if (!product) {
+      return;
+    }
+
+    try {
+      await deleteProduct(product.id);
+      toast.success("Produto removido.");
+      navigate("/");
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Nao foi possivel remover o produto.",
+      );
+    }
+  }
+
+  async function handleToggleFavorite() {
+    if (!user) {
+      toast.error("Faça login para salvar favoritos.");
+      navigate("/login");
+      return;
+    }
+
+    if (!product) {
+      return;
+    }
+
+    try {
+      if (favoriteId) {
+        await deleteFavorite(favoriteId);
+        setFavoriteId(null);
+        setIsFavorite(false);
+        toast.success("Removido dos favoritos", {
+          description: "O produto foi removido da sua lista de favoritos.",
+        });
+      } else {
+        const favorite = await favoriteProduct(product.id);
+        setFavoriteId(favorite.id);
+        setIsFavorite(true);
+        toast.success("Adicionado aos favoritos!", {
+          description: "O produto foi adicionado à sua lista de favoritos.",
+        });
+      }
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Não foi possível atualizar o favorito.",
+      );
+    }
   }
 
   return (
     <div className="container px-4 lg:px-8 py-8 max-w-7xl">
-      <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6">
+      <Link
+        to="/"
+        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
+      >
         <ArrowLeft className="h-4 w-4" />
         Voltar
       </Link>
@@ -135,7 +321,11 @@ export function ProductDetailPage() {
         <div className="space-y-4">
           <Card className="overflow-hidden">
             <div className="aspect-square bg-gray-50">
-              <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
+              <img
+                src={product.image}
+                alt={product.name}
+                className="h-full w-full object-cover"
+              />
             </div>
           </Card>
         </div>
@@ -143,8 +333,12 @@ export function ProductDetailPage() {
         <div className="space-y-6">
           <div className="space-y-3">
             <Badge variant="secondary">{product.category}</Badge>
-            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight">{product.name}</h1>
-            <p className="text-sm md:text-base text-muted-foreground">{product.description}</p>
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight">
+              {product.name}
+            </h1>
+            <p className="text-sm md:text-base text-muted-foreground">
+              {product.description}
+            </p>
           </div>
 
           <Separator />
@@ -163,27 +357,136 @@ export function ProductDetailPage() {
 
             <div className="flex items-center gap-2">
               <PriceBadge change={product.priceChange} size="lg" />
-              <span className="text-xs md:text-sm text-muted-foreground">nos últimos 7 dias</span>
+              <span className="text-xs md:text-sm text-muted-foreground">
+                nos últimos 7 dias
+              </span>
             </div>
 
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span>Vendido por</span>
-              <span className="font-medium text-foreground">{product.store}</span>
+              <span className="font-medium text-foreground">
+                {product.store}
+              </span>
             </div>
           </div>
 
           <Separator />
 
           <div className="flex flex-col sm:flex-row gap-3">
-            <Button className="flex-1 bg-violet-600 hover:bg-violet-700" size="lg" onClick={handleCreateAlert}>
+            <Button
+              className="flex-1 bg-violet-600 hover:bg-violet-700"
+              size="lg"
+              onClick={handleCreateAlert}
+            >
               <Bell className="h-5 w-5 mr-2" />
               Criar alerta de preço
             </Button>
-            <Button variant="outline" size="lg" className="sm:w-auto" onClick={handleToggleFavorite}>
-              <Heart className={`h-5 w-5 sm:mr-0 ${isFavorite ? "fill-current text-red-500" : ""}`} />
-              <span className="sm:hidden ml-2">{isFavorite ? "Favoritado" : "Favoritar"}</span>
+            <Button
+              variant="outline"
+              size="lg"
+              className="sm:w-auto"
+              onClick={handleToggleFavorite}
+            >
+              <Heart
+                className={`h-5 w-5 sm:mr-0 ${isFavorite ? "fill-current text-red-500" : ""}`}
+              />
+              <span className="sm:hidden ml-2">
+                {isFavorite ? "Favoritado" : "Favoritar"}
+              </span>
             </Button>
           </div>
+
+          {user?.role === "ADMIN" ? (
+            <div className="flex flex-col gap-2 rounded-lg border border-dashed p-4">
+              <p className="text-sm font-medium">Acoes administrativas</p>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Dialog open={editOpen} onOpenChange={setEditOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline">Editar produto</Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Editar produto</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="product-name">Nome</Label>
+                        <Input
+                          id="product-name"
+                          value={formValues.name}
+                          onChange={(event) =>
+                            handleFormChange("name", event.target.value)
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="product-price">Preco</Label>
+                        <Input
+                          id="product-price"
+                          type="number"
+                          value={formValues.price}
+                          onChange={(event) =>
+                            handleFormChange("price", event.target.value)
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="product-category">Categoria</Label>
+                        <Input
+                          id="product-category"
+                          value={formValues.category}
+                          onChange={(event) =>
+                            handleFormChange("category", event.target.value)
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="product-store">Loja</Label>
+                        <Input
+                          id="product-store"
+                          value={formValues.storeName}
+                          onChange={(event) =>
+                            handleFormChange("storeName", event.target.value)
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="product-url">URL do produto</Label>
+                        <Input
+                          id="product-url"
+                          value={formValues.productUrl}
+                          onChange={(event) =>
+                            handleFormChange("productUrl", event.target.value)
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="product-image">URL da imagem</Label>
+                        <Input
+                          id="product-image"
+                          value={formValues.imageUrl}
+                          onChange={(event) =>
+                            handleFormChange("imageUrl", event.target.value)
+                          }
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button
+                        className="bg-violet-600 hover:bg-violet-700"
+                        onClick={handleUpdateProduct}
+                      >
+                        Salvar alteracoes
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+                <Button variant="destructive" onClick={handleDeleteProduct}>
+                  Excluir produto
+                </Button>
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -191,17 +494,25 @@ export function ProductDetailPage() {
         <div className="space-y-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h2 className="text-xl sm:text-2xl font-bold">Histórico de Preços</h2>
-              <p className="text-sm text-muted-foreground mt-1">Últimos 30 dias</p>
+              <h2 className="text-xl sm:text-2xl font-bold">
+                Histórico de Preços
+              </h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Últimos 30 dias
+              </p>
             </div>
             <div className="flex flex-wrap gap-4 text-sm sm:gap-6">
               <div>
                 <p className="text-muted-foreground">Menor preço</p>
-                <p className="font-bold text-green-600">R$ {lowestPrice.toLocaleString("pt-BR")}</p>
+                <p className="font-bold text-green-600">
+                  R$ {lowestPrice.toLocaleString("pt-BR")}
+                </p>
               </div>
               <div>
                 <p className="text-muted-foreground">Maior preço</p>
-                <p className="font-bold text-red-600">R$ {highestPrice.toLocaleString("pt-BR")}</p>
+                <p className="font-bold text-red-600">
+                  R$ {highestPrice.toLocaleString("pt-BR")}
+                </p>
               </div>
             </div>
           </div>
@@ -218,15 +529,24 @@ export function ProductDetailPage() {
                 stroke="#888"
                 fontSize={12}
               />
-              <YAxis stroke="#888" fontSize={12} tickFormatter={(value) => `R$ ${value}`} />
+              <YAxis
+                stroke="#888"
+                fontSize={12}
+                tickFormatter={(value) => `R$ ${value}`}
+              />
               <Tooltip
                 contentStyle={{
                   backgroundColor: "white",
                   border: "1px solid #e5e7eb",
-                  borderRadius: "8px"
+                  borderRadius: "8px",
                 }}
-                formatter={(value: number) => [`R$ ${value.toLocaleString("pt-BR")}`, "Preço"]}
-                labelFormatter={(label) => new Date(label).toLocaleDateString("pt-BR")}
+                formatter={(value: number) => [
+                  `R$ ${value.toLocaleString("pt-BR")}`,
+                  "Preço",
+                ]}
+                labelFormatter={(label) =>
+                  new Date(label).toLocaleDateString("pt-BR")
+                }
               />
               <Line
                 type="monotone"
@@ -242,7 +562,9 @@ export function ProductDetailPage() {
       </Card>
 
       <Card className="mt-8 p-4 sm:p-6">
-        <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-6">Comparar entre lojas</h2>
+        <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-6">
+          Comparar entre lojas
+        </h2>
         <div className="space-y-3">
           {product.stores.map((store, index) => (
             <div
@@ -263,7 +585,11 @@ export function ProductDetailPage() {
                   R$ {store.price.toLocaleString("pt-BR")}
                 </span>
                 <a href={store.url} target="_blank" rel="noreferrer">
-                  <Button variant="outline" size="sm" className="w-full whitespace-nowrap sm:w-auto">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full whitespace-nowrap sm:w-auto"
+                  >
                     <ExternalLink className="h-4 w-4 mr-2" />
                     Visitar
                   </Button>

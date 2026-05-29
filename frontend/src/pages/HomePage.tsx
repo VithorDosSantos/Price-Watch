@@ -1,10 +1,23 @@
-import { Bell, Search, Shield, TrendingUp, User, Heart, BarChart3 } from "lucide-react";
+import {
+  Bell,
+  Search,
+  Shield,
+  TrendingUp,
+  User,
+  Heart,
+  BarChart3,
+} from "lucide-react";
 import { FormEvent, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ProductCard, type ProductCardProps } from "../components/ProductCard";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { listFavorites, mapProductToCard, searchProducts, type Product } from "../services/api";
+import {
+  listFavorites,
+  mapProductToCard,
+  searchProducts,
+  type Product,
+} from "../services/api";
 
 const SEARCH_PAGE_SIZE = 8;
 
@@ -18,11 +31,15 @@ export function HomePage() {
   const [totalPages, setTotalPages] = useState<number | null>(null);
   const [hasNextPage, setHasNextPage] = useState(false);
   const [hasPreviousPage, setHasPreviousPage] = useState(false);
-  const [feedback, setFeedback] = useState("Digite um produto para começar a busca.");
+  const [feedback, setFeedback] = useState(
+    "Digite um produto para começar a busca.",
+  );
   const resultsRef = useRef<HTMLElement>(null);
   const navigate = useNavigate();
   const [pageButtons, setPageButtons] = useState<number[]>([]);
-  const canPaginate = hasSearched && (hasNextPage || hasPreviousPage || products.length >= SEARCH_PAGE_SIZE);
+  const canPaginate =
+    hasSearched &&
+    (hasNextPage || hasPreviousPage || products.length >= SEARCH_PAGE_SIZE);
 
   function buildPageButtons(page: number, totalPages?: number): number[] {
     if (!totalPages) {
@@ -57,32 +74,45 @@ export function HomePage() {
     return Array.from(buttons).sort((a, b) => a - b);
   }
 
-  function normalizeProducts(resultProducts: Product[], favorites: string[]) {
-    return resultProducts
-      .slice(0, SEARCH_PAGE_SIZE)
-      .map((product) => ({ ...mapProductToCard(product), isFavorite: favorites.includes(product.id) }));
+  function normalizeProducts(
+    resultProducts: Product[],
+    favoritesByProduct: Map<string, string>,
+  ) {
+    return resultProducts.slice(0, SEARCH_PAGE_SIZE).map((product) => ({
+      ...mapProductToCard(product),
+      isFavorite: favoritesByProduct.has(product.id),
+      favoriteId: favoritesByProduct.get(product.id),
+    }));
   }
 
   async function loadSearchResults(searchQuery: string, page: number) {
     setIsLoading(true);
 
     try {
-      const result = await searchProducts(searchQuery, { page, limit: SEARCH_PAGE_SIZE });
-      let favorites: string[] = [];
+      const result = await searchProducts(searchQuery, {
+        page,
+        limit: SEARCH_PAGE_SIZE,
+      });
+      let favoritesByProduct = new Map<string, string>();
 
       try {
-        favorites = (await listFavorites()).map((item) => item.product.id);
+        const favorites = await listFavorites();
+        favoritesByProduct = new Map(
+          favorites.map((item) => [item.product.id, item.id]),
+        );
       } catch {
-        favorites = [];
+        favoritesByProduct = new Map();
       }
 
-      setProducts(normalizeProducts(result.products, favorites));
+      setProducts(normalizeProducts(result.products, favoritesByProduct));
       setSubmittedQuery(searchQuery);
       setCurrentPage(result.page);
       const pageCount = result.totalPages ?? null;
       setTotalPages(pageCount);
       setPageButtons(buildPageButtons(result.page, pageCount ?? undefined));
-      setHasNextPage(result.hasNextPage || result.products.length >= SEARCH_PAGE_SIZE);
+      setHasNextPage(
+        result.hasNextPage || result.products.length >= SEARCH_PAGE_SIZE,
+      );
       setHasPreviousPage(result.page > 1 || result.hasPreviousPage);
       setHasSearched(true);
       setFeedback(
@@ -91,11 +121,13 @@ export function HomePage() {
             ? result.totalResults
               ? `Mostrando ${result.products.length} de ${result.totalResults} resultados.`
               : `Mostrando ${result.products.length} resultado(s) nesta página.`
-            : "Nenhum produto encontrado para essa busca.")
+            : "Nenhum produto encontrado para essa busca."),
       );
     } catch {
       setProducts([]);
-      setFeedback("Não foi possível consultar a API agora. Tente novamente em instantes.");
+      setFeedback(
+        "Não foi possível consultar a API agora. Tente novamente em instantes.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -107,7 +139,10 @@ export function HomePage() {
     await loadSearchResults(query, 1);
 
     window.setTimeout(() => {
-      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      resultsRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
     }, 80);
   }
 
@@ -115,21 +150,31 @@ export function HomePage() {
     setIsLoading(true);
 
     try {
-      const result = await searchProducts(query, { page: 1, limit: SEARCH_PAGE_SIZE });
-      const favorites = (await listFavorites()).map((item) => item.product.id);
+      const result = await searchProducts(query, {
+        page: 1,
+        limit: SEARCH_PAGE_SIZE,
+      });
+      const favorites = await listFavorites();
+      const favoritesByProduct = new Map(
+        favorites.map((item) => [item.product.id, item.id]),
+      );
 
-      setProducts(normalizeProducts(result.products, favorites));
+      setProducts(normalizeProducts(result.products, favoritesByProduct));
       setSubmittedQuery(query);
       setCurrentPage(result.page);
       const pageCount = result.totalPages ?? null;
       setTotalPages(pageCount);
       setPageButtons(buildPageButtons(result.page, pageCount ?? undefined));
-      setHasNextPage(result.hasNextPage || result.products.length >= SEARCH_PAGE_SIZE);
+      setHasNextPage(
+        result.hasNextPage || result.products.length >= SEARCH_PAGE_SIZE,
+      );
       setHasPreviousPage(result.page > 1 || result.hasPreviousPage);
       setHasSearched(false);
       setFeedback("Sugestões carregadas para você explorar.");
     } catch {
-      setFeedback("Não foi possível carregar os resultados agora. Tente novamente.");
+      setFeedback(
+        "Não foi possível carregar os resultados agora. Tente novamente.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -142,8 +187,21 @@ export function HomePage() {
 
     await loadSearchResults(submittedQuery, nextPage);
     window.setTimeout(() => {
-      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      resultsRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
     }, 80);
+  }
+
+  function handleFavoriteRemoved(favoriteId: string) {
+    setProducts((prev) =>
+      prev.map((product) =>
+        product.favoriteId === favoriteId
+          ? { ...product, isFavorite: false, favoriteId: undefined }
+          : product,
+      ),
+    );
   }
 
   return (
@@ -157,10 +215,14 @@ export function HomePage() {
             </span>
           </h1>
           <p className="text-base text-muted-foreground sm:text-lg lg:text-xl">
-            Pesquise um produto, abra os detalhes e salve o que quiser acompanhar depois.
+            Pesquise um produto, abra os detalhes e salve o que quiser
+            acompanhar depois.
           </p>
 
-          <form onSubmit={handleSearch} className="mx-auto mt-8 flex max-w-2xl flex-col gap-3 sm:flex-row">
+          <form
+            onSubmit={handleSearch}
+            className="mx-auto mt-8 flex max-w-2xl flex-col gap-3 sm:flex-row"
+          >
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -182,91 +244,46 @@ export function HomePage() {
           </form>
           <p className="text-sm text-muted-foreground">{feedback}</p>
         </div>
-      </section>
 
-      <section className="container px-4 pb-8 lg:px-8">
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <Link
-            to="/dashboard"
-            className="group rounded-2xl border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md"
-          >
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Fluxo principal</p>
-                <h3 className="mt-1 text-lg font-semibold">Painel</h3>
-              </div>
-              <BarChart3 className="h-5 w-5 text-violet-600" />
-            </div>
-            <p className="mt-3 text-sm text-muted-foreground">Veja seus favoritos, histórico e alertas em um só lugar.</p>
-          </Link>
-
-          <Link
-            to="/favorites"
-            className="group rounded-2xl border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md"
-          >
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Lista pessoal</p>
-                <h3 className="mt-1 text-lg font-semibold">Favoritos</h3>
-              </div>
-              <Heart className="h-5 w-5 text-violet-600" />
-            </div>
-            <p className="mt-3 text-sm text-muted-foreground">Revise os produtos que você quer acompanhar depois.</p>
-          </Link>
-
-          <Link
-            to="/alerts"
-            className="group rounded-2xl border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md"
-          >
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Avisos</p>
-                <h3 className="mt-1 text-lg font-semibold">Alertas</h3>
-              </div>
-              <Bell className="h-5 w-5 text-violet-600" />
-            </div>
-            <p className="mt-3 text-sm text-muted-foreground">Crie e ajuste os limites de preço dos produtos monitorados.</p>
-          </Link>
-
-          <Link
-            to="/profile"
-            className="group rounded-2xl border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md"
-          >
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Sua conta</p>
-                <h3 className="mt-1 text-lg font-semibold">Perfil</h3>
-              </div>
-              <User className="h-5 w-5 text-violet-600" />
-            </div>
-            <p className="mt-3 text-sm text-muted-foreground">Atualize seus dados e encontre os atalhos do app.</p>
-          </Link>
-        </div>
-      </section>
-
-      <section ref={resultsRef} className="container scroll-mt-20 px-4 pb-16 lg:px-8">
-        <div className="space-y-8">
+        <div
+          ref={resultsRef}
+          className="mx-auto mt-10 w-full max-w-6xl space-y-6 rounded-2xl border bg-white/80 p-4 shadow-sm backdrop-blur sm:p-6"
+        >
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-3xl font-bold tracking-tight">
+              <h2 className="text-xl font-bold tracking-tight">
                 {hasSearched ? "Resultados da busca" : "Comece sua busca"}
               </h2>
-              <p className="mt-2 text-muted-foreground">
+              <p className="mt-1 text-sm text-muted-foreground">
                 {hasSearched
                   ? `Resultados para "${query}" exibidos abaixo.`
                   : "Digite um termo para ver produtos reais da busca integrada."}
               </p>
             </div>
-            <Button className="w-full sm:w-auto" variant="outline" onClick={() => void loadShowcase()}>
+            <Button
+              className="w-full sm:w-auto"
+              variant="outline"
+              onClick={() => void loadShowcase()}
+            >
               Ver sugestões
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
-            {products.map((product) => (
-              <ProductCard key={product.id} {...product} isFavorite={product.isFavorite} />
-            ))}
-          </div>
+          {products.length === 0 && hasSearched ? (
+            <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+              Nenhum produto encontrado para essa busca.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
+              {products.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  {...product}
+                  onFavoriteRemoved={handleFavoriteRemoved}
+                />
+              ))}
+            </div>
+          )}
 
           {canPaginate && (
             <div className="flex flex-col items-center justify-between gap-3 rounded-2xl border bg-white p-4 shadow-sm sm:flex-row">
@@ -283,29 +300,102 @@ export function HomePage() {
                 >
                   Anterior
                 </Button>
-                {pageButtons.length > 0 ? (
-                  pageButtons.map((page) => (
-                    <Button
-                      key={page}
-                      variant={page === currentPage ? "secondary" : "outline"}
-                      className={page === currentPage ? "bg-violet-600 text-white" : ""}
-                      onClick={() => void handlePageChange(page)}
-                      disabled={isLoading || page === currentPage}
-                    >
-                      {page}
-                    </Button>
-                  ))
-                ) : null}
+                {pageButtons.length > 0
+                  ? pageButtons.map((page) => (
+                      <Button
+                        key={page}
+                        variant={page === currentPage ? "secondary" : "outline"}
+                        className={
+                          page === currentPage ? "bg-violet-600 text-white" : ""
+                        }
+                        onClick={() => void handlePageChange(page)}
+                        disabled={isLoading || page === currentPage}
+                      >
+                        {page}
+                      </Button>
+                    ))
+                  : null}
                 <Button
                   className="flex-1 bg-violet-600 hover:bg-violet-700 sm:flex-none"
                   onClick={() => void handlePageChange(currentPage + 1)}
-                  disabled={(products.length < SEARCH_PAGE_SIZE && !hasNextPage) || isLoading}
+                  disabled={
+                    (products.length < SEARCH_PAGE_SIZE && !hasNextPage) ||
+                    isLoading
+                  }
                 >
                   Próxima
                 </Button>
               </div>
             </div>
           )}
+        </div>
+      </section>
+
+      <section className="container px-4 pb-8 lg:px-8">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <Link
+            to="/dashboard"
+            className="group rounded-2xl border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md"
+          >
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Fluxo principal</p>
+                <h3 className="mt-1 text-lg font-semibold">Painel</h3>
+              </div>
+              <BarChart3 className="h-5 w-5 text-violet-600" />
+            </div>
+            <p className="mt-3 text-sm text-muted-foreground">
+              Veja seus favoritos, histórico e alertas em um só lugar.
+            </p>
+          </Link>
+
+          <Link
+            to="/favorites"
+            className="group rounded-2xl border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md"
+          >
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Lista pessoal</p>
+                <h3 className="mt-1 text-lg font-semibold">Favoritos</h3>
+              </div>
+              <Heart className="h-5 w-5 text-violet-600" />
+            </div>
+            <p className="mt-3 text-sm text-muted-foreground">
+              Revise os produtos que você quer acompanhar depois.
+            </p>
+          </Link>
+
+          <Link
+            to="/alerts"
+            className="group rounded-2xl border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md"
+          >
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Avisos</p>
+                <h3 className="mt-1 text-lg font-semibold">Alertas</h3>
+              </div>
+              <Bell className="h-5 w-5 text-violet-600" />
+            </div>
+            <p className="mt-3 text-sm text-muted-foreground">
+              Crie e ajuste os limites de preço dos produtos monitorados.
+            </p>
+          </Link>
+
+          <Link
+            to="/profile"
+            className="group rounded-2xl border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md"
+          >
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Sua conta</p>
+                <h3 className="mt-1 text-lg font-semibold">Perfil</h3>
+              </div>
+              <User className="h-5 w-5 text-violet-600" />
+            </div>
+            <p className="mt-3 text-sm text-muted-foreground">
+              Atualize seus dados e encontre os atalhos do app.
+            </p>
+          </Link>
         </div>
       </section>
 
@@ -316,28 +406,36 @@ export function HomePage() {
               <TrendingUp className="h-6 w-6 text-violet-600" />
             </div>
             <h3 className="font-semibold">Histórico</h3>
-            <p className="text-sm text-muted-foreground">Veja como o preço mudou ao longo do tempo.</p>
+            <p className="text-sm text-muted-foreground">
+              Veja como o preço mudou ao longo do tempo.
+            </p>
           </div>
           <div className="space-y-3 text-center">
             <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-violet-100">
               <Bell className="h-6 w-6 text-violet-600" />
             </div>
             <h3 className="font-semibold">Alertas</h3>
-            <p className="text-sm text-muted-foreground">Receba um aviso quando o preço chegar ao valor que você definiu.</p>
+            <p className="text-sm text-muted-foreground">
+              Receba um aviso quando o preço chegar ao valor que você definiu.
+            </p>
           </div>
           <div className="space-y-3 text-center">
             <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-violet-100">
               <Shield className="h-6 w-6 text-violet-600" />
             </div>
             <h3 className="font-semibold">100% Gratuito</h3>
-            <p className="text-sm text-muted-foreground">Acompanhe quantos produtos quiser sem custo.</p>
+            <p className="text-sm text-muted-foreground">
+              Acompanhe quantos produtos quiser sem custo.
+            </p>
           </div>
         </div>
       </section>
 
       <section className="container px-4 py-16 lg:px-8">
         <div className="rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 p-6 text-center text-white sm:p-8 lg:p-12">
-          <h2 className="mb-4 text-2xl font-bold sm:text-3xl lg:text-4xl">Pronto para economizar?</h2>
+          <h2 className="mb-4 text-2xl font-bold sm:text-3xl lg:text-4xl">
+            Pronto para economizar?
+          </h2>
           <p className="mx-auto mb-8 max-w-2xl text-base text-violet-100 sm:text-lg">
             Comece agora e acompanhe os produtos que mais importam para você.
           </p>

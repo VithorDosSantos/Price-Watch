@@ -5,7 +5,7 @@ import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { cn } from "./ui/utils";
-import { favoriteProduct } from "../services/api";
+import { deleteFavorite, favoriteProduct } from "../services/api";
 import { toast } from "sonner";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -18,6 +18,8 @@ export interface ProductCardProps {
   store: string;
   priceChange?: number;
   isFavorite?: boolean;
+  favoriteId?: string;
+  onFavoriteRemoved?: (favoriteId: string) => void;
 }
 
 export function ProductCard({
@@ -29,6 +31,8 @@ export function ProductCard({
   store,
   priceChange,
   isFavorite = false,
+  favoriteId,
+  onFavoriteRemoved,
 }: ProductCardProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -44,6 +48,21 @@ export function ProductCard({
     }
 
     if (isFavorite) {
+      if (favoriteId) {
+        try {
+          await deleteFavorite(favoriteId);
+          toast.success("Produto removido dos favoritos.");
+          onFavoriteRemoved?.(favoriteId);
+        } catch (err) {
+          toast.error(
+            err instanceof Error
+              ? err.message
+              : "Não foi possível remover o favorito.",
+          );
+        }
+        return;
+      }
+
       navigate("/favorites");
       return;
     }
@@ -52,7 +71,11 @@ export function ProductCard({
       await favoriteProduct(id);
       toast.success("Produto salvo nos favoritos.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Não foi possível salvar o favorito.");
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Não foi possível salvar o favorito.",
+      );
     }
   }
 
@@ -71,7 +94,7 @@ export function ProductCard({
           onClick={() => void handleFavoriteClick()}
           className={cn(
             "absolute right-2 top-2 h-8 w-8 rounded-full bg-white/90 backdrop-blur hover:bg-white",
-            isFavorite && "text-red-500"
+            isFavorite && "text-red-500",
           )}
           aria-label={isFavorite ? "Ver favoritos" : "Salvar nos favoritos"}
           title={isFavorite ? "Ver favoritos" : "Salvar nos favoritos"}
@@ -108,7 +131,7 @@ export function ProductCard({
           <div
             className={cn(
               "flex items-center gap-1 text-sm font-medium",
-              priceChange < 0 ? "text-green-600" : "text-red-600"
+              priceChange < 0 ? "text-green-600" : "text-red-600",
             )}
           >
             {priceChange < 0 ? (

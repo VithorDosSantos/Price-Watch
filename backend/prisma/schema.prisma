@@ -16,6 +16,8 @@ model Product {
   productUrl   String?
   storeName    String?
   category     String?
+  isManual     Boolean        @default(false)
+  isDeleted    Boolean        @default(false)
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   priceHistory PriceHistory[]
@@ -37,23 +39,29 @@ model PriceHistory {
 model Favorite {
   id        String   @id @default(uuid())
   productId String
+  userId    String
   userName  String
   createdAt DateTime @default(now())
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([productId])
+  @@index([userId])
 }
 
 model PriceAlert {
   id          String   @id @default(uuid())
   productId   String
+  userId      String
   targetPrice Decimal  @db.Decimal(10, 2)
   email       String
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([productId])
+  @@index([userId])
 }
 
 model Store {
@@ -96,4 +104,6 @@ model User {
   role      Role     @default(USER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  favorites Favorite[]
+  alerts    PriceAlert[]
 }
