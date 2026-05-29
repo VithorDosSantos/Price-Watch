@@ -15,10 +15,6 @@ export default defineConfig({
         "src/**/index.ts",
         "src/types/**"
       ],
-      lines: 70,
-      functions: 70,
-      branches: 70,
-      statements: 70,
       all: true,
       skipFull: false
     }

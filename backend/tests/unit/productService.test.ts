@@ -7,7 +7,8 @@ vi.mock("../../src/prisma/client", () => ({
         id: `db-${create.externalId}`,
         externalId: create.externalId
       })),
-      findFirst: vi.fn(async () => null)
+      findFirst: vi.fn(async () => null),
+      findMany: vi.fn(async () => [])
     }
   }
 }));
