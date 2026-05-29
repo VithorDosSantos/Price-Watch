@@ -78,11 +78,11 @@ export async function updatePriceAlertController(
     userId,
   );
 
-  if (!updated) {
-    return response.status(404).json({ message: "Alerta não encontrado." });
+  if (updated) {
+    return response.json(updated);
   }
 
-  return response.json(updated);
+  return response.status(404).json({ message: "Alerta não encontrado." });
 }
 
 export async function deletePriceAlertController(
@@ -96,9 +96,9 @@ export async function deletePriceAlertController(
 
   const deleted = await deletePriceAlert(request.params.id, userId);
 
-  if (!deleted) {
-    return response.status(404).json({ message: "Alerta não encontrado." });
+  if (deleted) {
+    return response.status(204).send();
   }
 
-  return response.status(204).send();
+  return response.status(404).json({ message: "Alerta não encontrado." });
 }

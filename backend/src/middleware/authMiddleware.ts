@@ -13,6 +13,7 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
     (req as any).user = { id: payload.userId, role: payload.role };
     return next();
   } catch (err) {
+    console.error("Token verification failed", err);
     return res.status(401).json({ message: "Invalid token" });
   }
 }

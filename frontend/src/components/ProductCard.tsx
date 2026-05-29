@@ -1,6 +1,5 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Heart, TrendingDown, TrendingUp } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
@@ -33,7 +32,7 @@ export function ProductCard({
   isFavorite = false,
   favoriteId,
   onFavoriteRemoved
-}: ProductCardProps) {
+}: Readonly<ProductCardProps>) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const discount = originalPrice

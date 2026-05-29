@@ -20,7 +20,7 @@ import { AdminRoute } from "./components/AdminRoute";
 import { AppErrorBoundary } from "./components/AppErrorBoundary";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
-function Layout({ children }: { children: React.ReactNode }) {
+function Layout({ children }: Readonly<{ children: React.ReactNode }>) {
   const location = useLocation();
   const isHome = location.pathname === "/";
 

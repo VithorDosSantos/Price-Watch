@@ -18,6 +18,7 @@ export async function updateUserRole(request: Request, response: Response) {
     const user = await prisma.user.update({ where: { id }, data: { role: role as any }, select: { id: true, email: true, name: true, role: true } });
     return response.json({ user });
   } catch (err) {
+    console.error("Error updating user", err);
     return response.status(500).json({ message: "Error updating user" });
   }
 }

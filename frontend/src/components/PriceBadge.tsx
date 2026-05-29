@@ -8,7 +8,7 @@ interface PriceBadgeProps {
   size?: "sm" | "md" | "lg";
 }
 
-export function PriceBadge({ change, showIcon = true, size = "md" }: PriceBadgeProps) {
+export function PriceBadge({ change, showIcon = true, size = "md" }: Readonly<PriceBadgeProps>) {
   const isNegative = change < 0;
   const isNeutral = change === 0;
 

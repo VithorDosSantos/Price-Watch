@@ -12,7 +12,7 @@ export async function searchProductsController(
   request: Request,
   response: Response,
 ) {
-  const query = String(request.query.q ?? "");
+  const query = typeof request.query.q === "string" ? request.query.q : "";
   const page = Number(request.query.page ?? 1);
   const limit = Number(request.query.limit ?? 8);
 
@@ -69,7 +69,8 @@ function optionalNullableString(
 ): string | null | undefined {
   if (value === undefined) return undefined;
   if (!value) return null;
-  return trim ? String(value).trim() : String(value);
+  const str = typeof value === "string" ? value : JSON.stringify(value);
+  return trim ? str.trim() : str;
 }
 
 export async function updateProductController(
@@ -104,11 +105,11 @@ export async function updateProductController(
       category: optionalNullableString(category, true),
     });
 
-    if (!updated) {
-      return response.status(404).json({ message: "Produto não encontrado." });
+    if (updated) {
+      return response.json(updated);
     }
 
-    return response.json(updated);
+    return response.status(404).json({ message: "Produto não encontrado." });
   } catch (err) {
     const message =
       err instanceof Error ? err.message : "Erro ao atualizar produto";
@@ -123,11 +124,11 @@ export async function deleteProductController(
   try {
     const result = await deleteProduct(request.params.id);
 
-    if (!result) {
-      return response.status(404).json({ message: "Produto não encontrado." });
+    if (result) {
+      return response.status(204).send();
     }
 
-    return response.status(204).send();
+    return response.status(404).json({ message: "Produto não encontrado." });
   } catch (err) {
     if (err instanceof ProductDeleteConflictError) {
       return response.status(409).json({

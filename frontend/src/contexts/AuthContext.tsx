@@ -10,28 +10,29 @@ const AuthContext = createContext<{
   logout: () => void;
 }>({ user: null, loading: true, loginWithToken: () => {}, logout: () => {} });
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({ children }: Readonly<{ children: React.ReactNode }>) {
   const [user, setUser] = useState<User>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function init() {
-      const token = typeof window !== "undefined" ? localStorage.getItem("pw_token") : null;
-      if (!token) {
-        setLoading(false);
+      const token = typeof globalThis.window !== "undefined" ? localStorage.getItem("pw_token") : null;
+      if (token) {
+        try {
+          setAuthToken(token);
+          const res = await getCurrentUser();
+          setUser(res.user);
+        } catch (err) {
+          console.error("Failed to restore session", err);
+          setAuthToken(null);
+          setUser(null);
+        } finally {
+          setLoading(false);
+        }
         return;
       }
 
-      try {
-        setAuthToken(token);
-        const res = await getCurrentUser();
-        setUser(res.user);
-      } catch (err) {
-        setAuthToken(null);
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
+      setLoading(false);
     }
 
     init();

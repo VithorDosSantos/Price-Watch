@@ -51,7 +51,7 @@ export function ProfilePage() {
   }
 
   async function handleDeleteAccount() {
-    const confirmed = window.confirm(
+    const confirmed = globalThis.confirm(
       "Tem certeza que deseja excluir sua conta? Essa ação não pode ser desfeita."
     );
     if (!confirmed) {

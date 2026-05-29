@@ -45,7 +45,7 @@ export async function createPriceHistoryRecord(input: PriceHistoryInput) {
   }
 
   if (Number.isNaN(input.oldPrice) || Number.isNaN(input.newPrice)) {
-    throw new Error("Os preços precisam ser numéricos.");
+    throw new TypeError("Os preços precisam ser numéricos.");
   }
 
   const record = await prisma.priceHistoryEntry.create({

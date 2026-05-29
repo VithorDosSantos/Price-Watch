@@ -14,6 +14,7 @@ export function AdminUsersPage() {
       const res = await getUsers();
       setUsers(res.users);
     } catch (err) {
+      console.error("Failed to load users", err);
       toast.error("Erro ao carregar usuários");
     } finally {
       setLoading(false);
@@ -30,6 +31,7 @@ export function AdminUsersPage() {
       setUsers((prev) => prev.map((u) => (u.id === id ? res.user : u)));
       toast.success("Perfil atualizado");
     } catch (err) {
+      console.error("Failed to update role", err);
       toast.error("Erro ao atualizar");
     }
   }
@@ -63,20 +65,20 @@ export function AdminUsersPage() {
                   <td className="p-3">{u.role}</td>
                   <td className="p-3">
                     <div className="flex flex-col gap-2 sm:flex-row">
-                      {u.role !== "ADMIN" ? (
-                        <Button
-                          onClick={() => changeRole(u.id, "ADMIN")}
-                          className="w-full sm:w-auto"
-                        >
-                          Tornar admin
-                        </Button>
-                      ) : (
+                      {u.role === "ADMIN" ? (
                         <Button
                           onClick={() => changeRole(u.id, "USER")}
                           variant="destructive"
                           className="w-full sm:w-auto"
                         >
                           Revogar admin
+                        </Button>
+                      ) : (
+                        <Button
+                          onClick={() => changeRole(u.id, "ADMIN")}
+                          className="w-full sm:w-auto"
+                        >
+                          Tornar admin
                         </Button>
                       )}
                     </div>

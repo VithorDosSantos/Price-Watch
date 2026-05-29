@@ -15,7 +15,7 @@ export function EmptyState({
   description,
   actionLabel,
   onAction
-}: EmptyStateProps) {
+}: Readonly<EmptyStateProps>) {
   return (
     <div className="flex flex-col items-center justify-center text-center py-16 px-4">
       <div className="rounded-full bg-gray-100 p-6 mb-6">

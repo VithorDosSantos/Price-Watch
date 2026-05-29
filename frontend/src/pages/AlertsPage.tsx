@@ -60,6 +60,7 @@ export function AlertsPage() {
       const res = await listAlerts();
       setAlerts(res);
     } catch (err) {
+      console.error("Failed to load alerts", err);
       setAlerts([]);
     }
   }
@@ -146,6 +147,7 @@ export function AlertsPage() {
                     });
                     await refreshAlerts();
                   } catch (err) {
+                    console.error("Failed to create alert", err);
                     toast.error("Erro ao criar alerta");
                   }
                 }}

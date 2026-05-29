@@ -117,7 +117,7 @@ export function HomePage() {
     setFeedback("Buscando preços reais na web...");
     await loadSearchResults(query, 1);
 
-    window.setTimeout(() => {
+    globalThis.setTimeout(() => {
       resultsRef.current?.scrollIntoView({
         behavior: "smooth",
         block: "start"
@@ -159,7 +159,7 @@ export function HomePage() {
     }
 
     await loadSearchResults(submittedQuery, nextPage);
-    window.setTimeout(() => {
+    globalThis.setTimeout(() => {
       resultsRef.current?.scrollIntoView({
         behavior: "smooth",
         block: "start"
@@ -260,7 +260,7 @@ export function HomePage() {
           {canPaginate && (
             <div className="flex flex-col items-center justify-between gap-3 rounded-2xl border bg-white p-4 shadow-sm sm:flex-row">
               <p className="text-sm text-muted-foreground">
-                {`Página ${currentPage}${totalPages ? ` de ${totalPages}` : ""} para "${submittedQuery}"`}
+                {`Página ${String(currentPage)}${totalPages ? " de " + String(totalPages) : ""} para "${submittedQuery}"`}
               </p>
               <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
                 <Button

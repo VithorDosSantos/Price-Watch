@@ -27,6 +27,7 @@ export function DashboardPage() {
         const history = await listPriceHistory();
         setPriceHistory(history);
       } catch (err) {
+        console.error("Failed to load dashboard", err);
         setFavorites([]);
         setPriceHistory([]);
       }

@@ -6,7 +6,7 @@ import { XIcon } from "lucide-react";
 
 import { cn } from "./utils";
 
-function Sheet(props: React.ComponentProps<typeof SheetPrimitive.Root>) {
+function Sheet(props: Readonly<React.ComponentProps<typeof SheetPrimitive.Root>>) {
   return <SheetPrimitive.Root data-slot="sheet" {...props} />;
 }
 
@@ -28,7 +28,7 @@ const SheetClose = React.forwardRef<
 });
 SheetClose.displayName = "SheetClose";
 
-function SheetPortal(props: React.ComponentProps<typeof SheetPrimitive.Portal>) {
+function SheetPortal(props: Readonly<React.ComponentProps<typeof SheetPrimitive.Portal>>) {
   return <SheetPrimitive.Portal data-slot="sheet-portal" {...props} />;
 }
 

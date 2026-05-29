@@ -15,6 +15,7 @@ export function FavoritesPage() {
         const res = await listFavorites();
         setFavorites(res);
       } catch (err) {
+        console.error("Failed to load favorites", err);
         setFavorites([]);
       }
     }

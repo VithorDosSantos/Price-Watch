@@ -34,7 +34,7 @@ export class AppErrorBoundary extends React.Component<
             </p>
             <Button
               className="mt-6 bg-violet-600 hover:bg-violet-700"
-              onClick={() => window.location.assign("/")}
+              onClick={() => globalThis.location.assign("/")}
             >
               Voltar para início
             </Button>

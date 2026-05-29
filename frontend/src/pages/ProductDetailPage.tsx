@@ -224,7 +224,7 @@ export function ProductDetailPage() {
         imageUrl: formValues.imageUrl.trim() || null
       });
 
-      setProduct(mapApiProduct(updated as Product));
+      setProduct(mapApiProduct(updated));
       setEditOpen(false);
       toast.success("Produto atualizado.");
     } catch (err) {
