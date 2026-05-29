@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Check, Layers3, PencilLine, Plus, Search, Trash2, X } from "lucide-react";
+import { Check, PencilLine, Plus, Search, Trash2, X } from "lucide-react";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";

@@ -77,7 +77,7 @@ export function HomePage() {
   const [feedback, setFeedback] = useState(
     "Digite um produto para começar a busca.",
   );
-  const resultsRef = useRef<HTMLElement>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const [pageButtons, setPageButtons] = useState<number[]>([]);
   const canPaginate =
