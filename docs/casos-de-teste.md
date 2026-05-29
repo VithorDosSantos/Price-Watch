@@ -165,6 +165,22 @@ Este documento registra o inicio da suite de testes do PriceWatch, cobrindo test
 - Resultado esperado: HTTP 201/200/204 conforme a rota.
 - Status: Automatizado.
 
+## CT20 - Fluxo E2E de conta (registro, login, perfil)
+
+- Tipo: E2E
+- Arquivo automatizado: `frontend/tests/e2e/auth-profile.spec.ts`
+- Objetivo: validar registro, login, atualizacao de perfil e exclusao de conta.
+- Resultado esperado: usuario autenticado, perfil atualizado e exclusao redireciona para cadastro.
+- Status: Automatizado.
+
+## CT21 - Rota protegida redireciona para login
+
+- Tipo: E2E
+- Arquivo automatizado: `frontend/tests/e2e/auth-profile.spec.ts`
+- Objetivo: garantir que `/profile` redireciona usuario nao autenticado para login.
+- Resultado esperado: redirecionamento para `/login`.
+- Status: Automatizado.
+
 ## Casos Pendentes
 
 - Testar CRUD de lojas por API com usuario administrador.
