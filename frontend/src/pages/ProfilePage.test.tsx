@@ -61,7 +61,7 @@ describe("ProfilePage", () => {
 
   it("deletes account with confirmation", async () => {
     vi.spyOn(globalThis, "confirm").mockReturnValue(true);
-    vi.mocked(deleteCurrentUser).mockResolvedValue(undefined as any);
+    vi.mocked(deleteCurrentUser).mockResolvedValue(undefined as Awaited<ReturnType<typeof deleteCurrentUser>>);
 
     render(
       <MemoryRouter>

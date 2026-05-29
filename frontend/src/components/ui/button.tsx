@@ -39,7 +39,7 @@ const Button = React.forwardRef<
       asChild?: boolean;
     }
 >(({ className, variant, size, asChild = false, ...props }, ref) => {
-  const Comp: any = asChild ? Slot : "button";
+  const Comp: React.ElementType = asChild ? Slot : "button";
 
   return (
     <Comp

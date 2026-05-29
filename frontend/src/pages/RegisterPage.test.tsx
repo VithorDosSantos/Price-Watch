@@ -43,7 +43,7 @@ describe("RegisterPage", () => {
   });
 
   it("submits registration", async () => {
-    vi.mocked(registerUser).mockResolvedValue({ token: "t", user: { id: "u1", email: "a@b.com", role: "USER" } } as any);
+    vi.mocked(registerUser).mockResolvedValue({ token: "t", user: { id: "u1", email: "a@b.com", role: "USER" } } as ReturnType<typeof registerUser> extends Promise<infer R> ? R : never);
     renderPage();
 
     fireEvent.change(screen.getByLabelText("Nome"), { target: { value: "Test" } });

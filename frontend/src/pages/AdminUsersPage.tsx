@@ -5,7 +5,7 @@ import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 
 export function AdminUsersPage() {
-  const [users, setUsers] = useState<Array<any>>([]);
+  const [users, setUsers] = useState<Array<{ id: string; email: string; name?: string; role: string }>>([]);
   const [loading, setLoading] = useState(false);
 
   async function load() {
@@ -22,7 +22,8 @@ export function AdminUsersPage() {
   }
 
   useEffect(() => {
-    load();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- load is async, setState is in callback
+    void load();
   }, []);
 
   async function changeRole(id: string, role: "ADMIN" | "USER") {

@@ -5,12 +5,12 @@ import { FavoritesPage } from "./FavoritesPage";
 
 vi.mock("../services/api", () => ({
   listFavorites: vi.fn(),
-  mapProductToCard: vi.fn((p: any) => ({
+  mapProductToCard: vi.fn((p: Record<string, unknown>) => ({
     id: p.id,
     name: p.name,
-    image: p.imageUrl ?? "",
+    image: (p.imageUrl as string) ?? "",
     currentPrice: p.price,
-    store: p.storeName ?? "",
+    store: (p.storeName as string) ?? "",
   })),
   deleteFavorite: vi.fn(),
   setAuthToken: vi.fn(),

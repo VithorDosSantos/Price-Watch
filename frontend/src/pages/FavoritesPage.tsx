@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 
 export function FavoritesPage() {
   const navigate = useNavigate();
-  const [favorites, setFavorites] = useState<any[]>([]);
+  const [favorites, setFavorites] = useState<Record<string, unknown>[]>([]);
 
   useEffect(() => {
     async function load() {

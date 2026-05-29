@@ -6,7 +6,7 @@ import { DashboardPage } from "./DashboardPage";
 vi.mock("../services/api", () => ({
   listFavorites: vi.fn().mockResolvedValue([]),
   listPriceHistory: vi.fn().mockResolvedValue([]),
-  mapProductToCard: vi.fn((p: any) => ({
+  mapProductToCard: vi.fn((p: Record<string, unknown>) => ({
     id: p.id,
     name: p.name,
     image: "",

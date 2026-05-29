@@ -16,8 +16,8 @@ import {
 import { LineChart, Line, ResponsiveContainer } from "recharts";
 
 export function DashboardPage() {
-  const [favorites, setFavorites] = useState<any[]>([]);
-  const [priceHistory, setPriceHistory] = useState<any[]>([]);
+  const [favorites, setFavorites] = useState<Record<string, unknown>[]>([]);
+  const [priceHistory, setPriceHistory] = useState<Record<string, unknown>[]>([]);
 
   useEffect(() => {
     async function load() {

@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { HomePage } from "./HomePage";
 
 vi.mock("../services/api", () => ({
   searchProducts: vi.fn().mockResolvedValue({ products: [], totalPages: 0 }),
   listFavorites: vi.fn().mockResolvedValue([]),
-  mapProductToCard: vi.fn((p: any) => ({
+  mapProductToCard: vi.fn((p: Record<string, unknown>) => ({
     id: p.id,
     name: p.name,
     image: "",

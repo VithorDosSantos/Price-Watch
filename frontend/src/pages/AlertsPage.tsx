@@ -28,26 +28,41 @@ import { toast } from "sonner";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 
-function getProductName(alert: any) {
+interface AlertRecord {
+  id: string;
+  isActive?: boolean;
+  targetPrice?: number;
+  createdAt?: string;
+  product?: {
+    id?: string;
+    name?: string;
+    productName?: string;
+    price?: number;
+    currentPrice?: number;
+  };
+}
+
+function getProductName(alert: AlertRecord) {
   return alert.product?.name ?? alert.product?.productName ?? "Produto sem nome";
 }
 
-function getProductPrice(alert: any) {
+function getProductPrice(alert: AlertRecord) {
   return Number(alert.product?.price ?? alert.product?.currentPrice ?? 0);
 }
 
-function getTargetPrice(alert: any) {
+function getTargetPrice(alert: AlertRecord) {
   return Number(alert.targetPrice ?? 0);
 }
 
 export function AlertsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [alerts, setAlerts] = useState<any[]>([]);
+  const [alerts, setAlerts] = useState<AlertRecord[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     void refreshAlerts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
   async function refreshAlerts() {
