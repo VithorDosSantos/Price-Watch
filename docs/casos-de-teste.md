@@ -141,10 +141,32 @@ Este documento registra o inicio da suite de testes do PriceWatch, cobrindo test
 - Resultado esperado: HTTP 204.
 - Status: Automatizado.
 
+## CT17 - Autenticacao Local (Login e /auth/me)
+
+- Tipo: Integracao
+- Arquivo automatizado: `backend/tests/integration/authRoutes.test.ts`
+- Objetivo: validar login e retorno do usuario autenticado.
+- Resultado esperado: HTTP 200 com token no login e HTTP 200 no `/auth/me` com token valido.
+- Status: Automatizado.
+
+## CT18 - Rotas Admin bloqueiam usuario comum
+
+- Tipo: Integracao
+- Arquivo automatizado: `backend/tests/integration/adminRoutes.test.ts`
+- Objetivo: garantir que rotas administrativas retornem 403 para usuario sem perfil ADMIN.
+- Resultado esperado: HTTP 403 em `/stores`, `/price-history`, `/users` e `/products/:id`.
+- Status: Automatizado.
+
+## CT19 - Rotas Admin permitem usuario administrador
+
+- Tipo: Integracao
+- Arquivo automatizado: `backend/tests/integration/adminRoutes.test.ts`
+- Objetivo: garantir que rotas administrativas aceitam token ADMIN.
+- Resultado esperado: HTTP 201/200/204 conforme a rota.
+- Status: Automatizado.
+
 ## Casos Pendentes
 
-- Testar autenticacao local: login e `/auth/me`.
-- Testar protecao de rotas administrativas com JWT.
 - Testar CRUD de lojas por API com usuario administrador.
 - Testar CRUD de historico de precos por API com usuario administrador.
 - Testar integracao de produtos com SerpApi e persistencia local dos resultados.

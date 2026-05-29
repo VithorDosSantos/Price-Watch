@@ -80,6 +80,7 @@ describe("alert routes", () => {
           storeName: "Loja",
           category: null,
         }),
+        findUnique: async () => null,
         upsert: async () => ({ id: "prod-1", externalId: "ext-1" }),
       },
       configurable: true,
