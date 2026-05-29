@@ -26,7 +26,7 @@ afterEach(() => {
   });
   Object.defineProperty(prisma, "priceHistoryEntry", {
     value: originalPriceHistoryEntry,
-    configurable: true
+    configurable: true,
   });
   Object.defineProperty(prisma, "user", {
     value: originalUser,

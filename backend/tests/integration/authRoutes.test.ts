@@ -52,7 +52,7 @@ function buildToken(role = "USER") {
 afterEach(() => {
   Object.defineProperty(prisma, "user", {
     value: originalUser,
-    configurable: true
+    configurable: true,
   });
 });
 
@@ -92,10 +92,10 @@ describe("auth routes", () => {
           id: "user-1",
           email: "test@example.com",
           name: "Teste Integração",
-          role: "USER"
-        })
+          role: "USER",
+        }),
       },
-      configurable: true
+      configurable: true,
     });
 
     const token = buildToken();
@@ -114,10 +114,10 @@ describe("auth routes", () => {
           id: "user-1",
           email: "test@example.com",
           name: "Nome Atualizado",
-          role: "USER"
-        })
+          role: "USER",
+        }),
       },
-      configurable: true
+      configurable: true,
     });
 
     const token = buildToken();
@@ -133,9 +133,9 @@ describe("auth routes", () => {
   it("DELETE /auth/me remove usuario autenticado", async () => {
     Object.defineProperty(prisma, "user", {
       value: {
-        delete: async () => ({ id: "user-1" })
+        delete: async () => ({ id: "user-1" }),
       },
-      configurable: true
+      configurable: true,
     });
 
     const token = buildToken();
