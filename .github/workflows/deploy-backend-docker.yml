@@ -82,17 +82,14 @@ jobs:
       - name: Run tests with coverage
         run: cd backend && npm run coverage
 
+      - name: Fix lcov paths for SonarCloud
+        run: sed -i "s|SF:$(pwd)/|SF:|g" backend/coverage/lcov.info
+
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@ba3875ecf642b2129de2b589510c81a8b53dbf4e # master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          args: >
-            -Dsonar.projectBaseDir=./backend
-            -Dsonar.sources=src
-            -Dsonar.tests=tests
-            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
 
   docker-build:
     name: Build backend Docker image
