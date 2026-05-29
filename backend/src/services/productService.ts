@@ -147,10 +147,6 @@ function mapSerpApiItem(item: SerpApiShoppingResult): ProductDTO {
   };
 }
 
-function normalizeText(value?: string | null): string {
-  return (value ?? "").trim().toLowerCase();
-}
-
 function normalizeProductUrl(value?: string | null): string {
   if (!value) {
     return "";

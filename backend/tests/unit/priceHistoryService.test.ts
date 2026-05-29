@@ -69,7 +69,7 @@ describe("priceHistoryService", () => {
 
     it("throws when prices are NaN", async () => {
       await expect(
-        createPriceHistoryRecord({ productName: "Item", oldPrice: NaN, newPrice: 90 }),
+        createPriceHistoryRecord({ productName: "Item", oldPrice: Number.NaN, newPrice: 90 }),
       ).rejects.toThrow("numéricos");
     });
 
