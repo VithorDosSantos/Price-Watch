@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { prisma } from "../../src/prisma/client";
+import { mockProductNotFound, mockProductFound } from "./helpers";
 
 vi.mock("../../src/services/productService", () => ({
   getProductById: vi.fn(),
@@ -13,9 +14,6 @@ import {
   deleteFavorite,
 } from "../../src/services/favoriteService";
 
-const mockedGetProductById = vi.mocked(getProductById);
-const mockedUpsertProduct = vi.mocked(upsertProduct);
-
 const originalFavorite = prisma.favorite;
 
 afterEach(() => {
@@ -26,10 +24,14 @@ afterEach(() => {
   });
 });
 
+function mockFavoriteModel(methods: Record<string, unknown>) {
+  Object.defineProperty(prisma, "favorite", { value: methods, configurable: true });
+}
+
 describe("favoriteService", () => {
   describe("createFavorite", () => {
     it("throws when product is not found", async () => {
-      mockedGetProductById.mockResolvedValueOnce(null);
+      mockProductNotFound(getProductById as any);
 
       await expect(
         createFavorite({ productId: "p1", userId: "u1" }),
@@ -37,57 +39,33 @@ describe("favoriteService", () => {
     });
 
     it("creates favorite with default userName", async () => {
-      mockedGetProductById.mockResolvedValueOnce({
-        id: "p1",
-        externalId: "e1",
-        name: "Product",
-        price: 100,
-      } as any);
-      mockedUpsertProduct.mockResolvedValueOnce("saved-p1");
-
-      const mockFav = {
-        id: "f1",
-        productId: "saved-p1",
-        userId: "u1",
-        userName: "Aluno PriceWatch",
-        product: { id: "saved-p1", name: "Product" },
-      };
-
-      Object.defineProperty(prisma, "favorite", {
-        value: {
-          create: vi.fn().mockResolvedValueOnce(mockFav),
-        },
-        configurable: true,
+      mockProductFound(getProductById as any, upsertProduct as any);
+      mockFavoriteModel({
+        create: vi.fn().mockResolvedValueOnce({
+          id: "f1",
+          productId: "saved-p1",
+          userId: "u1",
+          userName: "Aluno PriceWatch",
+          product: { id: "saved-p1", name: "Product" },
+        }),
       });
 
       const result = await createFavorite({ productId: "p1", userId: "u1" });
 
       expect(result.userName).toBe("Aluno PriceWatch");
-      expect(mockedUpsertProduct).toHaveBeenCalled();
+      expect(upsertProduct).toHaveBeenCalled();
     });
 
     it("creates favorite with custom userName", async () => {
-      mockedGetProductById.mockResolvedValueOnce({
-        id: "p1",
-        externalId: "e1",
-        name: "Product",
-        price: 100,
-      } as any);
-      mockedUpsertProduct.mockResolvedValueOnce("saved-p1");
-
-      const mockFav = {
-        id: "f1",
-        productId: "saved-p1",
-        userId: "u1",
-        userName: "Custom User",
-        product: { id: "saved-p1", name: "Product" },
-      };
-
-      Object.defineProperty(prisma, "favorite", {
-        value: {
-          create: vi.fn().mockResolvedValueOnce(mockFav),
-        },
-        configurable: true,
+      mockProductFound(getProductById as any, upsertProduct as any);
+      mockFavoriteModel({
+        create: vi.fn().mockResolvedValueOnce({
+          id: "f1",
+          productId: "saved-p1",
+          userId: "u1",
+          userName: "Custom User",
+          product: { id: "saved-p1", name: "Product" },
+        }),
       });
 
       const result = await createFavorite({
@@ -102,16 +80,11 @@ describe("favoriteService", () => {
 
   describe("listFavorites", () => {
     it("returns favorites filtered by userId", async () => {
-      const favorites = [
-        { id: "f1", userId: "u1", product: { name: "P1" } },
-        { id: "f2", userId: "u1", product: { name: "P2" } },
-      ];
-
-      Object.defineProperty(prisma, "favorite", {
-        value: {
-          findMany: vi.fn().mockResolvedValueOnce(favorites),
-        },
-        configurable: true,
+      mockFavoriteModel({
+        findMany: vi.fn().mockResolvedValueOnce([
+          { id: "f1", userId: "u1", product: { name: "P1" } },
+          { id: "f2", userId: "u1", product: { name: "P2" } },
+        ]),
       });
 
       const result = await listFavorites("u1");
@@ -127,13 +100,8 @@ describe("favoriteService", () => {
   });
 
   describe("deleteFavorite", () => {
-    it("returns null when favorite not found or not owned", async () => {
-      Object.defineProperty(prisma, "favorite", {
-        value: {
-          findFirst: vi.fn().mockResolvedValueOnce(null),
-        },
-        configurable: true,
-      });
+    it("returns null when not found or not owned", async () => {
+      mockFavoriteModel({ findFirst: vi.fn().mockResolvedValueOnce(null) });
 
       const result = await deleteFavorite("f1", "u1");
 
@@ -142,13 +110,9 @@ describe("favoriteService", () => {
 
     it("deletes the favorite when ownership is valid", async () => {
       const existingFav = { id: "f1", userId: "u1", product: { name: "P1" } };
-
-      Object.defineProperty(prisma, "favorite", {
-        value: {
-          findFirst: vi.fn().mockResolvedValueOnce(existingFav),
-          delete: vi.fn().mockResolvedValueOnce(existingFav),
-        },
-        configurable: true,
+      mockFavoriteModel({
+        findFirst: vi.fn().mockResolvedValueOnce(existingFav),
+        delete: vi.fn().mockResolvedValueOnce(existingFav),
       });
 
       const result = await deleteFavorite("f1", "u1");
