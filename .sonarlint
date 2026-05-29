@@ -1,0 +1,12 @@
+{
+  "sonarlint.connectedMode.connections.sonarcloud": [
+    {
+      "connectionId": "sonarcloud",
+      "organizationKey": "seu-org",
+      "token": "${SONAR_TOKEN}"
+    }
+  ],
+  "sonarlint.connectedMode.project": {
+    "projectKey": "pricewatch-backend"
+  }
+}

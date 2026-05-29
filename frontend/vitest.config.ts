@@ -1,19 +1,26 @@
 import { defineConfig } from "vitest/config";
+import react from "@vitejs/plugin-react";
+import path from "path";
 
 export default defineConfig({
+  plugins: [react()],
+  server: {
+    port: 5173
+  },
   test: {
-    environment: "node",
+    environment: "jsdom",
     globals: true,
-    testTimeout: 20000,
-    include: ["tests/**/*.test.ts"],
+    setupFiles: ["./tests/setup.ts"],
+    css: true,
     coverage: {
       provider: "v8",
       reporter: ["text", "html", "json", "lcov"],
-      include: ["src/**/*.ts"],
+      include: ["src/**/*.{ts,tsx}"],
       exclude: [
         "src/**/*.d.ts",
+        "src/main.tsx",
         "src/**/index.ts",
-        "src/types/**"
+        "src/**/*.test.{ts,tsx}"
       ],
       lines: 70,
       functions: 70,
@@ -21,6 +28,11 @@ export default defineConfig({
       statements: 70,
       all: true,
       skipFull: false
+    }
+  },
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src")
     }
   }
 });
