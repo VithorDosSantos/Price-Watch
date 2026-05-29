@@ -4,14 +4,14 @@ import { MemoryRouter } from "react-router-dom";
 import { DashboardPage } from "./DashboardPage";
 
 vi.mock("../services/api", () => ({
-  listFavorites: vi.fn().mockResolvedValue([]),
-  listPriceHistory: vi.fn().mockResolvedValue([]),
+  listFavorites: vi.fn(),
+  listPriceHistory: vi.fn(),
   mapProductToCard: vi.fn((p: Record<string, unknown>) => ({
     id: p.id,
     name: p.name,
-    image: "",
-    currentPrice: 0,
-    store: ""
+    image: (p.imageUrl as string) ?? "https://example.com/img.jpg",
+    currentPrice: p.price,
+    store: (p.storeName as string) ?? "Loja"
   })),
   setAuthToken: vi.fn(),
   getCurrentUser: vi.fn()
@@ -26,10 +26,21 @@ vi.mock("../contexts/AuthContext", () => ({
   })
 }));
 
+vi.mock("recharts", () => ({
+  ResponsiveContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  LineChart: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  Line: () => <div />
+}));
+
+import React from "react";
+import { listFavorites, listPriceHistory } from "../services/api";
+
 beforeEach(() => vi.clearAllMocks());
 
 describe("DashboardPage", () => {
-  it("renders dashboard heading", async () => {
+  it("renders heading and stats", async () => {
+    vi.mocked(listFavorites).mockResolvedValue([]);
+    vi.mocked(listPriceHistory).mockResolvedValue([]);
     render(
       <MemoryRouter>
         <DashboardPage />
@@ -39,9 +50,26 @@ describe("DashboardPage", () => {
     await waitFor(() => {
       expect(screen.getByText("Painel")).toBeInTheDocument();
     });
+    expect(screen.getByText("Itens acompanhados")).toBeInTheDocument();
+    expect(screen.getByText("Alertas ativos")).toBeInTheDocument();
+    expect(screen.getAllByText("Favoritos").length).toBeGreaterThan(0);
   });
 
-  it("renders stats cards", async () => {
+  it("renders with data", async () => {
+    vi.mocked(listFavorites).mockResolvedValue([
+      { id: "f1", product: { id: "p1", name: "Notebook", price: 3000, storeName: "Amazon" } }
+    ]);
+    vi.mocked(listPriceHistory).mockResolvedValue([
+      {
+        id: "ph1",
+        productName: "TV",
+        newPrice: 2000,
+        oldPrice: 2500,
+        storeName: "ML",
+        imageUrl: "https://example.com/tv.jpg",
+        recordedAt: "2024-01-01"
+      }
+    ]);
     render(
       <MemoryRouter>
         <DashboardPage />
@@ -49,7 +77,20 @@ describe("DashboardPage", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/produtos/i)).toBeInTheDocument();
+      expect(screen.getByText("Notebook")).toBeInTheDocument();
     });
+    expect(screen.getByText("TV")).toBeInTheDocument();
+    expect(screen.getByText("Maiores quedas")).toBeInTheDocument();
+  });
+
+  it("handles load error", async () => {
+    vi.mocked(listFavorites).mockRejectedValue(new Error("fail"));
+    vi.mocked(listPriceHistory).mockRejectedValue(new Error("fail"));
+    render(
+      <MemoryRouter>
+        <DashboardPage />
+      </MemoryRouter>
+    );
+    await waitFor(() => expect(listFavorites).toHaveBeenCalled());
   });
 });

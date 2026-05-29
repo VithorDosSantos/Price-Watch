@@ -8,11 +8,12 @@ vi.mock("../services/api", () => ({
   mapProductToCard: vi.fn((p: Record<string, unknown>) => ({
     id: p.id,
     name: p.name,
-    image: (p.imageUrl as string) ?? "",
+    image: (p.imageUrl as string) ?? "https://example.com/img.jpg",
     currentPrice: p.price,
-    store: (p.storeName as string) ?? ""
+    store: (p.storeName as string) ?? "Loja"
   })),
   deleteFavorite: vi.fn(),
+  favoriteProduct: vi.fn(),
   setAuthToken: vi.fn(),
   getCurrentUser: vi.fn()
 }));
@@ -38,20 +39,37 @@ describe("FavoritesPage", () => {
         <FavoritesPage />
       </MemoryRouter>
     );
-
+    expect(screen.getByText("Favoritos")).toBeInTheDocument();
     await waitFor(() => {
-      expect(screen.getByText(/favoritos/i)).toBeInTheDocument();
+      expect(screen.getByText(/ainda não salvou/i)).toBeInTheDocument();
     });
+    expect(screen.getByText("Buscar produtos")).toBeInTheDocument();
   });
 
-  it("renders favorites heading", async () => {
-    vi.mocked(listFavorites).mockResolvedValue([]);
+  it("renders favorites with products", async () => {
+    vi.mocked(listFavorites).mockResolvedValue([
+      { id: "f1", product: { id: "p1", name: "Notebook", price: 3000, storeName: "Amazon" } },
+      { id: "f2", product: { id: "p2", name: "Mouse", price: 150, storeName: "ML" } }
+    ]);
     render(
       <MemoryRouter>
         <FavoritesPage />
       </MemoryRouter>
     );
+    await waitFor(() => {
+      expect(screen.getByText("Notebook")).toBeInTheDocument();
+      expect(screen.getByText("Mouse")).toBeInTheDocument();
+    });
+  });
 
-    expect(screen.getByText("Favoritos")).toBeInTheDocument();
+  it("handles load error", async () => {
+    vi.mocked(listFavorites).mockRejectedValue(new Error("fail"));
+    render(
+      <MemoryRouter>
+        <FavoritesPage />
+      </MemoryRouter>
+    );
+    await waitFor(() => expect(listFavorites).toHaveBeenCalled());
+    expect(screen.getByText(/ainda não salvou/i)).toBeInTheDocument();
   });
 });
