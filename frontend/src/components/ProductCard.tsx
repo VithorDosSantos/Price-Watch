@@ -32,7 +32,7 @@ export function ProductCard({
   priceChange,
   isFavorite = false,
   favoriteId,
-  onFavoriteRemoved,
+  onFavoriteRemoved
 }: ProductCardProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -54,11 +54,7 @@ export function ProductCard({
           toast.success("Produto removido dos favoritos.");
           onFavoriteRemoved?.(favoriteId);
         } catch (err) {
-          toast.error(
-            err instanceof Error
-              ? err.message
-              : "Não foi possível remover o favorito.",
-          );
+          toast.error(err instanceof Error ? err.message : "Não foi possível remover o favorito.");
         }
         return;
       }
@@ -71,11 +67,7 @@ export function ProductCard({
       await favoriteProduct(id);
       toast.success("Produto salvo nos favoritos.");
     } catch (err) {
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : "Não foi possível salvar o favorito.",
-      );
+      toast.error(err instanceof Error ? err.message : "Não foi possível salvar o favorito.");
     }
   }
 
@@ -94,32 +86,24 @@ export function ProductCard({
           onClick={() => void handleFavoriteClick()}
           className={cn(
             "absolute right-2 top-2 h-8 w-8 rounded-full bg-white/90 backdrop-blur hover:bg-white",
-            isFavorite && "text-red-500",
+            isFavorite && "text-red-500"
           )}
           aria-label={isFavorite ? "Ver favoritos" : "Salvar nos favoritos"}
           title={isFavorite ? "Ver favoritos" : "Salvar nos favoritos"}
         >
           <Heart className={cn("h-4 w-4", isFavorite && "fill-current")} />
         </Button>
-        {discount > 0 && (
-          <Badge className="absolute left-2 top-2 bg-green-600">
-            -{discount}%
-          </Badge>
-        )}
+        {discount > 0 && <Badge className="absolute left-2 top-2 bg-green-600">-{discount}%</Badge>}
       </div>
 
       <div className="p-4 space-y-3">
         <div className="space-y-1">
-          <h3 className="font-medium line-clamp-2 text-sm leading-tight">
-            {name}
-          </h3>
+          <h3 className="font-medium line-clamp-2 text-sm leading-tight">{name}</h3>
           <p className="text-xs text-muted-foreground">{store}</p>
         </div>
 
         <div className="flex items-baseline gap-2">
-          <span className="text-2xl font-bold">
-            R$ {currentPrice.toLocaleString("pt-BR")}
-          </span>
+          <span className="text-2xl font-bold">R$ {currentPrice.toLocaleString("pt-BR")}</span>
           {originalPrice && originalPrice > currentPrice && (
             <span className="text-sm text-muted-foreground line-through">
               R$ {originalPrice.toLocaleString("pt-BR")}
@@ -131,7 +115,7 @@ export function ProductCard({
           <div
             className={cn(
               "flex items-center gap-1 text-sm font-medium",
-              priceChange < 0 ? "text-green-600" : "text-red-600",
+              priceChange < 0 ? "text-green-600" : "text-red-600"
             )}
           >
             {priceChange < 0 ? (
@@ -144,9 +128,7 @@ export function ProductCard({
         )}
 
         <Link to={`/product/${id}`}>
-          <Button className="w-full bg-violet-600 hover:bg-violet-700">
-            Ver detalhes
-          </Button>
+          <Button className="w-full bg-violet-600 hover:bg-violet-700">Ver detalhes</Button>
         </Link>
       </div>
     </Card>

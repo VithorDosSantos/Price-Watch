@@ -15,13 +15,13 @@ export function PriceBadge({ change, showIcon = true, size = "md" }: PriceBadgeP
   const sizeClasses = {
     sm: "text-xs px-2 py-0.5",
     md: "text-sm px-2.5 py-1",
-    lg: "text-base px-3 py-1.5",
+    lg: "text-base px-3 py-1.5"
   };
 
   const iconSizes = {
     sm: "h-3 w-3",
     md: "h-4 w-4",
-    lg: "h-5 w-5",
+    lg: "h-5 w-5"
   };
 
   return (
@@ -42,7 +42,8 @@ export function PriceBadge({ change, showIcon = true, size = "md" }: PriceBadgeP
           {isNeutral && <Minus className={iconSizes[size]} />}
         </>
       )}
-      {isNegative ? "" : "+"}{change.toFixed(1)}%
+      {isNegative ? "" : "+"}
+      {change.toFixed(1)}%
     </Badge>
   );
 }

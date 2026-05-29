@@ -20,9 +20,7 @@ export function StatsCard({ title, value, icon: Icon, change, changeLabel }: Sta
           {change !== undefined && (
             <div className="flex items-center gap-2">
               <PriceBadge change={change} size="sm" />
-              {changeLabel && (
-                <span className="text-xs text-muted-foreground">{changeLabel}</span>
-              )}
+              {changeLabel && <span className="text-xs text-muted-foreground">{changeLabel}</span>}
             </div>
           )}
         </div>

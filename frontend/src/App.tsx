@@ -29,7 +29,11 @@ function Layout({ children }: { children: React.ReactNode }) {
       <Navbar />
       <div className="flex min-w-0 flex-1">
         {!isHome && <Sidebar />}
-        <main className={isHome ? "min-w-0 flex-1 flex flex-col" : "min-w-0 flex-1 p-3 sm:p-4 md:p-6 lg:p-8"}>
+        <main
+          className={
+            isHome ? "min-w-0 flex-1 flex flex-col" : "min-w-0 flex-1 p-3 sm:p-4 md:p-6 lg:p-8"
+          }
+        >
           {children}
         </main>
       </div>
@@ -55,9 +59,30 @@ export default function App() {
             <Route path="/price-history" element={<PriceHistoryPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
-            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-            <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
-            <Route path="/admin/users" element={<AdminRoute><AdminUsersPage /></AdminRoute>} />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <AdminRoute>
+                  <AdminPage />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/users"
+              element={
+                <AdminRoute>
+                  <AdminUsersPage />
+                </AdminRoute>
+              }
+            />
           </Routes>
         </AppErrorBoundary>
       </Layout>

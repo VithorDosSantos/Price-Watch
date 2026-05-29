@@ -9,7 +9,7 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle,
+  DialogTitle
 } from "../components/ui/dialog";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -22,7 +22,13 @@ import {
   TableHeader,
   TableRow
 } from "../components/ui/table";
-import { createStore, deleteStore, listStores, updateStore, type StoreRecord } from "../services/api";
+import {
+  createStore,
+  deleteStore,
+  listStores,
+  updateStore,
+  type StoreRecord
+} from "../services/api";
 import { toast } from "sonner";
 
 type StoreFormState = {
@@ -56,7 +62,10 @@ export function StoresPage() {
   }, []);
 
   const filteredStores = useMemo(
-    () => stores.filter((store) => (store.name ?? "").toLowerCase().includes(searchQuery.toLowerCase())),
+    () =>
+      stores.filter((store) =>
+        (store.name ?? "").toLowerCase().includes(searchQuery.toLowerCase())
+      ),
     [searchQuery, stores]
   );
 
@@ -112,7 +121,9 @@ export function StoresPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Lojas</h1>
-          <p className="text-muted-foreground mt-2">Cadastre e organize as lojas usadas nas comparações de preço.</p>
+          <p className="text-muted-foreground mt-2">
+            Cadastre e organize as lojas usadas nas comparações de preço.
+          </p>
         </div>
 
         <Button className="bg-violet-600 hover:bg-violet-700" onClick={openCreateDialog}>
@@ -128,11 +139,15 @@ export function StoresPage() {
         </Card>
         <Card className="p-5">
           <p className="text-sm text-muted-foreground">Lojas ativas</p>
-          <p className="mt-2 text-3xl font-bold">{stores.filter((store) => store.isActive).length}</p>
+          <p className="mt-2 text-3xl font-bold">
+            {stores.filter((store) => store.isActive).length}
+          </p>
         </Card>
         <Card className="p-5">
           <p className="text-sm text-muted-foreground">Lojas inativas</p>
-          <p className="mt-2 text-3xl font-bold">{stores.filter((store) => !store.isActive).length}</p>
+          <p className="mt-2 text-3xl font-bold">
+            {stores.filter((store) => !store.isActive).length}
+          </p>
         </Card>
       </div>
 
@@ -163,13 +178,21 @@ export function StoresPage() {
                 <TableRow key={store.id}>
                   <TableCell className="font-medium">{store.name}</TableCell>
                   <TableCell>
-                    <a href={store.website} target="_blank" rel="noreferrer" className="text-violet-600 hover:underline">
+                    <a
+                      href={store.website}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-violet-600 hover:underline"
+                    >
                       {store.website}
                     </a>
                   </TableCell>
                   <TableCell>{store.contactEmail}</TableCell>
                   <TableCell>
-                    <Badge variant={store.isActive ? "default" : "secondary"} className={store.isActive ? "bg-green-600" : ""}>
+                    <Badge
+                      variant={store.isActive ? "default" : "secondary"}
+                      className={store.isActive ? "bg-green-600" : ""}
+                    >
                       {store.isActive ? (
                         <span className="flex items-center gap-1">
                           <Check className="h-3 w-3" /> Ativa
@@ -186,7 +209,11 @@ export function StoresPage() {
                       <Button variant="ghost" size="icon" onClick={() => openEditDialog(store)}>
                         <PencilLine className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => void handleDelete(store.id)}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => void handleDelete(store.id)}
+                      >
                         <Trash2 className="h-4 w-4 text-red-600" />
                       </Button>
                     </div>
@@ -213,7 +240,9 @@ export function StoresPage() {
               <Input
                 id="store-name"
                 value={form.name}
-                onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, name: event.target.value }))
+                }
               />
             </div>
             <div className="space-y-2">
@@ -221,7 +250,9 @@ export function StoresPage() {
               <Input
                 id="store-website"
                 value={form.website}
-                onChange={(event) => setForm((current) => ({ ...current, website: event.target.value }))}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, website: event.target.value }))
+                }
               />
             </div>
             <div className="space-y-2">
@@ -229,17 +260,23 @@ export function StoresPage() {
               <Input
                 id="store-email"
                 value={form.contactEmail}
-                onChange={(event) => setForm((current) => ({ ...current, contactEmail: event.target.value }))}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, contactEmail: event.target.value }))
+                }
               />
             </div>
             <div className="flex items-center justify-between rounded-lg border p-4">
               <div>
                 <p className="font-medium">Ativa</p>
-                <p className="text-sm text-muted-foreground">Define se a loja aparece nos fluxos do sistema.</p>
+                <p className="text-sm text-muted-foreground">
+                  Define se a loja aparece nos fluxos do sistema.
+                </p>
               </div>
               <Switch
                 checked={form.isActive}
-                onCheckedChange={(checked) => setForm((current) => ({ ...current, isActive: checked }))}
+                onCheckedChange={(checked) =>
+                  setForm((current) => ({ ...current, isActive: checked }))
+                }
               />
             </div>
           </div>
@@ -248,7 +285,10 @@ export function StoresPage() {
             <Button variant="outline" onClick={() => setOpen(false)}>
               Cancelar
             </Button>
-            <Button className="bg-violet-600 hover:bg-violet-700" onClick={() => void handleSubmit()}>
+            <Button
+              className="bg-violet-600 hover:bg-violet-700"
+              onClick={() => void handleSubmit()}
+            >
               Salvar
             </Button>
           </DialogFooter>

@@ -38,7 +38,9 @@ export function AdminUsersPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold mb-2 sm:mb-4">Usuários</h1>
-        <p className="text-sm text-muted-foreground">Gerencie contas e permissões de forma simples.</p>
+        <p className="text-sm text-muted-foreground">
+          Gerencie contas e permissões de forma simples.
+        </p>
       </div>
       {loading ? (
         <Card className="p-6">Carregando...</Card>
@@ -62,9 +64,20 @@ export function AdminUsersPage() {
                   <td className="p-3">
                     <div className="flex flex-col gap-2 sm:flex-row">
                       {u.role !== "ADMIN" ? (
-                        <Button onClick={() => changeRole(u.id, "ADMIN")} className="w-full sm:w-auto">Tornar admin</Button>
+                        <Button
+                          onClick={() => changeRole(u.id, "ADMIN")}
+                          className="w-full sm:w-auto"
+                        >
+                          Tornar admin
+                        </Button>
                       ) : (
-                        <Button onClick={() => changeRole(u.id, "USER")} variant="destructive" className="w-full sm:w-auto">Revogar admin</Button>
+                        <Button
+                          onClick={() => changeRole(u.id, "USER")}
+                          variant="destructive"
+                          className="w-full sm:w-auto"
+                        >
+                          Revogar admin
+                        </Button>
                       )}
                     </div>
                   </td>

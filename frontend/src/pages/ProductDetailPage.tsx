@@ -1,10 +1,4 @@
-import {
-  ArrowLeft,
-  Bell,
-  ExternalLink,
-  Heart,
-  TrendingDown,
-} from "lucide-react";
+import { ArrowLeft, Bell, ExternalLink, Heart, TrendingDown } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
@@ -14,7 +8,7 @@ import {
   ResponsiveContainer,
   Tooltip,
   XAxis,
-  YAxis,
+  YAxis
 } from "recharts";
 import { PriceBadge } from "../components/PriceBadge";
 import { Badge } from "../components/ui/badge";
@@ -26,7 +20,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogTrigger
 } from "../components/ui/dialog";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -39,7 +33,7 @@ import {
   getProduct,
   listFavorites,
   updateProduct,
-  type Product,
+  type Product
 } from "../services/api";
 import { toast } from "sonner";
 import { useAuth } from "../contexts/AuthContext";
@@ -65,7 +59,7 @@ function buildPriceHistory(price: number) {
     { date: "2026-04-21", price: Math.round(price * 1.1) },
     { date: "2026-04-28", price: Math.round(price * 1.06) },
     { date: "2026-05-05", price: Math.round(price * 1.03) },
-    { date: "2026-05-12", price },
+    { date: "2026-05-12", price }
   ];
 }
 
@@ -75,15 +69,12 @@ function mapApiProduct(product: Product): ProductDetailsView {
   return {
     id: product.id,
     name: product.name,
-    image:
-      product.imageUrl ??
-      "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600",
+    image: product.imageUrl ?? "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600",
     currentPrice: price,
     originalPrice: Math.round(price * 1.12),
     store: product.storeName ?? "Loja parceira",
     category: product.category ?? "Produto",
-    description:
-      "Produto encontrado pela integração do PriceWatch com a busca em tempo real.",
+    description: "Produto encontrado pela integração do PriceWatch com a busca em tempo real.",
     productUrl: product.productUrl,
     priceChange: -8.5,
     priceHistory: buildPriceHistory(price),
@@ -91,11 +82,11 @@ function mapApiProduct(product: Product): ProductDetailsView {
       {
         name: product.storeName ?? "Loja parceira",
         price,
-        url: product.productUrl ?? "#",
+        url: product.productUrl ?? "#"
       },
       { name: "Loja parceira", price: Math.round(price * 1.04), url: "#" },
-      { name: "Marketplace", price: Math.round(price * 1.08), url: "#" },
-    ],
+      { name: "Marketplace", price: Math.round(price * 1.08), url: "#" }
+    ]
   };
 }
 
@@ -114,7 +105,7 @@ export function ProductDetailPage() {
     category: "",
     storeName: "",
     productUrl: "",
-    imageUrl: "",
+    imageUrl: ""
   });
 
   useEffect(() => {
@@ -130,9 +121,7 @@ export function ProductDetailPage() {
         if (apiProduct) {
           try {
             const favorites = await listFavorites();
-            const match = favorites.find(
-              (fav) => fav.product.id === apiProduct.id,
-            );
+            const match = favorites.find((fav) => fav.product.id === apiProduct.id);
             setIsFavorite(Boolean(match));
             setFavoriteId(match?.id ?? null);
           } catch {
@@ -161,7 +150,7 @@ export function ProductDetailPage() {
       category: product.category ?? "",
       storeName: product.store ?? "",
       productUrl: product.productUrl ?? "",
-      imageUrl: product.image ?? "",
+      imageUrl: product.image ?? ""
     });
   }, [product]);
 
@@ -184,12 +173,8 @@ export function ProductDetailPage() {
     );
   }
 
-  const lowestPrice = Math.min(
-    ...product.priceHistory.map((history) => history.price),
-  );
-  const highestPrice = Math.max(
-    ...product.priceHistory.map((history) => history.price),
-  );
+  const lowestPrice = Math.min(...product.priceHistory.map((history) => history.price));
+  const highestPrice = Math.max(...product.priceHistory.map((history) => history.price));
   const productName = product.name;
 
   async function handleCreateAlert() {
@@ -206,12 +191,10 @@ export function ProductDetailPage() {
     try {
       await createAlert(product.id, product.currentPrice, user.email);
       toast.success("Alerta criado com sucesso!", {
-        description: `Você será notificado quando o preço de "${productName}" mudar.`,
+        description: `Você será notificado quando o preço de "${productName}" mudar.`
       });
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Não foi possível criar o alerta.",
-      );
+      toast.error(err instanceof Error ? err.message : "Não foi possível criar o alerta.");
     }
   }
 
@@ -238,18 +221,14 @@ export function ProductDetailPage() {
         category: formValues.category.trim() || null,
         storeName: formValues.storeName.trim() || null,
         productUrl: formValues.productUrl.trim() || null,
-        imageUrl: formValues.imageUrl.trim() || null,
+        imageUrl: formValues.imageUrl.trim() || null
       });
 
       setProduct(mapApiProduct(updated as Product));
       setEditOpen(false);
       toast.success("Produto atualizado.");
     } catch (err) {
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : "Nao foi possivel atualizar o produto.",
-      );
+      toast.error(err instanceof Error ? err.message : "Nao foi possivel atualizar o produto.");
     }
   }
 
@@ -263,11 +242,7 @@ export function ProductDetailPage() {
       toast.success("Produto removido.");
       navigate("/");
     } catch (err) {
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : "Nao foi possivel remover o produto.",
-      );
+      toast.error(err instanceof Error ? err.message : "Nao foi possivel remover o produto.");
     }
   }
 
@@ -288,22 +263,18 @@ export function ProductDetailPage() {
         setFavoriteId(null);
         setIsFavorite(false);
         toast.success("Removido dos favoritos", {
-          description: "O produto foi removido da sua lista de favoritos.",
+          description: "O produto foi removido da sua lista de favoritos."
         });
       } else {
         const favorite = await favoriteProduct(product.id);
         setFavoriteId(favorite.id);
         setIsFavorite(true);
         toast.success("Adicionado aos favoritos!", {
-          description: "O produto foi adicionado à sua lista de favoritos.",
+          description: "O produto foi adicionado à sua lista de favoritos."
         });
       }
     } catch (err) {
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : "Não foi possível atualizar o favorito.",
-      );
+      toast.error(err instanceof Error ? err.message : "Não foi possível atualizar o favorito.");
     }
   }
 
@@ -321,11 +292,7 @@ export function ProductDetailPage() {
         <div className="space-y-4">
           <Card className="overflow-hidden">
             <div className="aspect-square bg-gray-50">
-              <img
-                src={product.image}
-                alt={product.name}
-                className="h-full w-full object-cover"
-              />
+              <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
             </div>
           </Card>
         </div>
@@ -336,9 +303,7 @@ export function ProductDetailPage() {
             <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight">
               {product.name}
             </h1>
-            <p className="text-sm md:text-base text-muted-foreground">
-              {product.description}
-            </p>
+            <p className="text-sm md:text-base text-muted-foreground">{product.description}</p>
           </div>
 
           <Separator />
@@ -357,16 +322,12 @@ export function ProductDetailPage() {
 
             <div className="flex items-center gap-2">
               <PriceBadge change={product.priceChange} size="lg" />
-              <span className="text-xs md:text-sm text-muted-foreground">
-                nos últimos 7 dias
-              </span>
+              <span className="text-xs md:text-sm text-muted-foreground">nos últimos 7 dias</span>
             </div>
 
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span>Vendido por</span>
-              <span className="font-medium text-foreground">
-                {product.store}
-              </span>
+              <span className="font-medium text-foreground">{product.store}</span>
             </div>
           </div>
 
@@ -390,9 +351,7 @@ export function ProductDetailPage() {
               <Heart
                 className={`h-5 w-5 sm:mr-0 ${isFavorite ? "fill-current text-red-500" : ""}`}
               />
-              <span className="sm:hidden ml-2">
-                {isFavorite ? "Favoritado" : "Favoritar"}
-              </span>
+              <span className="sm:hidden ml-2">{isFavorite ? "Favoritado" : "Favoritar"}</span>
             </Button>
           </div>
 
@@ -414,9 +373,7 @@ export function ProductDetailPage() {
                         <Input
                           id="product-name"
                           value={formValues.name}
-                          onChange={(event) =>
-                            handleFormChange("name", event.target.value)
-                          }
+                          onChange={(event) => handleFormChange("name", event.target.value)}
                         />
                       </div>
                       <div className="space-y-2">
@@ -425,9 +382,7 @@ export function ProductDetailPage() {
                           id="product-price"
                           type="number"
                           value={formValues.price}
-                          onChange={(event) =>
-                            handleFormChange("price", event.target.value)
-                          }
+                          onChange={(event) => handleFormChange("price", event.target.value)}
                         />
                       </div>
                       <div className="space-y-2">
@@ -435,9 +390,7 @@ export function ProductDetailPage() {
                         <Input
                           id="product-category"
                           value={formValues.category}
-                          onChange={(event) =>
-                            handleFormChange("category", event.target.value)
-                          }
+                          onChange={(event) => handleFormChange("category", event.target.value)}
                         />
                       </div>
                       <div className="space-y-2">
@@ -445,9 +398,7 @@ export function ProductDetailPage() {
                         <Input
                           id="product-store"
                           value={formValues.storeName}
-                          onChange={(event) =>
-                            handleFormChange("storeName", event.target.value)
-                          }
+                          onChange={(event) => handleFormChange("storeName", event.target.value)}
                         />
                       </div>
                       <div className="space-y-2">
@@ -455,9 +406,7 @@ export function ProductDetailPage() {
                         <Input
                           id="product-url"
                           value={formValues.productUrl}
-                          onChange={(event) =>
-                            handleFormChange("productUrl", event.target.value)
-                          }
+                          onChange={(event) => handleFormChange("productUrl", event.target.value)}
                         />
                       </div>
                       <div className="space-y-2">
@@ -465,9 +414,7 @@ export function ProductDetailPage() {
                         <Input
                           id="product-image"
                           value={formValues.imageUrl}
-                          onChange={(event) =>
-                            handleFormChange("imageUrl", event.target.value)
-                          }
+                          onChange={(event) => handleFormChange("imageUrl", event.target.value)}
                         />
                       </div>
                     </div>
@@ -494,25 +441,17 @@ export function ProductDetailPage() {
         <div className="space-y-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h2 className="text-xl sm:text-2xl font-bold">
-                Histórico de Preços
-              </h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                Últimos 30 dias
-              </p>
+              <h2 className="text-xl sm:text-2xl font-bold">Histórico de Preços</h2>
+              <p className="text-sm text-muted-foreground mt-1">Últimos 30 dias</p>
             </div>
             <div className="flex flex-wrap gap-4 text-sm sm:gap-6">
               <div>
                 <p className="text-muted-foreground">Menor preço</p>
-                <p className="font-bold text-green-600">
-                  R$ {lowestPrice.toLocaleString("pt-BR")}
-                </p>
+                <p className="font-bold text-green-600">R$ {lowestPrice.toLocaleString("pt-BR")}</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Maior preço</p>
-                <p className="font-bold text-red-600">
-                  R$ {highestPrice.toLocaleString("pt-BR")}
-                </p>
+                <p className="font-bold text-red-600">R$ {highestPrice.toLocaleString("pt-BR")}</p>
               </div>
             </div>
           </div>
@@ -529,24 +468,15 @@ export function ProductDetailPage() {
                 stroke="#888"
                 fontSize={12}
               />
-              <YAxis
-                stroke="#888"
-                fontSize={12}
-                tickFormatter={(value) => `R$ ${value}`}
-              />
+              <YAxis stroke="#888" fontSize={12} tickFormatter={(value) => `R$ ${value}`} />
               <Tooltip
                 contentStyle={{
                   backgroundColor: "white",
                   border: "1px solid #e5e7eb",
-                  borderRadius: "8px",
+                  borderRadius: "8px"
                 }}
-                formatter={(value: number) => [
-                  `R$ ${value.toLocaleString("pt-BR")}`,
-                  "Preço",
-                ]}
-                labelFormatter={(label) =>
-                  new Date(label).toLocaleDateString("pt-BR")
-                }
+                formatter={(value: number) => [`R$ ${value.toLocaleString("pt-BR")}`, "Preço"]}
+                labelFormatter={(label) => new Date(label).toLocaleDateString("pt-BR")}
               />
               <Line
                 type="monotone"
@@ -562,9 +492,7 @@ export function ProductDetailPage() {
       </Card>
 
       <Card className="mt-8 p-4 sm:p-6">
-        <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-6">
-          Comparar entre lojas
-        </h2>
+        <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-6">Comparar entre lojas</h2>
         <div className="space-y-3">
           {product.stores.map((store, index) => (
             <div

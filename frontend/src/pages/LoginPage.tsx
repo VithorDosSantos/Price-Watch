@@ -54,14 +54,18 @@ export function LoginPage() {
         <div className="flex items-center p-6 sm:p-8 lg:p-10">
           <div className="w-full space-y-6">
             <div className="space-y-2">
-              <p className="text-sm font-medium uppercase tracking-[0.2em] text-violet-600">Acesso</p>
+              <p className="text-sm font-medium uppercase tracking-[0.2em] text-violet-600">
+                Acesso
+              </p>
               <h2 className="text-3xl font-bold tracking-tight">Entrar na conta</h2>
               <p className="text-sm text-muted-foreground">Use seu email e senha para continuar.</p>
             </div>
 
             <form className="space-y-4" onSubmit={handleLogin}>
               <div className="space-y-2">
-                <label htmlFor="login-email" className="text-sm font-medium text-slate-700">Email</label>
+                <label htmlFor="login-email" className="text-sm font-medium text-slate-700">
+                  Email
+                </label>
                 <Input
                   id="login-email"
                   type="email"
@@ -74,8 +78,13 @@ export function LoginPage() {
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-3">
-                  <label htmlFor="login-password" className="text-sm font-medium text-slate-700">Senha</label>
-                  <a href="/register" className="text-sm font-medium text-violet-600 hover:text-violet-700">
+                  <label htmlFor="login-password" className="text-sm font-medium text-slate-700">
+                    Senha
+                  </label>
+                  <a
+                    href="/register"
+                    className="text-sm font-medium text-violet-600 hover:text-violet-700"
+                  >
                     Criar conta
                   </a>
                 </div>
@@ -89,13 +98,17 @@ export function LoginPage() {
                 />
               </div>
 
-              <Button type="submit" className="h-12 w-full bg-violet-600 font-semibold hover:bg-violet-700" disabled={isSubmitting}>
+              <Button
+                type="submit"
+                className="h-12 w-full bg-violet-600 font-semibold hover:bg-violet-700"
+                disabled={isSubmitting}
+              >
                 {isSubmitting ? "Entrando..." : "Entrar"}
               </Button>
             </form>
 
             <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
-              Ainda não tem conta?{' '}
+              Ainda não tem conta?{" "}
               <a href="/register" className="font-medium text-violet-600 hover:text-violet-700">
                 Cadastre-se agora
               </a>

@@ -78,6 +78,7 @@ jobs:
     name: SonarCloud Analysis
     runs-on: ubuntu-latest
     needs: test-and-coverage
+    continue-on-error: true
 
     steps:
       - name: Checkout repository

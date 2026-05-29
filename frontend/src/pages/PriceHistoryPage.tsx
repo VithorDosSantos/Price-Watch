@@ -60,7 +60,10 @@ export function PriceHistoryPage() {
   }, []);
 
   const filteredRecords = useMemo(
-    () => records.filter((record) => (record.productName ?? "").toLowerCase().includes(searchQuery.toLowerCase())),
+    () =>
+      records.filter((record) =>
+        (record.productName ?? "").toLowerCase().includes(searchQuery.toLowerCase())
+      ),
     [records, searchQuery]
   );
 
@@ -123,7 +126,9 @@ export function PriceHistoryPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Histórico de Preços</h1>
-          <p className="text-muted-foreground mt-2">CRUD para registrar e manter a evolução de preços por produto.</p>
+          <p className="text-muted-foreground mt-2">
+            CRUD para registrar e manter a evolução de preços por produto.
+          </p>
         </div>
 
         <Button className="bg-violet-600 hover:bg-violet-700" onClick={openCreateDialog}>
@@ -163,7 +168,11 @@ export function PriceHistoryPage() {
                     <TableCell className="font-medium max-w-sm">{record.productName}</TableCell>
                     <TableCell>R$ {record.oldPrice.toLocaleString("pt-BR")}</TableCell>
                     <TableCell>R$ {record.newPrice.toLocaleString("pt-BR")}</TableCell>
-                    <TableCell className={difference <= 0 ? "text-green-600 font-medium" : "text-red-600 font-medium"}>
+                    <TableCell
+                      className={
+                        difference <= 0 ? "text-green-600 font-medium" : "text-red-600 font-medium"
+                      }
+                    >
                       {difference <= 0 ? "-" : "+"}
                       R$ {Math.abs(difference).toLocaleString("pt-BR")}
                     </TableCell>
@@ -173,7 +182,11 @@ export function PriceHistoryPage() {
                         <Button variant="ghost" size="icon" onClick={() => openEditDialog(record)}>
                           <PencilLine className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => void handleDelete(record.id)}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => void handleDelete(record.id)}
+                        >
                           <Trash2 className="h-4 w-4 text-red-600" />
                         </Button>
                       </div>
@@ -201,7 +214,9 @@ export function PriceHistoryPage() {
               <Input
                 id="history-product"
                 value={form.productName}
-                onChange={(event) => setForm((current) => ({ ...current, productName: event.target.value }))}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, productName: event.target.value }))
+                }
               />
             </div>
             <div className="grid gap-4 md:grid-cols-2">
@@ -211,7 +226,9 @@ export function PriceHistoryPage() {
                   id="history-old-price"
                   type="number"
                   value={form.oldPrice}
-                  onChange={(event) => setForm((current) => ({ ...current, oldPrice: event.target.value }))}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, oldPrice: event.target.value }))
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -220,7 +237,9 @@ export function PriceHistoryPage() {
                   id="history-new-price"
                   type="number"
                   value={form.newPrice}
-                  onChange={(event) => setForm((current) => ({ ...current, newPrice: event.target.value }))}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, newPrice: event.target.value }))
+                  }
                 />
               </div>
             </div>
@@ -230,7 +249,9 @@ export function PriceHistoryPage() {
                 id="history-captured-at"
                 type="datetime-local"
                 value={form.capturedAt}
-                onChange={(event) => setForm((current) => ({ ...current, capturedAt: event.target.value }))}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, capturedAt: event.target.value }))
+                }
               />
             </div>
           </div>
@@ -239,7 +260,10 @@ export function PriceHistoryPage() {
             <Button variant="outline" onClick={() => setOpen(false)}>
               Cancelar
             </Button>
-            <Button className="bg-violet-600 hover:bg-violet-700" onClick={() => void handleSubmit()}>
+            <Button
+              className="bg-violet-600 hover:bg-violet-700"
+              onClick={() => void handleSubmit()}
+            >
               Salvar
             </Button>
           </DialogFooter>

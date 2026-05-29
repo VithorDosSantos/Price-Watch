@@ -5,7 +5,7 @@ import React from "react";
 
 vi.mock("../services/api", () => ({
   getCurrentUser: vi.fn(),
-  setAuthToken: vi.fn(),
+  setAuthToken: vi.fn()
 }));
 
 import { getCurrentUser, setAuthToken } from "../services/api";
@@ -37,7 +37,7 @@ describe("AuthContext", () => {
     render(
       <AuthProvider>
         <TestConsumer />
-      </AuthProvider>,
+      </AuthProvider>
     );
 
     await waitFor(() => {
@@ -49,13 +49,13 @@ describe("AuthContext", () => {
   it("loads user from API when token exists in localStorage", async () => {
     localStorage.setItem("pw_token", "valid-token");
     mockedGetCurrentUser.mockResolvedValueOnce({
-      user: { id: "u1", email: "test@test.com", role: "USER" },
+      user: { id: "u1", email: "test@test.com", role: "USER" }
     });
 
     render(
       <AuthProvider>
         <TestConsumer />
-      </AuthProvider>,
+      </AuthProvider>
     );
 
     await waitFor(() => {
@@ -72,7 +72,7 @@ describe("AuthContext", () => {
     render(
       <AuthProvider>
         <TestConsumer />
-      </AuthProvider>,
+      </AuthProvider>
     );
 
     await waitFor(() => {
@@ -86,7 +86,7 @@ describe("AuthContext", () => {
     render(
       <AuthProvider>
         <TestConsumer />
-      </AuthProvider>,
+      </AuthProvider>
     );
 
     await waitFor(() => {
@@ -104,13 +104,13 @@ describe("AuthContext", () => {
   it("logout clears the user", async () => {
     localStorage.setItem("pw_token", "valid-token");
     mockedGetCurrentUser.mockResolvedValueOnce({
-      user: { id: "u1", email: "test@test.com", role: "USER" },
+      user: { id: "u1", email: "test@test.com", role: "USER" }
     });
 
     render(
       <AuthProvider>
         <TestConsumer />
-      </AuthProvider>,
+      </AuthProvider>
     );
 
     await waitFor(() => {

@@ -7,13 +7,7 @@ import React from "react";
 
 describe("EmptyState", () => {
   it("renders icon, title and description", () => {
-    render(
-      <EmptyState
-        icon={Search}
-        title="Nada encontrado"
-        description="Tente outra busca"
-      />,
-    );
+    render(<EmptyState icon={Search} title="Nada encontrado" description="Tente outra busca" />);
 
     expect(screen.getByText("Nada encontrado")).toBeInTheDocument();
     expect(screen.getByText("Tente outra busca")).toBeInTheDocument();
@@ -30,7 +24,7 @@ describe("EmptyState", () => {
         description="Desc"
         actionLabel="Criar"
         onAction={onAction}
-      />,
+      />
     );
 
     const button = screen.getByText("Criar");
@@ -41,13 +35,7 @@ describe("EmptyState", () => {
   });
 
   it("does not render button when no action provided", () => {
-    render(
-      <EmptyState
-        icon={Search}
-        title="Vazio"
-        description="Desc"
-      />,
-    );
+    render(<EmptyState icon={Search} title="Vazio" description="Desc" />);
 
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });

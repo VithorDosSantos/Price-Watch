@@ -37,15 +37,11 @@ test("registro, login, update de perfil e exclusao", async ({ page }) => {
   });
   await page.getByRole("button", { name: "Excluir conta" }).click();
   await expect(page).toHaveURL(/\/register/);
-  await expect(
-    page.getByRole("heading", { name: "Criar conta" }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Criar conta" })).toBeVisible();
 });
 
 test("rota protegida redireciona para login", async ({ page }) => {
   await page.goto("/profile");
   await expect(page).toHaveURL(/\/login/);
-  await expect(
-    page.getByRole("heading", { name: "Entrar na conta" }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Entrar na conta" })).toBeVisible();
 });

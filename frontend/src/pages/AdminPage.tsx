@@ -7,16 +7,24 @@ export function AdminPage() {
       <p>Use esta área para organizar o sistema e manter os cadastros atualizados.</p>
       <ul className="space-y-3">
         <li>
-          <Link to="/stores" className="text-violet-600 underline">Lojas</Link>
+          <Link to="/stores" className="text-violet-600 underline">
+            Lojas
+          </Link>
         </li>
         <li>
-          <Link to="/categories" className="text-violet-600 underline">Categorias</Link>
+          <Link to="/categories" className="text-violet-600 underline">
+            Categorias
+          </Link>
         </li>
         <li>
-          <Link to="/price-history" className="text-violet-600 underline">Histórico de preços</Link>
+          <Link to="/price-history" className="text-violet-600 underline">
+            Histórico de preços
+          </Link>
         </li>
         <li>
-          <Link to="/admin/users" className="text-violet-600 underline">Usuários</Link>
+          <Link to="/admin/users" className="text-violet-600 underline">
+            Usuários
+          </Link>
         </li>
       </ul>
     </div>

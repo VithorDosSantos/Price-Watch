@@ -22,7 +22,13 @@ import {
   TableHeader,
   TableRow
 } from "../components/ui/table";
-import { createCategory, deleteCategory, listCategories, updateCategory, type CategoryRecord } from "../services/api";
+import {
+  createCategory,
+  deleteCategory,
+  listCategories,
+  updateCategory,
+  type CategoryRecord
+} from "../services/api";
 import { toast } from "sonner";
 
 type CategoryFormState = {
@@ -54,7 +60,10 @@ export function CategoriesPage() {
   }, []);
 
   const filteredCategories = useMemo(
-    () => categories.filter((category) => (category.name ?? "").toLowerCase().includes(searchQuery.toLowerCase())),
+    () =>
+      categories.filter((category) =>
+        (category.name ?? "").toLowerCase().includes(searchQuery.toLowerCase())
+      ),
     [categories, searchQuery]
   );
 
@@ -78,7 +87,9 @@ export function CategoriesPage() {
     try {
       if (editingCategory) {
         const updated = await updateCategory(editingCategory.id, form);
-        setCategories((current) => current.map((item) => (item.id === updated.id ? updated : item)));
+        setCategories((current) =>
+          current.map((item) => (item.id === updated.id ? updated : item))
+        );
         toast.success("Categoria atualizada com sucesso!");
       } else {
         const created = await createCategory(form);
@@ -109,7 +120,9 @@ export function CategoriesPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Categorias</h1>
-          <p className="text-muted-foreground mt-2">Organize os produtos por tipo para facilitar buscas e filtros.</p>
+          <p className="text-muted-foreground mt-2">
+            Organize os produtos por tipo para facilitar buscas e filtros.
+          </p>
         </div>
 
         <Button className="bg-violet-600 hover:bg-violet-700" onClick={openCreateDialog}>
@@ -125,11 +138,15 @@ export function CategoriesPage() {
         </Card>
         <Card className="p-5">
           <p className="text-sm text-muted-foreground">Categorias ativas</p>
-          <p className="mt-2 text-3xl font-bold">{categories.filter((category) => category.isActive).length}</p>
+          <p className="mt-2 text-3xl font-bold">
+            {categories.filter((category) => category.isActive).length}
+          </p>
         </Card>
         <Card className="p-5">
           <p className="text-sm text-muted-foreground">Categorias inativas</p>
-          <p className="mt-2 text-3xl font-bold">{categories.filter((category) => !category.isActive).length}</p>
+          <p className="mt-2 text-3xl font-bold">
+            {categories.filter((category) => !category.isActive).length}
+          </p>
         </Card>
       </div>
 
@@ -160,7 +177,10 @@ export function CategoriesPage() {
                   <TableCell className="font-medium">{category.name}</TableCell>
                   <TableCell>{category.description}</TableCell>
                   <TableCell>
-                    <Badge variant={category.isActive ? "default" : "secondary"} className={category.isActive ? "bg-green-600" : ""}>
+                    <Badge
+                      variant={category.isActive ? "default" : "secondary"}
+                      className={category.isActive ? "bg-green-600" : ""}
+                    >
                       {category.isActive ? (
                         <span className="flex items-center gap-1">
                           <Check className="h-3 w-3" /> Ativa
@@ -177,7 +197,11 @@ export function CategoriesPage() {
                       <Button variant="ghost" size="icon" onClick={() => openEditDialog(category)}>
                         <PencilLine className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => void handleDelete(category.id)}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => void handleDelete(category.id)}
+                      >
                         <Trash2 className="h-4 w-4 text-red-600" />
                       </Button>
                     </div>
@@ -204,7 +228,9 @@ export function CategoriesPage() {
               <Input
                 id="category-name"
                 value={form.name}
-                onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, name: event.target.value }))
+                }
               />
             </div>
             <div className="space-y-2">
@@ -212,17 +238,23 @@ export function CategoriesPage() {
               <Input
                 id="category-description"
                 value={form.description}
-                onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, description: event.target.value }))
+                }
               />
             </div>
             <div className="flex items-center justify-between rounded-lg border p-4">
               <div>
                 <p className="font-medium">Ativa</p>
-                <p className="text-sm text-muted-foreground">Define se a categoria aparece nas telas de busca.</p>
+                <p className="text-sm text-muted-foreground">
+                  Define se a categoria aparece nas telas de busca.
+                </p>
               </div>
               <Switch
                 checked={form.isActive}
-                onCheckedChange={(checked) => setForm((current) => ({ ...current, isActive: checked }))}
+                onCheckedChange={(checked) =>
+                  setForm((current) => ({ ...current, isActive: checked }))
+                }
               />
             </div>
           </div>
@@ -231,7 +263,10 @@ export function CategoriesPage() {
             <Button variant="outline" onClick={() => setOpen(false)}>
               Cancelar
             </Button>
-            <Button className="bg-violet-600 hover:bg-violet-700" onClick={() => void handleSubmit()}>
+            <Button
+              className="bg-violet-600 hover:bg-violet-700"
+              onClick={() => void handleSubmit()}
+            >
               Salvar
             </Button>
           </DialogFooter>

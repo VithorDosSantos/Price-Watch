@@ -31,7 +31,7 @@ import {
   listPriceHistory,
   createPriceHistory,
   updatePriceHistory,
-  deletePriceHistory,
+  deletePriceHistory
 } from "./api";
 import type { Product } from "./api";
 
@@ -42,7 +42,7 @@ function jsonResponse(data: unknown, status = 200) {
   return Promise.resolve({
     ok: status >= 200 && status < 300,
     status,
-    json: () => Promise.resolve(data),
+    json: () => Promise.resolve(data)
   });
 }
 
@@ -50,7 +50,7 @@ function emptyResponse() {
   return Promise.resolve({
     ok: true,
     status: 204,
-    json: () => Promise.resolve(undefined),
+    json: () => Promise.resolve(undefined)
   });
 }
 
@@ -58,7 +58,7 @@ function errorResponse(message: string, status = 400) {
   return Promise.resolve({
     ok: false,
     status,
-    json: () => Promise.resolve({ message }),
+    json: () => Promise.resolve({ message })
   });
 }
 
@@ -95,7 +95,7 @@ describe("mapProductToCard", () => {
       imageUrl: "https://img.com/nb.jpg",
       productUrl: "https://store.com/nb",
       storeName: "TechStore",
-      category: "Electronics",
+      category: "Electronics"
     };
 
     const card = mapProductToCard(product);
@@ -113,7 +113,7 @@ describe("mapProductToCard", () => {
       id: "2",
       externalId: "ext-2",
       name: "",
-      price: 0,
+      price: 0
     };
 
     const card = mapProductToCard(product);
@@ -133,7 +133,7 @@ describe("Auth API", () => {
 
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/auth/register"),
-      expect.objectContaining({ method: "POST" }),
+      expect.objectContaining({ method: "POST" })
     );
     expect(result.token).toBe("t1");
   });
@@ -146,7 +146,7 @@ describe("Auth API", () => {
 
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/auth/login/local"),
-      expect.objectContaining({ method: "POST" }),
+      expect.objectContaining({ method: "POST" })
     );
     expect(result.token).toBe("t2");
   });
@@ -161,8 +161,8 @@ describe("Auth API", () => {
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/auth/me"),
       expect.objectContaining({
-        headers: expect.objectContaining({ Authorization: "Bearer mytoken" }),
-      }),
+        headers: expect.objectContaining({ Authorization: "Bearer mytoken" })
+      })
     );
     expect(result.user.email).toBe("a@b.com");
   });
@@ -176,7 +176,7 @@ describe("Auth API", () => {
 
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/auth/me"),
-      expect.objectContaining({ method: "PATCH" }),
+      expect.objectContaining({ method: "PATCH" })
     );
     expect(result.user.name).toBe("New");
   });
@@ -189,7 +189,7 @@ describe("Auth API", () => {
 
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/auth/me"),
-      expect.objectContaining({ method: "DELETE" }),
+      expect.objectContaining({ method: "DELETE" })
     );
   });
 
@@ -203,7 +203,9 @@ describe("Auth API", () => {
 describe("Admin API", () => {
   it("getUsers fetches user list", async () => {
     setAuthToken("admin-token");
-    mockFetch.mockReturnValueOnce(jsonResponse({ users: [{ id: "u1", email: "a@b.com", role: "ADMIN" }] }));
+    mockFetch.mockReturnValueOnce(
+      jsonResponse({ users: [{ id: "u1", email: "a@b.com", role: "ADMIN" }] })
+    );
 
     const result = await getUsers();
 
@@ -212,13 +214,15 @@ describe("Admin API", () => {
 
   it("updateUserRole sends PATCH with role", async () => {
     setAuthToken("admin-token");
-    mockFetch.mockReturnValueOnce(jsonResponse({ user: { id: "u1", email: "a@b.com", role: "ADMIN" } }));
+    mockFetch.mockReturnValueOnce(
+      jsonResponse({ user: { id: "u1", email: "a@b.com", role: "ADMIN" } })
+    );
 
     const result = await updateUserRole("u1", "ADMIN");
 
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/users/u1/role"),
-      expect.objectContaining({ method: "PATCH" }),
+      expect.objectContaining({ method: "PATCH" })
     );
     expect(result.user.role).toBe("ADMIN");
   });
@@ -232,7 +236,7 @@ describe("Products API", () => {
       page: 2,
       limit: 10,
       hasNextPage: false,
-      hasPreviousPage: true,
+      hasPreviousPage: true
     };
     mockFetch.mockReturnValueOnce(jsonResponse(mockResponse));
 
@@ -240,7 +244,7 @@ describe("Products API", () => {
 
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringMatching(/q=notebook.*page=2.*limit=10/),
-      expect.anything(),
+      expect.anything()
     );
     expect(result.page).toBe(2);
   });
@@ -262,7 +266,7 @@ describe("Products API", () => {
 
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/products/p1"),
-      expect.objectContaining({ method: "PUT" }),
+      expect.objectContaining({ method: "PUT" })
     );
     expect(result.name).toBe("Updated");
   });
@@ -274,7 +278,7 @@ describe("Products API", () => {
 
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/products/p1"),
-      expect.objectContaining({ method: "DELETE" }),
+      expect.objectContaining({ method: "DELETE" })
     );
   });
 });
@@ -288,7 +292,7 @@ describe("Favorites API", () => {
 
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/favorites"),
-      expect.objectContaining({ method: "POST" }),
+      expect.objectContaining({ method: "POST" })
     );
     expect(result.id).toBe("f1");
   });
@@ -300,7 +304,7 @@ describe("Favorites API", () => {
 
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/favorites/f1"),
-      expect.objectContaining({ method: "DELETE" }),
+      expect.objectContaining({ method: "DELETE" })
     );
   });
 
@@ -322,7 +326,7 @@ describe("Alerts API", () => {
 
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/alerts"),
-      expect.objectContaining({ method: "POST" }),
+      expect.objectContaining({ method: "POST" })
     );
     expect(result.targetPrice).toBe(100);
   });
@@ -335,7 +339,7 @@ describe("Alerts API", () => {
 
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/alerts/a1"),
-      expect.objectContaining({ method: "PUT" }),
+      expect.objectContaining({ method: "PUT" })
     );
     expect(result.targetPrice).toBe(80);
   });
@@ -347,7 +351,7 @@ describe("Alerts API", () => {
 
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/alerts/a1"),
-      expect.objectContaining({ method: "DELETE" }),
+      expect.objectContaining({ method: "DELETE" })
     );
   });
 
@@ -373,11 +377,15 @@ describe("Stores API", () => {
     const store = { id: "s1", name: "New Store" };
     mockFetch.mockReturnValueOnce(jsonResponse(store));
 
-    const result = await createStore({ name: "New Store", website: "https://s.com", contactEmail: "s@s.com" });
+    const result = await createStore({
+      name: "New Store",
+      website: "https://s.com",
+      contactEmail: "s@s.com"
+    });
 
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/stores"),
-      expect.objectContaining({ method: "POST" }),
+      expect.objectContaining({ method: "POST" })
     );
     expect(result.name).toBe("New Store");
   });
@@ -390,7 +398,7 @@ describe("Stores API", () => {
 
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/stores/s1"),
-      expect.objectContaining({ method: "PUT" }),
+      expect.objectContaining({ method: "PUT" })
     );
     expect(result.name).toBe("Updated");
   });
@@ -402,7 +410,7 @@ describe("Stores API", () => {
 
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/stores/s1"),
-      expect.objectContaining({ method: "DELETE" }),
+      expect.objectContaining({ method: "DELETE" })
     );
   });
 });
@@ -424,7 +432,7 @@ describe("Categories API", () => {
 
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/categories"),
-      expect.objectContaining({ method: "POST" }),
+      expect.objectContaining({ method: "POST" })
     );
     expect(result.name).toBe("Electronics");
   });
@@ -437,7 +445,7 @@ describe("Categories API", () => {
 
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/categories/c1"),
-      expect.objectContaining({ method: "PUT" }),
+      expect.objectContaining({ method: "PUT" })
     );
     expect(result.name).toBe("Updated");
   });
@@ -449,7 +457,7 @@ describe("Categories API", () => {
 
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/categories/c1"),
-      expect.objectContaining({ method: "DELETE" }),
+      expect.objectContaining({ method: "DELETE" })
     );
   });
 });
@@ -471,7 +479,7 @@ describe("Price History API", () => {
 
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/price-history"),
-      expect.objectContaining({ method: "POST" }),
+      expect.objectContaining({ method: "POST" })
     );
     expect(result.productName).toBe("Item");
   });
@@ -484,7 +492,7 @@ describe("Price History API", () => {
 
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/price-history/ph1"),
-      expect.objectContaining({ method: "PUT" }),
+      expect.objectContaining({ method: "PUT" })
     );
     expect(result.productName).toBe("Updated");
   });
@@ -496,7 +504,7 @@ describe("Price History API", () => {
 
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/price-history/ph1"),
-      expect.objectContaining({ method: "DELETE" }),
+      expect.objectContaining({ method: "DELETE" })
     );
   });
 });

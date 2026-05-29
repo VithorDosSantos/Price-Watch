@@ -1,23 +1,10 @@
-import {
-  Bell,
-  Search,
-  Shield,
-  TrendingUp,
-  User,
-  Heart,
-  BarChart3,
-} from "lucide-react";
+import { Bell, Search, Shield, TrendingUp, User, Heart, BarChart3 } from "lucide-react";
 import { FormEvent, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ProductCard, type ProductCardProps } from "../components/ProductCard";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import {
-  listFavorites,
-  mapProductToCard,
-  searchProducts,
-  type Product,
-} from "../services/api";
+import { listFavorites, mapProductToCard, searchProducts, type Product } from "../services/api";
 
 const SEARCH_PAGE_SIZE = 8;
 
@@ -74,24 +61,18 @@ export function HomePage() {
   const [totalPages, setTotalPages] = useState<number | null>(null);
   const [hasNextPage, setHasNextPage] = useState(false);
   const [hasPreviousPage, setHasPreviousPage] = useState(false);
-  const [feedback, setFeedback] = useState(
-    "Digite um produto para começar a busca.",
-  );
+  const [feedback, setFeedback] = useState("Digite um produto para começar a busca.");
   const resultsRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const [pageButtons, setPageButtons] = useState<number[]>([]);
   const canPaginate =
-    hasSearched &&
-    (hasNextPage || hasPreviousPage || products.length >= SEARCH_PAGE_SIZE);
+    hasSearched && (hasNextPage || hasPreviousPage || products.length >= SEARCH_PAGE_SIZE);
 
-  function normalizeProducts(
-    resultProducts: Product[],
-    favoritesByProduct: Map<string, string>,
-  ) {
+  function normalizeProducts(resultProducts: Product[], favoritesByProduct: Map<string, string>) {
     return resultProducts.slice(0, SEARCH_PAGE_SIZE).map((product) => ({
       ...mapProductToCard(product),
       isFavorite: favoritesByProduct.has(product.id),
-      favoriteId: favoritesByProduct.get(product.id),
+      favoriteId: favoritesByProduct.get(product.id)
     }));
   }
 
@@ -101,15 +82,13 @@ export function HomePage() {
     try {
       const result = await searchProducts(searchQuery, {
         page,
-        limit: SEARCH_PAGE_SIZE,
+        limit: SEARCH_PAGE_SIZE
       });
       let favoritesByProduct = new Map<string, string>();
 
       try {
         const favorites = await listFavorites();
-        favoritesByProduct = new Map(
-          favorites.map((item) => [item.product.id, item.id]),
-        );
+        favoritesByProduct = new Map(favorites.map((item) => [item.product.id, item.id]));
       } catch {
         favoritesByProduct = new Map();
       }
@@ -120,18 +99,14 @@ export function HomePage() {
       const pageCount = result.totalPages ?? null;
       setTotalPages(pageCount);
       setPageButtons(buildPageButtons(result.page, pageCount ?? undefined));
-      setHasNextPage(
-        result.hasNextPage || result.products.length >= SEARCH_PAGE_SIZE,
-      );
+      setHasNextPage(result.hasNextPage || result.products.length >= SEARCH_PAGE_SIZE);
       setHasPreviousPage(result.page > 1 || result.hasPreviousPage);
       setHasSearched(true);
       const feedbackMessage = result.message ?? buildFeedbackMessage(result);
       setFeedback(feedbackMessage);
     } catch {
       setProducts([]);
-      setFeedback(
-        "Não foi possível consultar a API agora. Tente novamente em instantes.",
-      );
+      setFeedback("Não foi possível consultar a API agora. Tente novamente em instantes.");
     } finally {
       setIsLoading(false);
     }
@@ -145,7 +120,7 @@ export function HomePage() {
     window.setTimeout(() => {
       resultsRef.current?.scrollIntoView({
         behavior: "smooth",
-        block: "start",
+        block: "start"
       });
     }, 80);
   }
@@ -156,12 +131,10 @@ export function HomePage() {
     try {
       const result = await searchProducts(query, {
         page: 1,
-        limit: SEARCH_PAGE_SIZE,
+        limit: SEARCH_PAGE_SIZE
       });
       const favorites = await listFavorites();
-      const favoritesByProduct = new Map(
-        favorites.map((item) => [item.product.id, item.id]),
-      );
+      const favoritesByProduct = new Map(favorites.map((item) => [item.product.id, item.id]));
 
       setProducts(normalizeProducts(result.products, favoritesByProduct));
       setSubmittedQuery(query);
@@ -169,16 +142,12 @@ export function HomePage() {
       const pageCount = result.totalPages ?? null;
       setTotalPages(pageCount);
       setPageButtons(buildPageButtons(result.page, pageCount ?? undefined));
-      setHasNextPage(
-        result.hasNextPage || result.products.length >= SEARCH_PAGE_SIZE,
-      );
+      setHasNextPage(result.hasNextPage || result.products.length >= SEARCH_PAGE_SIZE);
       setHasPreviousPage(result.page > 1 || result.hasPreviousPage);
       setHasSearched(false);
       setFeedback("Sugestões carregadas para você explorar.");
     } catch {
-      setFeedback(
-        "Não foi possível carregar os resultados agora. Tente novamente.",
-      );
+      setFeedback("Não foi possível carregar os resultados agora. Tente novamente.");
     } finally {
       setIsLoading(false);
     }
@@ -193,7 +162,7 @@ export function HomePage() {
     window.setTimeout(() => {
       resultsRef.current?.scrollIntoView({
         behavior: "smooth",
-        block: "start",
+        block: "start"
       });
     }, 80);
   }
@@ -203,8 +172,8 @@ export function HomePage() {
       prev.map((product) =>
         product.favoriteId === favoriteId
           ? { ...product, isFavorite: false, favoriteId: undefined }
-          : product,
-      ),
+          : product
+      )
     );
   }
 
@@ -219,8 +188,7 @@ export function HomePage() {
             </span>
           </h1>
           <p className="text-base text-muted-foreground sm:text-lg lg:text-xl">
-            Pesquise um produto, abra os detalhes e salve o que quiser
-            acompanhar depois.
+            Pesquise um produto, abra os detalhes e salve o que quiser acompanhar depois.
           </p>
 
           <form
@@ -308,9 +276,7 @@ export function HomePage() {
                       <Button
                         key={page}
                         variant={page === currentPage ? "secondary" : "outline"}
-                        className={
-                          page === currentPage ? "bg-violet-600 text-white" : ""
-                        }
+                        className={page === currentPage ? "bg-violet-600 text-white" : ""}
                         onClick={() => void handlePageChange(page)}
                         disabled={isLoading || page === currentPage}
                       >
@@ -321,10 +287,7 @@ export function HomePage() {
                 <Button
                   className="flex-1 bg-violet-600 hover:bg-violet-700 sm:flex-none"
                   onClick={() => void handlePageChange(currentPage + 1)}
-                  disabled={
-                    (products.length < SEARCH_PAGE_SIZE && !hasNextPage) ||
-                    isLoading
-                  }
+                  disabled={(products.length < SEARCH_PAGE_SIZE && !hasNextPage) || isLoading}
                 >
                   Próxima
                 </Button>

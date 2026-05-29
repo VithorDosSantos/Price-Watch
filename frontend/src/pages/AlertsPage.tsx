@@ -11,7 +11,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogTrigger
 } from "../components/ui/dialog";
 import { Label } from "../components/ui/label";
 import {
@@ -20,23 +20,16 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow,
+  TableRow
 } from "../components/ui/table";
-import {
-  createAlert,
-  deleteAlert,
-  listAlerts,
-  updateAlert,
-} from "../services/api";
+import { createAlert, deleteAlert, listAlerts, updateAlert } from "../services/api";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 function getProductName(alert: any) {
-  return (
-    alert.product?.name ?? alert.product?.productName ?? "Produto sem nome"
-  );
+  return alert.product?.name ?? alert.product?.productName ?? "Produto sem nome";
 }
 
 function getProductPrice(alert: any) {
@@ -74,16 +67,10 @@ export function AlertsPage() {
   async function handleToggleAlert(alertId: string, isActive: boolean) {
     try {
       const updated = await updateAlert(alertId, { isActive });
-      setAlerts((prev) =>
-        prev.map((alert) => (alert.id === alertId ? updated : alert)),
-      );
+      setAlerts((prev) => prev.map((alert) => (alert.id === alertId ? updated : alert)));
       toast.success(isActive ? "Alerta ativado" : "Alerta desativado");
     } catch (err) {
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : "Não foi possível atualizar o alerta.",
-      );
+      toast.error(err instanceof Error ? err.message : "Não foi possível atualizar o alerta.");
     }
   }
 
@@ -93,16 +80,12 @@ export function AlertsPage() {
       setAlerts((prev) => prev.filter((alert) => alert.id !== alertId));
       toast.success("Alerta removido");
     } catch (err) {
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : "Não foi possível remover o alerta.",
-      );
+      toast.error(err instanceof Error ? err.message : "Não foi possível remover o alerta.");
     }
   }
 
   const filteredAlerts = alerts.filter((alert) =>
-    getProductName(alert).toLowerCase().includes(searchQuery.toLowerCase()),
+    getProductName(alert).toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const activeAlerts = alerts.filter((a) => a.isActive ?? true).length;
@@ -111,9 +94,7 @@ export function AlertsPage() {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-            Alertas
-          </h1>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Alertas</h1>
           <p className="text-sm md:text-base text-muted-foreground mt-2">
             Crie avisos para saber quando um produto ficar mais barato.
           </p>
@@ -130,17 +111,13 @@ export function AlertsPage() {
             <DialogHeader>
               <DialogTitle>Criar alerta</DialogTitle>
               <DialogDescription>
-                Defina o preço que você quer pagar e receba um aviso quando ele
-                chegar lá.
+                Defina o preço que você quer pagar e receba um aviso quando ele chegar lá.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="product">Produto ou link</Label>
-                <Input
-                  id="product"
-                  placeholder="Digite o nome do produto ou cole o link"
-                />
+                <Input id="product" placeholder="Digite o nome do produto ou cole o link" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="price">Preço que você quer pagar (R$)</Label>
@@ -152,12 +129,10 @@ export function AlertsPage() {
                 type="submit"
                 className="bg-violet-600 hover:bg-violet-700"
                 onClick={async () => {
-                  const productInput = (
-                    document.getElementById("product") as HTMLInputElement
-                  ).value;
+                  const productInput = (document.getElementById("product") as HTMLInputElement)
+                    .value;
                   const priceInput = Number(
-                    (document.getElementById("price") as HTMLInputElement)
-                      .value || 0,
+                    (document.getElementById("price") as HTMLInputElement).value || 0
                   );
                   if (!user) {
                     toast.error("Faça login para criar alertas.");
@@ -167,8 +142,7 @@ export function AlertsPage() {
                   try {
                     await createAlert(productInput, priceInput, user.email);
                     toast.success("Alerta criado com sucesso!", {
-                      description:
-                        "Você será notificado quando o preço atingir o valor desejado.",
+                      description: "Você será notificado quando o preço atingir o valor desejado."
                     });
                     await refreshAlerts();
                   } catch (err) {
@@ -242,9 +216,7 @@ export function AlertsPage() {
             <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="font-semibold mb-2">Nenhum alerta encontrado</h3>
             <p className="text-sm text-muted-foreground">
-              {searchQuery
-                ? "Tente outra busca"
-                : "Crie seu primeiro alerta para começar"}
+              {searchQuery ? "Tente outra busca" : "Crie seu primeiro alerta para começar"}
             </p>
           </div>
         ) : (
@@ -268,8 +240,7 @@ export function AlertsPage() {
                     const currentPrice = getProductPrice(alert);
                     const targetPrice = getTargetPrice(alert);
                     const difference = currentPrice - targetPrice;
-                    const percentDiff =
-                      currentPrice > 0 ? (difference / currentPrice) * 100 : 0;
+                    const percentDiff = currentPrice > 0 ? (difference / currentPrice) * 100 : 0;
 
                     return (
                       <TableRow key={alert.id}>
@@ -299,9 +270,7 @@ export function AlertsPage() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {new Date(alert.createdAt).toLocaleDateString(
-                            "pt-BR",
-                          )}
+                          {new Date(alert.createdAt).toLocaleDateString("pt-BR")}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-3">
@@ -335,16 +304,13 @@ export function AlertsPage() {
                 const currentPrice = getProductPrice(alert);
                 const targetPrice = getTargetPrice(alert);
                 const difference = currentPrice - targetPrice;
-                const percentDiff =
-                  currentPrice > 0 ? (difference / currentPrice) * 100 : 0;
+                const percentDiff = currentPrice > 0 ? (difference / currentPrice) * 100 : 0;
 
                 return (
                   <Card key={alert.id} className="p-4">
                     <div className="space-y-3">
                       <div className="flex items-start justify-between gap-2">
-                        <h3 className="font-medium text-sm line-clamp-2 flex-1">
-                          {productName}
-                        </h3>
+                        <h3 className="font-medium text-sm line-clamp-2 flex-1">{productName}</h3>
                         <Button
                           type="button"
                           size="icon"
@@ -357,20 +323,14 @@ export function AlertsPage() {
 
                       <div className="grid grid-cols-2 gap-3 text-sm">
                         <div>
-                          <p className="text-muted-foreground text-xs">
-                            Preço Alvo
-                          </p>
+                          <p className="text-muted-foreground text-xs">Preço Alvo</p>
                           <p className="font-bold text-green-600">
                             R$ {targetPrice.toLocaleString("pt-BR")}
                           </p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground text-xs">
-                            Preço Atual
-                          </p>
-                          <p className="font-semibold">
-                            R$ {currentPrice.toLocaleString("pt-BR")}
-                          </p>
+                          <p className="text-muted-foreground text-xs">Preço Atual</p>
+                          <p className="font-semibold">R$ {currentPrice.toLocaleString("pt-BR")}</p>
                           <p className="text-xs text-muted-foreground">
                             {difference > 0 ? "+" : ""}
                             {percentDiff.toFixed(1)}% do alvo
@@ -382,9 +342,7 @@ export function AlertsPage() {
                         <div className="flex items-center gap-2">
                           <Switch
                             checked={alert.isActive ?? true}
-                            onCheckedChange={(checked) =>
-                              void handleToggleAlert(alert.id, checked)
-                            }
+                            onCheckedChange={(checked) => void handleToggleAlert(alert.id, checked)}
                           />
                           <Badge
                             variant={alert.isActive ? "default" : "secondary"}
@@ -394,9 +352,7 @@ export function AlertsPage() {
                           </Badge>
                         </div>
                         <p className="text-xs text-muted-foreground">
-                          {new Date(alert.createdAt).toLocaleDateString(
-                            "pt-BR",
-                          )}
+                          {new Date(alert.createdAt).toLocaleDateString("pt-BR")}
                         </p>
                       </div>
                     </div>

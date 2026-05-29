@@ -52,7 +52,8 @@ export function RegisterPage() {
               Crie sua conta e acompanhe quedas de preço sem perder tempo.
             </h1>
             <p className="max-w-md text-sm leading-6 text-violet-100/90">
-              Crie sua conta para salvar favoritos, acompanhar preços e usar o painel administrativo quando estiver disponível.
+              Crie sua conta para salvar favoritos, acompanhar preços e usar o painel administrativo
+              quando estiver disponível.
             </p>
           </div>
           <div className="relative rounded-2xl border border-white/15 bg-white/10 p-5 backdrop-blur">
@@ -66,14 +67,20 @@ export function RegisterPage() {
         <div className="flex items-center p-6 sm:p-8 lg:p-10">
           <div className="w-full space-y-6">
             <div className="space-y-2">
-              <p className="text-sm font-medium uppercase tracking-[0.2em] text-violet-600">Cadastro</p>
+              <p className="text-sm font-medium uppercase tracking-[0.2em] text-violet-600">
+                Cadastro
+              </p>
               <h2 className="text-3xl font-bold tracking-tight">Criar conta</h2>
-              <p className="text-sm text-muted-foreground">Preencha os dados abaixo para começar a usar o PriceWatch.</p>
+              <p className="text-sm text-muted-foreground">
+                Preencha os dados abaixo para começar a usar o PriceWatch.
+              </p>
             </div>
 
             <form className="space-y-4" onSubmit={handleRegister}>
               <div className="space-y-2">
-                <label htmlFor="register-name" className="text-sm font-medium text-slate-700">Nome</label>
+                <label htmlFor="register-name" className="text-sm font-medium text-slate-700">
+                  Nome
+                </label>
                 <Input
                   id="register-name"
                   placeholder="Seu nome"
@@ -84,7 +91,9 @@ export function RegisterPage() {
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="register-email" className="text-sm font-medium text-slate-700">Email</label>
+                <label htmlFor="register-email" className="text-sm font-medium text-slate-700">
+                  Email
+                </label>
                 <Input
                   id="register-email"
                   type="email"
@@ -97,7 +106,9 @@ export function RegisterPage() {
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <label htmlFor="register-password" className="text-sm font-medium text-slate-700">Senha</label>
+                  <label htmlFor="register-password" className="text-sm font-medium text-slate-700">
+                    Senha
+                  </label>
                   <Input
                     id="register-password"
                     type="password"
@@ -109,7 +120,12 @@ export function RegisterPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label htmlFor="register-confirm-password" className="text-sm font-medium text-slate-700">Confirmar senha</label>
+                  <label
+                    htmlFor="register-confirm-password"
+                    className="text-sm font-medium text-slate-700"
+                  >
+                    Confirmar senha
+                  </label>
                   <Input
                     id="register-confirm-password"
                     type="password"
@@ -121,13 +137,17 @@ export function RegisterPage() {
                 </div>
               </div>
 
-              <Button type="submit" className="h-12 w-full bg-violet-600 font-semibold hover:bg-violet-700" disabled={isSubmitting}>
+              <Button
+                type="submit"
+                className="h-12 w-full bg-violet-600 font-semibold hover:bg-violet-700"
+                disabled={isSubmitting}
+              >
                 {isSubmitting ? "Criando conta..." : "Criar conta"}
               </Button>
             </form>
 
             <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
-              Já tem conta?{' '}
+              Já tem conta?{" "}
               <a href="/login" className="font-medium text-violet-600 hover:text-violet-700">
                 Entrar agora
               </a>

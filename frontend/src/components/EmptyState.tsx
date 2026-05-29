@@ -14,7 +14,7 @@ export function EmptyState({
   title,
   description,
   actionLabel,
-  onAction,
+  onAction
 }: EmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center text-center py-16 px-4">
