@@ -6,7 +6,7 @@ import { AdminRoute } from "./AdminRoute";
 import React from "react";
 
 vi.mock("../contexts/AuthContext", () => ({
-  useAuth: vi.fn(),
+  useAuth: vi.fn()
 }));
 
 import { useAuth } from "../contexts/AuthContext";
@@ -18,7 +18,7 @@ function mockAuth(overrides: Partial<ReturnType<typeof useAuth>> = {}) {
     loading: false,
     loginWithToken: vi.fn(),
     logout: vi.fn(),
-    ...overrides,
+    ...overrides
   });
 }
 
@@ -30,7 +30,7 @@ describe("ProtectedRoute", () => {
         <ProtectedRoute>
           <span>Content</span>
         </ProtectedRoute>
-      </MemoryRouter>,
+      </MemoryRouter>
     );
     expect(container.innerHTML).toBe("");
   });
@@ -42,7 +42,7 @@ describe("ProtectedRoute", () => {
         <ProtectedRoute>
           <span>Content</span>
         </ProtectedRoute>
-      </MemoryRouter>,
+      </MemoryRouter>
     );
     expect(screen.queryByText("Content")).not.toBeInTheDocument();
   });
@@ -54,7 +54,7 @@ describe("ProtectedRoute", () => {
         <ProtectedRoute>
           <span>Content</span>
         </ProtectedRoute>
-      </MemoryRouter>,
+      </MemoryRouter>
     );
     expect(screen.getByText("Content")).toBeInTheDocument();
   });
@@ -68,7 +68,7 @@ describe("AdminRoute", () => {
         <AdminRoute>
           <span>Admin</span>
         </AdminRoute>
-      </MemoryRouter>,
+      </MemoryRouter>
     );
     expect(container.innerHTML).toBe("");
   });
@@ -80,7 +80,7 @@ describe("AdminRoute", () => {
         <AdminRoute>
           <span>Admin</span>
         </AdminRoute>
-      </MemoryRouter>,
+      </MemoryRouter>
     );
     expect(screen.queryByText("Admin")).not.toBeInTheDocument();
   });
@@ -92,7 +92,7 @@ describe("AdminRoute", () => {
         <AdminRoute>
           <span>Admin</span>
         </AdminRoute>
-      </MemoryRouter>,
+      </MemoryRouter>
     );
     expect(screen.queryByText("Admin")).not.toBeInTheDocument();
   });
@@ -104,7 +104,7 @@ describe("AdminRoute", () => {
         <AdminRoute>
           <span>Admin</span>
         </AdminRoute>
-      </MemoryRouter>,
+      </MemoryRouter>
     );
     expect(screen.getByText("Admin")).toBeInTheDocument();
   });
