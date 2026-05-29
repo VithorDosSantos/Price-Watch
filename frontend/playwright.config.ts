@@ -6,16 +6,16 @@ export default defineConfig({
   testDir: "tests/e2e",
   timeout: 60_000,
   expect: {
-    timeout: 10_000
+    timeout: 10_000,
   },
   use: {
     baseURL,
-    trace: "on-first-retry"
+    trace: "on-first-retry",
   },
   projects: [
     {
       name: "chromium",
-      use: { browserName: "chromium" }
-    }
-  ]
+      use: { browserName: "chromium" },
+    },
+  ],
 });
