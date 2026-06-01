@@ -4,7 +4,13 @@ import { Link, useNavigate } from "react-router-dom";
 import { ProductCard, type ProductCardProps } from "../components/ProductCard";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { listFavorites, mapProductToCard, searchProducts, type Product } from "../services/api";
+import {
+  getShowcaseProducts,
+  listFavorites,
+  mapProductToCard,
+  searchProducts,
+  type Product
+} from "../services/api";
 
 const SEARCH_PAGE_SIZE = 8;
 
@@ -114,8 +120,15 @@ export function HomePage() {
 
   async function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const trimmedQuery = query.trim();
+    if (!trimmedQuery) {
+      setFeedback("Digite um termo para pesquisar.");
+      setProducts([]);
+      setHasSearched(false);
+      return;
+    }
     setFeedback("Buscando preços reais na web...");
-    await loadSearchResults(query, 1);
+    await loadSearchResults(trimmedQuery, 1);
 
     globalThis.setTimeout(() => {
       resultsRef.current?.scrollIntoView({
@@ -129,7 +142,7 @@ export function HomePage() {
     setIsLoading(true);
 
     try {
-      const result = await searchProducts(query, {
+      const result = await getShowcaseProducts({
         page: 1,
         limit: SEARCH_PAGE_SIZE
       });
@@ -137,7 +150,7 @@ export function HomePage() {
       const favoritesByProduct = new Map(favorites.map((item) => [item.product.id, item.id]));
 
       setProducts(normalizeProducts(result.products, favoritesByProduct));
-      setSubmittedQuery(query);
+      setSubmittedQuery("");
       setCurrentPage(result.page);
       const pageCount = result.totalPages ?? null;
       setTotalPages(pageCount);
@@ -145,7 +158,12 @@ export function HomePage() {
       setHasNextPage(result.hasNextPage || result.products.length >= SEARCH_PAGE_SIZE);
       setHasPreviousPage(result.page > 1 || result.hasPreviousPage);
       setHasSearched(false);
-      setFeedback("Sugestões carregadas para você explorar.");
+      setFeedback(
+        result.message ??
+          (result.products.length > 0
+            ? "Sugestões carregadas para você explorar."
+            : "Nenhuma sugestão disponível no momento.")
+      );
     } catch {
       setFeedback("Não foi possível carregar os resultados agora. Tente novamente.");
     } finally {
@@ -203,13 +221,14 @@ export function HomePage() {
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Digite o nome do produto ou cole o link da loja"
                 className="h-14 pl-12 text-base shadow-lg border-gray-200"
+                required
               />
             </div>
             <Button
               type="submit"
               size="lg"
               className="h-14 w-full bg-violet-600 hover:bg-violet-700 sm:w-auto sm:px-8"
-              disabled={isLoading}
+              disabled={isLoading || query.trim().length === 0}
             >
               {isLoading ? "Buscando" : "Pesquisar"}
             </Button>

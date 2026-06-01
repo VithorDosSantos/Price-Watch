@@ -217,6 +217,24 @@ export async function searchProducts(
   return await request<ProductSearchResponse>(`/products/search?${searchParams.toString()}`);
 }
 
+export async function getShowcaseProducts(options?: {
+  page?: number;
+  limit?: number;
+}): Promise<ProductSearchResponse> {
+  const searchParams = new URLSearchParams();
+
+  if (options?.page) {
+    searchParams.set("page", String(options.page));
+  }
+
+  if (options?.limit) {
+    searchParams.set("limit", String(options.limit));
+  }
+
+  const suffix = searchParams.toString();
+  return await request<ProductSearchResponse>(`/products/showcase${suffix ? `?${suffix}` : ""}`);
+}
+
 export function mapProductToCard(product: Product): ProductCardView {
   const price = Number(product.price ?? 0);
 

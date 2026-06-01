@@ -2,29 +2,21 @@ import type { Request, Response } from "express";
 import {
   ProductDeleteConflictError,
   SerpApiError,
+  getShowcaseProducts,
   getProductById,
   searchProducts,
   updateProduct,
-  deleteProduct,
+  deleteProduct
 } from "../services/productService";
 
-export async function searchProductsController(
-  request: Request,
-  response: Response,
-) {
+export async function searchProductsController(request: Request, response: Response) {
   const query = typeof request.query.q === "string" ? request.query.q : "";
   const page = Number(request.query.page ?? 1);
   const limit = Number(request.query.limit ?? 8);
 
-  if (
-    !Number.isInteger(page) ||
-    page < 1 ||
-    !Number.isInteger(limit) ||
-    limit < 1 ||
-    limit > 24
-  ) {
+  if (!Number.isInteger(page) || page < 1 || !Number.isInteger(limit) || limit < 1 || limit > 24) {
     return response.status(400).json({
-      message: "Parâmetros de paginação inválidos.",
+      message: "Parâmetros de paginação inválidos."
     });
   }
 
@@ -32,12 +24,11 @@ export async function searchProductsController(
     const result = await searchProducts(query, page, limit);
     return response.json(result);
   } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "Erro ao consultar produtos";
+    const message = err instanceof Error ? err.message : "Erro ao consultar produtos";
     if (err instanceof SerpApiError) {
       return response.status(err.status).json({
         message,
-        details: err.body,
+        details: err.body
       });
     }
 
@@ -45,10 +36,26 @@ export async function searchProductsController(
   }
 }
 
-export async function getProductDetailsController(
-  request: Request,
-  response: Response,
-) {
+export async function showcaseProductsController(request: Request, response: Response) {
+  const page = Number(request.query.page ?? 1);
+  const limit = Number(request.query.limit ?? 8);
+
+  if (!Number.isInteger(page) || page < 1 || !Number.isInteger(limit) || limit < 1 || limit > 24) {
+    return response.status(400).json({
+      message: "Parâmetros de paginação inválidos."
+    });
+  }
+
+  try {
+    const result = await getShowcaseProducts(page, limit);
+    return response.json(result);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Erro ao carregar vitrine.";
+    return response.status(502).json({ message });
+  }
+}
+
+export async function getProductDetailsController(request: Request, response: Response) {
   try {
     const product = await getProductById(request.params.id);
     if (!product) {
@@ -57,41 +64,28 @@ export async function getProductDetailsController(
 
     return response.json(product);
   } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "Erro ao obter detalhes do produto";
+    const message = err instanceof Error ? err.message : "Erro ao obter detalhes do produto";
     return response.status(502).json({ message });
   }
 }
 
-function optionalNullableString(
-  value: unknown,
-  trim = false,
-): string | null | undefined {
+function optionalNullableString(value: unknown, trim = false): string | null | undefined {
   if (value === undefined) return undefined;
   if (!value) return null;
   const str = typeof value === "string" ? value : JSON.stringify(value);
   return trim ? str.trim() : str;
 }
 
-export async function updateProductController(
-  request: Request,
-  response: Response,
-) {
-  const { name, price, imageUrl, productUrl, storeName, category } =
-    request.body ?? {};
+export async function updateProductController(request: Request, response: Response) {
+  const { name, price, imageUrl, productUrl, storeName, category } = request.body ?? {};
 
   if (name !== undefined && String(name).trim().length === 0) {
-    return response
-      .status(400)
-      .json({ message: "Nome do produto é obrigatório." });
+    return response.status(400).json({ message: "Nome do produto é obrigatório." });
   }
 
   const parsedPrice = price !== undefined ? Number(price) : undefined;
 
-  if (
-    parsedPrice !== undefined &&
-    (!Number.isFinite(parsedPrice) || parsedPrice <= 0)
-  ) {
+  if (parsedPrice !== undefined && (!Number.isFinite(parsedPrice) || parsedPrice <= 0)) {
     return response.status(400).json({ message: "Preço inválido." });
   }
 
@@ -102,7 +96,7 @@ export async function updateProductController(
       imageUrl: optionalNullableString(imageUrl),
       productUrl: optionalNullableString(productUrl),
       storeName: optionalNullableString(storeName, true),
-      category: optionalNullableString(category, true),
+      category: optionalNullableString(category, true)
     });
 
     if (updated) {
@@ -111,16 +105,12 @@ export async function updateProductController(
 
     return response.status(404).json({ message: "Produto não encontrado." });
   } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "Erro ao atualizar produto";
+    const message = err instanceof Error ? err.message : "Erro ao atualizar produto";
     return response.status(400).json({ message });
   }
 }
 
-export async function deleteProductController(
-  request: Request,
-  response: Response,
-) {
+export async function deleteProductController(request: Request, response: Response) {
   try {
     const result = await deleteProduct(request.params.id);
 
@@ -133,12 +123,11 @@ export async function deleteProductController(
     if (err instanceof ProductDeleteConflictError) {
       return response.status(409).json({
         message: err.message,
-        details: err.dependencySummary,
+        details: err.dependencySummary
       });
     }
 
-    const message =
-      err instanceof Error ? err.message : "Erro ao remover produto";
+    const message = err instanceof Error ? err.message : "Erro ao remover produto";
     return response.status(400).json({ message });
   }
 }

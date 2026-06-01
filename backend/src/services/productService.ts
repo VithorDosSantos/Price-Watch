@@ -46,7 +46,7 @@ export type ProductDTO = {
 export class SerpApiError extends Error {
   constructor(
     public status: number,
-    public body: string,
+    public body: string
   ) {
     super(`SerpApiError ${status}`);
     this.name = "SerpApiError";
@@ -97,9 +97,7 @@ function parsePrice(value?: string): number {
   return Number(cleaned) || 0;
 }
 
-function collectSerpApiResults(
-  data: SerpApiSearchResponse,
-): SerpApiShoppingResult[] {
+function collectSerpApiResults(data: SerpApiSearchResponse): SerpApiShoppingResult[] {
   const results: SerpApiShoppingResult[] = [];
 
   if (Array.isArray(data.shopping_results)) {
@@ -126,14 +124,11 @@ function hasNextPage(data: SerpApiSearchResponse): boolean {
 }
 
 function hasPreviousPage(data: SerpApiSearchResponse): boolean {
-  return Boolean(
-    data.serpapi_pagination?.previous_link || data.pagination?.previous,
-  );
+  return Boolean(data.serpapi_pagination?.previous_link || data.pagination?.previous);
 }
 
 function mapSerpApiItem(item: SerpApiShoppingResult): ProductDTO {
-  const externalId =
-    item.product_id ?? item.product_link ?? item.link ?? item.title;
+  const externalId = item.product_id ?? item.product_link ?? item.link ?? item.title;
 
   return {
     id: externalId,
@@ -143,7 +138,7 @@ function mapSerpApiItem(item: SerpApiShoppingResult): ProductDTO {
     imageUrl: item.thumbnail ?? item.serpapi_thumbnail,
     productUrl: item.link ?? item.product_link,
     storeName: item.source ?? "SerpApi",
-    category: undefined,
+    category: undefined
   };
 }
 
@@ -161,10 +156,7 @@ function normalizeProductUrl(value?: string | null): string {
   }
 }
 
-async function fetchSerpApiSearch(
-  query: string,
-  start: number,
-): Promise<Response> {
+async function fetchSerpApiSearch(query: string, start: number): Promise<Response> {
   const apiKey = getSerpApiKey();
 
   if (!apiKey) {
@@ -184,15 +176,15 @@ async function fetchSerpApiSearch(
 
   return fetch(url.toString(), {
     headers: {
-      Accept: "application/json",
-    },
+      Accept: "application/json"
+    }
   });
 }
 
 async function searchSerpApi(
   query: string,
   page: number,
-  limit: number,
+  limit: number
 ): Promise<{
   products: ProductDTO[];
   hasNextPage: boolean;
@@ -216,10 +208,9 @@ async function searchSerpApi(
 
   return {
     products: collectSerpApiResults(data).slice(0, limit).map(mapSerpApiItem),
-    hasNextPage:
-      hasNextPage(data) || collectSerpApiResults(data).length >= limit,
+    hasNextPage: hasNextPage(data) || collectSerpApiResults(data).length >= limit,
     hasPreviousPage: hasPreviousPage(data),
-    totalResults: data.search_information?.total_results,
+    totalResults: data.search_information?.total_results
   };
 }
 
@@ -238,7 +229,7 @@ type ProductSearchResult = {
 export async function searchProducts(
   query: string,
   page = 1,
-  limit = 8,
+  limit = 8
 ): Promise<ProductSearchResult> {
   if (!query.trim()) {
     return {
@@ -248,20 +239,19 @@ export async function searchProducts(
       limit,
       hasNextPage: false,
       hasPreviousPage: false,
+      message: "Informe um termo de busca para pesquisar produtos."
     };
   }
 
   const searchResult = await searchSerpApi(query, page, limit);
 
-  await Promise.allSettled(
-    searchResult.products.map((product) => upsertProduct(product)),
-  );
+  await Promise.allSettled(searchResult.products.map((product) => upsertProduct(product)));
 
   const savedProducts = await prisma.product.findMany({
     where: {
       externalId: {
-        in: searchResult.products.map((product) => product.externalId),
-      },
+        in: searchResult.products.map((product) => product.externalId)
+      }
     },
     select: {
       id: true,
@@ -273,30 +263,28 @@ export async function searchProducts(
       storeName: true,
       category: true,
       isManual: true,
-      isDeleted: true,
-    },
+      isDeleted: true
+    }
   });
 
   const deletedProducts = await prisma.product.findMany({
     where: {
-      isDeleted: true,
+      isDeleted: true
     },
     select: {
       productUrl: true,
       name: true,
-      storeName: true,
-    },
+      storeName: true
+    }
   });
 
   const deletedUrls = new Set(
     deletedProducts
       .map((product) => normalizeProductUrl(product.productUrl))
-      .filter((value) => value.length > 0),
+      .filter((value) => value.length > 0)
   );
 
-  const savedByExternalId = new Map(
-    savedProducts.map((product) => [product.externalId, product]),
-  );
+  const savedByExternalId = new Map(savedProducts.map((product) => [product.externalId, product]));
 
   const productsToReturn = searchResult.products.map((product) => {
     const saved = savedByExternalId.get(product.externalId);
@@ -321,7 +309,7 @@ export async function searchProducts(
       imageUrl: saved.imageUrl ?? undefined,
       productUrl: saved.productUrl ?? undefined,
       storeName: saved.storeName ?? undefined,
-      category: saved.category ?? undefined,
+      category: saved.category ?? undefined
     };
   });
 
@@ -335,9 +323,56 @@ export async function searchProducts(
     hasNextPage: searchResult.hasNextPage,
     hasPreviousPage: searchResult.hasPreviousPage,
     totalResults,
-    totalPages: totalResults
-      ? Math.max(1, Math.ceil(totalResults / limit))
-      : undefined,
+    totalPages: totalResults ? Math.max(1, Math.ceil(totalResults / limit)) : undefined
+  };
+}
+
+export async function getShowcaseProducts(page = 1, limit = 8): Promise<ProductSearchResult> {
+  const normalizedPage = Number.isFinite(page) && page > 0 ? page : 1;
+  const normalizedLimit = Number.isFinite(limit) && limit > 0 ? limit : 8;
+  const skip = (normalizedPage - 1) * normalizedLimit;
+
+  const [items, total] = await Promise.all([
+    prisma.product.findMany({
+      where: { isDeleted: false },
+      orderBy: { createdAt: "asc" },
+      skip,
+      take: normalizedLimit,
+      select: {
+        id: true,
+        externalId: true,
+        name: true,
+        price: true,
+        imageUrl: true,
+        productUrl: true,
+        storeName: true,
+        category: true
+      }
+    }),
+    prisma.product.count({ where: { isDeleted: false } })
+  ]);
+
+  const totalPages = total ? Math.max(1, Math.ceil(total / normalizedLimit)) : undefined;
+
+  return {
+    source: "mock",
+    products: items.map((product) => ({
+      id: product.id,
+      externalId: product.externalId,
+      name: product.name,
+      price: Number(product.price),
+      imageUrl: product.imageUrl ?? undefined,
+      productUrl: product.productUrl ?? undefined,
+      storeName: product.storeName ?? undefined,
+      category: product.category ?? undefined
+    })),
+    page: normalizedPage,
+    limit: normalizedLimit,
+    hasNextPage: skip + items.length < total,
+    hasPreviousPage: normalizedPage > 1,
+    totalResults: total || undefined,
+    totalPages,
+    message: items.length > 0 ? "Sugestoes carregadas para voce explorar." : undefined
   };
 }
 
@@ -345,8 +380,8 @@ export async function getProductById(id: string): Promise<ProductDTO | null> {
   const savedProduct = await prisma.product.findFirst({
     where: {
       OR: [{ id }, { externalId: id }],
-      isDeleted: false,
-    },
+      isDeleted: false
+    }
   });
 
   if (savedProduct) {
@@ -358,7 +393,7 @@ export async function getProductById(id: string): Promise<ProductDTO | null> {
       imageUrl: savedProduct.imageUrl ?? undefined,
       productUrl: savedProduct.productUrl ?? undefined,
       storeName: savedProduct.storeName ?? undefined,
-      category: savedProduct.category ?? undefined,
+      category: savedProduct.category ?? undefined
     };
   }
 
@@ -367,7 +402,7 @@ export async function getProductById(id: string): Promise<ProductDTO | null> {
 
 export async function upsertProduct(product: ProductDTO): Promise<string> {
   const existing = await prisma.product.findUnique({
-    where: { externalId: product.externalId },
+    where: { externalId: product.externalId }
   });
 
   if (
@@ -387,7 +422,7 @@ export async function upsertProduct(product: ProductDTO): Promise<string> {
       productUrl: product.productUrl,
       storeName: product.storeName,
       category: product.category,
-      isManual: false,
+      isManual: false
     },
     create: {
       externalId: product.externalId,
@@ -397,8 +432,8 @@ export async function upsertProduct(product: ProductDTO): Promise<string> {
       productUrl: product.productUrl,
       storeName: product.storeName,
       category: product.category,
-      isManual: false,
-    },
+      isManual: false
+    }
   });
 
   return savedProduct.id;
@@ -415,13 +450,13 @@ export type UpdateProductInput = {
 
 export async function updateProduct(
   id: string,
-  input: UpdateProductInput,
+  input: UpdateProductInput
 ): Promise<ProductDTO | null> {
   const product = await prisma.product.findFirst({
     where: {
       OR: [{ id }, { externalId: id }],
-      isDeleted: false,
-    },
+      isDeleted: false
+    }
   });
 
   if (!product) {
@@ -433,16 +468,12 @@ export async function updateProduct(
     data: {
       name: input.name ?? product.name,
       price: input.price ?? Number(product.price),
-      imageUrl:
-        input.imageUrl === undefined ? product.imageUrl : input.imageUrl,
-      productUrl:
-        input.productUrl === undefined ? product.productUrl : input.productUrl,
-      storeName:
-        input.storeName === undefined ? product.storeName : input.storeName,
-      category:
-        input.category === undefined ? product.category : input.category,
-      isManual: true,
-    },
+      imageUrl: input.imageUrl === undefined ? product.imageUrl : input.imageUrl,
+      productUrl: input.productUrl === undefined ? product.productUrl : input.productUrl,
+      storeName: input.storeName === undefined ? product.storeName : input.storeName,
+      category: input.category === undefined ? product.category : input.category,
+      isManual: true
+    }
   });
 
   return {
@@ -453,21 +484,19 @@ export async function updateProduct(
     imageUrl: updated.imageUrl ?? undefined,
     productUrl: updated.productUrl ?? undefined,
     storeName: updated.storeName ?? undefined,
-    category: updated.category ?? undefined,
+    category: updated.category ?? undefined
   };
 }
 
-export async function deleteProduct(
-  id: string,
-): Promise<{ deleted: boolean } | null> {
+export async function deleteProduct(id: string): Promise<{ deleted: boolean } | null> {
   const product = await prisma.product.findFirst({
     where: {
       OR: [{ id }, { externalId: id }],
-      isDeleted: false,
+      isDeleted: false
     },
     select: {
-      id: true,
-    },
+      id: true
+    }
   });
 
   if (!product) {
@@ -477,7 +506,7 @@ export async function deleteProduct(
   const [favoritesCount, alertsCount, historyCount] = await Promise.all([
     prisma.favorite.count({ where: { productId: product.id } }),
     prisma.priceAlert.count({ where: { productId: product.id } }),
-    prisma.priceHistory.count({ where: { productId: product.id } }),
+    prisma.priceHistory.count({ where: { productId: product.id } })
   ]);
 
   if (favoritesCount > 0 || alertsCount > 0 || historyCount > 0) {
@@ -488,8 +517,8 @@ export async function deleteProduct(
   await prisma.product.update({
     where: { id: product.id },
     data: {
-      isDeleted: true,
-    },
+      isDeleted: true
+    }
   });
 
   return { deleted: true };
