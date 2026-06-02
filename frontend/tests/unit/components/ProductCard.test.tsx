@@ -80,6 +80,31 @@ describe("ProductCard", () => {
     await waitFor(() => expect(favoriteProduct).toHaveBeenCalledWith("p1"));
   });
 
+  it("prevents duplicate favorite requests while saving", async () => {
+    let resolveFavorite: ((value: unknown) => void) | undefined;
+    vi.mocked(favoriteProduct).mockReturnValue(
+      new Promise((resolve) => {
+        resolveFavorite = resolve;
+      }) as never
+    );
+
+    render(
+      <MemoryRouter>
+        <ProductCard {...props} />
+      </MemoryRouter>
+    );
+
+    const favoriteButton = screen.getByLabelText("Salvar nos favoritos");
+    fireEvent.click(favoriteButton);
+    fireEvent.click(favoriteButton);
+    fireEvent.click(favoriteButton);
+
+    expect(favoriteProduct).toHaveBeenCalledTimes(1);
+
+    resolveFavorite?.({ id: "f1" });
+    await waitFor(() => expect(favoriteProduct).toHaveBeenCalledTimes(1));
+  });
+
   it("removes from favorites on click", async () => {
     vi.mocked(deleteFavorite).mockResolvedValue(undefined as never);
     const onRemoved = vi.fn();

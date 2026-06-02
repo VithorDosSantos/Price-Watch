@@ -39,27 +39,38 @@ export function ProductCard({
 }: Readonly<ProductCardProps>) {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [isFavoriting, setIsFavoriting] = useState(false);
+  const [favoritedLocally, setFavoritedLocally] = useState(false);
   const [alertOpen, setAlertOpen] = useState(false);
   const [targetPriceInput, setTargetPriceInput] = useState(String(currentPrice));
+  const isEffectivelyFavorite = isFavorite || favoritedLocally;
   const discount = originalPrice
     ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
     : 0;
 
   async function handleFavoriteClick() {
+    if (isFavoriting) {
+      return;
+    }
+
     if (!user) {
       toast.error("Faça login para salvar favoritos.");
       navigate("/login");
       return;
     }
 
-    if (isFavorite) {
+    if (isEffectivelyFavorite) {
       if (favoriteId) {
+        setIsFavoriting(true);
         try {
           await deleteFavorite(favoriteId);
           toast.success("Produto removido dos favoritos.");
           onFavoriteRemoved?.(favoriteId);
+          setFavoritedLocally(false);
         } catch (err) {
           toast.error(err instanceof Error ? err.message : "Não foi possível remover o favorito.");
+        } finally {
+          setIsFavoriting(false);
         }
         return;
       }
@@ -68,11 +79,15 @@ export function ProductCard({
       return;
     }
 
+    setIsFavoriting(true);
     try {
       await favoriteProduct(id);
+      setFavoritedLocally(true);
       toast.success("Produto salvo nos favoritos.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Não foi possível salvar o favorito.");
+    } finally {
+      setIsFavoriting(false);
     }
   }
 
@@ -125,12 +140,13 @@ export function ProductCard({
           onClick={() => void handleFavoriteClick()}
           className={cn(
             "absolute right-2 top-2 h-8 w-8 rounded-full bg-white/90 backdrop-blur hover:bg-white",
-            isFavorite && "text-red-500"
+            isEffectivelyFavorite && "text-red-500"
           )}
-          aria-label={isFavorite ? "Ver favoritos" : "Salvar nos favoritos"}
-          title={isFavorite ? "Ver favoritos" : "Salvar nos favoritos"}
+          aria-label={isEffectivelyFavorite ? "Ver favoritos" : "Salvar nos favoritos"}
+          title={isEffectivelyFavorite ? "Ver favoritos" : "Salvar nos favoritos"}
+          disabled={isFavoriting}
         >
-          <Heart className={cn("h-4 w-4", isFavorite && "fill-current")} />
+          <Heart className={cn("h-4 w-4", isEffectivelyFavorite && "fill-current")} />
         </Button>
         {discount > 0 && <Badge className="absolute left-2 top-2 bg-green-600">-{discount}%</Badge>}
       </div>

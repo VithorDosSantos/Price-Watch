@@ -1,4 +1,4 @@
-import { BarChart3, Bell, Clock3, Heart, Home, Layers3, Store, User } from "lucide-react";
+import { BarChart3, Bell, Heart, Home, Layers3, Store, User } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { cn } from "./ui/utils";
@@ -10,7 +10,6 @@ const navigation = [
   { name: "Alertas", href: "/alerts", icon: Bell },
   { name: "Lojas", href: "/stores", icon: Store },
   { name: "Categorias", href: "/categories", icon: Layers3 },
-  { name: "Histórico", href: "/price-history", icon: Clock3 },
   { name: "Perfil", href: "/profile", icon: User }
 ];
 

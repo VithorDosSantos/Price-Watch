@@ -47,6 +47,7 @@ model Favorite {
 
   @@index([productId])
   @@index([userId])
+  @@unique([userId, productId])
 }
 
 model PriceAlert {

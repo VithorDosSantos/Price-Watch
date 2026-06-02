@@ -141,6 +141,12 @@ describe("ProductDetailPage", () => {
 
     fireEvent.click(screen.getByText(/Criar alerta de preço/i));
 
+    await waitFor(() => expect(screen.getByLabelText("Preço que você quer pagar")).toBeInTheDocument());
+    fireEvent.change(screen.getByLabelText("Preço que você quer pagar"), {
+      target: { value: "99.9" }
+    });
+    fireEvent.click(screen.getByText("Salvar alerta"));
+
     await waitFor(() => expect(createAlert).toHaveBeenCalledWith("p1", 99.9, "a@b.com"));
   });
 

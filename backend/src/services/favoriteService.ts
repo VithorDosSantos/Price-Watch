@@ -1,5 +1,6 @@
 import { prisma } from "../prisma/client";
 import { getProductById, upsertProduct } from "./productService";
+import { Prisma } from "@prisma/client";
 
 export type CreateFavoriteInput = {
   productId: string;
@@ -16,16 +17,53 @@ export async function createFavorite(input: CreateFavoriteInput) {
 
   const savedProductId = await upsertProduct(product);
 
-  return prisma.favorite.create({
-    data: {
-      productId: savedProductId,
+  const existingFavorite = await prisma.favorite.findFirst({
+    where: {
       userId: input.userId,
-      userName: input.userName ?? "Aluno PriceWatch",
+      productId: savedProductId,
     },
     include: {
       product: true,
     },
   });
+
+  if (existingFavorite) {
+    return existingFavorite;
+  }
+
+  try {
+    return await prisma.favorite.create({
+      data: {
+        productId: savedProductId,
+        userId: input.userId,
+        userName: input.userName ?? "Aluno PriceWatch",
+      },
+      include: {
+        product: true,
+      },
+    });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      const recoveredFavorite = await prisma.favorite.findFirst({
+        where: {
+          userId: input.userId,
+          productId: savedProductId,
+        },
+        include: {
+          product: true,
+        },
+      });
+
+      if (recoveredFavorite) {
+        return recoveredFavorite;
+      }
+    }
+
+    throw error;
+  }
 }
 
 export async function listFavorites(userId: string) {

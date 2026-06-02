@@ -30,7 +30,6 @@ describe("Sidebar", () => {
     renderSidebar();
     expect(screen.getByText("Lojas")).toBeInTheDocument();
     expect(screen.getByText("Categorias")).toBeInTheDocument();
-    expect(screen.getByText("Histórico")).toBeInTheDocument();
     expect(screen.getByText("Perfil")).toBeInTheDocument();
   });
 });

@@ -22,11 +22,6 @@ export function AdminPage() {
           </Link>
         </li>
         <li>
-          <Link to="/price-history" className="text-violet-600 underline">
-            Histórico de preços
-          </Link>
-        </li>
-        <li>
           <Link to="/admin/users" className="text-violet-600 underline">
             Usuários
           </Link>

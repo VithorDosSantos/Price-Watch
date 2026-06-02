@@ -41,6 +41,7 @@ describe("favoriteService", () => {
     it("creates favorite with default userName", async () => {
       mockProductFound(getProductById as any, upsertProduct as any);
       mockFavoriteModel({
+        findFirst: vi.fn().mockResolvedValueOnce(null),
         create: vi.fn().mockResolvedValueOnce({
           id: "f1",
           productId: "saved-p1",
@@ -59,6 +60,7 @@ describe("favoriteService", () => {
     it("creates favorite with custom userName", async () => {
       mockProductFound(getProductById as any, upsertProduct as any);
       mockFavoriteModel({
+        findFirst: vi.fn().mockResolvedValueOnce(null),
         create: vi.fn().mockResolvedValueOnce({
           id: "f1",
           productId: "saved-p1",
@@ -75,6 +77,27 @@ describe("favoriteService", () => {
       });
 
       expect(result.userName).toBe("Custom User");
+    });
+
+    it("returns existing favorite instead of creating duplicate", async () => {
+      mockProductFound(getProductById as any, upsertProduct as any);
+      const existing = {
+        id: "f-existing",
+        productId: "saved-p1",
+        userId: "u1",
+        userName: "Aluno PriceWatch",
+        product: { id: "saved-p1", name: "Product" },
+      };
+
+      mockFavoriteModel({
+        findFirst: vi.fn().mockResolvedValueOnce(existing),
+        create: vi.fn(),
+      });
+
+      const result = await createFavorite({ productId: "p1", userId: "u1" });
+
+      expect(result).toEqual(existing);
+      expect(prisma.favorite.create).not.toHaveBeenCalled();
     });
   });
 

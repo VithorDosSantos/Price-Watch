@@ -1,7 +1,6 @@
 import {
   BarChart3,
   Bell,
-  Clock3,
   Heart,
   Home,
   Layers3,
@@ -25,8 +24,7 @@ const navigation = [
   { name: "Favoritos", href: "/favorites", icon: Heart },
   { name: "Alertas", href: "/alerts", icon: Bell },
   { name: "Lojas", href: "/stores", icon: Store },
-  { name: "Categorias", href: "/categories", icon: Layers3 },
-  { name: "Histórico", href: "/price-history", icon: Clock3 }
+  { name: "Categorias", href: "/categories", icon: Layers3 }
 ];
 
 export function Navbar() {
