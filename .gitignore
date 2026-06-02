@@ -1,5 +1,6 @@
 # Dependencies
 node_modules/
+**/node_modules/
 
 # Build outputs
 dist/
@@ -9,14 +10,22 @@ frontend/.vite/
 frontend/dist/
 frontend/vite.config.js
 frontend/vite.config.d.ts
+**/dist/
+**/.vite/
+**/vite.config.js
+**/vite.config.d.ts
 
 # Coverage reports
 coverage/
 *.lcov
+**/coverage/
+**/*.lcov
 
 # Test results
 test-results/
 playwright-report/
+**/test-results/
+**/playwright-report/
 
 # Environment variables
 .env

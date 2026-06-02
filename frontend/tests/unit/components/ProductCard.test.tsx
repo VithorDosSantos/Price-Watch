@@ -1,0 +1,103 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
+import { ProductCard } from "../../../src/components/ProductCard";
+
+const mockNavigate = vi.fn();
+
+vi.mock("react-router-dom", async () => {
+  const actual = await vi.importActual("react-router-dom");
+  return { ...actual, useNavigate: () => mockNavigate };
+});
+
+vi.mock("../../../src/contexts/AuthContext", () => ({
+  useAuth: () => ({
+    user: { id: "u1", email: "a@b.com", role: "USER" },
+    loading: false,
+    logout: vi.fn(),
+    loginWithToken: vi.fn()
+  })
+}));
+
+vi.mock("../../../src/services/api", () => ({
+  deleteFavorite: vi.fn(),
+  favoriteProduct: vi.fn(),
+  setAuthToken: vi.fn(),
+  getCurrentUser: vi.fn()
+}));
+
+import { favoriteProduct, deleteFavorite } from "../../../src/services/api";
+
+beforeEach(() => vi.clearAllMocks());
+
+describe("ProductCard", () => {
+  const props = {
+    id: "p1",
+    name: "Test Product",
+    image: "https://example.com/img.jpg",
+    currentPrice: 99.9,
+    store: "Amazon"
+  };
+
+  it("renders product name and store", () => {
+    render(
+      <MemoryRouter>
+        <ProductCard {...props} />
+      </MemoryRouter>
+    );
+    expect(screen.getByText("Test Product")).toBeInTheDocument();
+    expect(screen.getByText("Amazon")).toBeInTheDocument();
+  });
+
+  it("renders price", () => {
+    render(
+      <MemoryRouter>
+        <ProductCard {...props} />
+      </MemoryRouter>
+    );
+    expect(screen.getByText(/99/)).toBeInTheDocument();
+  });
+
+  it("renders discount badge when originalPrice provided", () => {
+    render(
+      <MemoryRouter>
+        <ProductCard {...props} originalPrice={120} />
+      </MemoryRouter>
+    );
+    expect(screen.getByText(/-\d+%/)).toBeInTheDocument();
+  });
+
+  it("adds to favorites on click", async () => {
+    vi.mocked(favoriteProduct).mockResolvedValue({ id: "f1" });
+    render(
+      <MemoryRouter>
+        <ProductCard {...props} />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByLabelText("Salvar nos favoritos"));
+    await waitFor(() => expect(favoriteProduct).toHaveBeenCalledWith("p1"));
+  });
+
+  it("removes from favorites on click", async () => {
+    vi.mocked(deleteFavorite).mockResolvedValue(undefined as never);
+    const onRemoved = vi.fn();
+    render(
+      <MemoryRouter>
+        <ProductCard {...props} isFavorite={true} favoriteId="f1" onFavoriteRemoved={onRemoved} />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByLabelText("Ver favoritos"));
+    await waitFor(() => expect(deleteFavorite).toHaveBeenCalledWith("f1"));
+  });
+
+  it("shows price change badge", () => {
+    render(
+      <MemoryRouter>
+        <ProductCard {...props} priceChange={-5.2} />
+      </MemoryRouter>
+    );
+    expect(screen.getByText(/5\.2/)).toBeInTheDocument();
+  });
+});
