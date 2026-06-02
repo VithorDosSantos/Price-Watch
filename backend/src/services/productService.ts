@@ -166,17 +166,53 @@ function calculatePriceChangePercent(current: number, previous: number): number 
   return roundToOneDecimal(((current - previous) / previous) * 100);
 }
 
+function isAsciiWhitespace(char: string): boolean {
+  return char === " " || char === "\t" || char === "\n" || char === "\r";
+}
+
+function isDiscountNumberChar(char: string): boolean {
+  return (
+    (char >= "0" && char <= "9") ||
+    char === "." ||
+    char === "," ||
+    char === "-"
+  );
+}
+
 function parseDiscountPercent(text?: string): number | undefined {
   if (!text) {
     return undefined;
   }
 
-  const match = text.match(/(-?\d+(?:[.,]\d+)?)\s*%/);
-  if (!match) {
+  const percentIndex = text.indexOf("%");
+  if (percentIndex <= 0) {
     return undefined;
   }
 
-  const normalized = match[1]?.replace(",", ".");
+  let end = percentIndex - 1;
+  while (end >= 0 && isAsciiWhitespace(text[end]!)) {
+    end -= 1;
+  }
+
+  if (end < 0) {
+    return undefined;
+  }
+
+  let start = end;
+  while (start >= 0 && isDiscountNumberChar(text[start]!)) {
+    start -= 1;
+  }
+
+  const candidate = text.slice(start + 1, end + 1);
+  if (!candidate) {
+    return undefined;
+  }
+
+  if (candidate.lastIndexOf("-") > 0) {
+    return undefined;
+  }
+
+  const normalized = candidate.replace(",", ".");
   const value = Number(normalized);
 
   if (!Number.isFinite(value) || value <= 0 || value >= 100) {
