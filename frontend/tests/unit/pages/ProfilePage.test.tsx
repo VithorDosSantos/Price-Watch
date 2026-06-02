@@ -61,6 +61,38 @@ describe("ProfilePage", () => {
     });
   });
 
+  it("rejects mismatched passwords before calling the API", async () => {
+    render(
+      <MemoryRouter>
+        <ProfilePage />
+      </MemoryRouter>
+    );
+
+    fireEvent.change(screen.getByLabelText("Nova senha"), { target: { value: "abc123" } });
+    fireEvent.change(screen.getByLabelText("Confirmar nova senha"), {
+      target: { value: "abc456" }
+    });
+    fireEvent.click(screen.getByRole("button", { name: /salvar perfil/i }));
+
+    expect(updateCurrentUser).not.toHaveBeenCalled();
+  });
+
+  it("does nothing when deletion is cancelled", async () => {
+    vi.spyOn(globalThis, "confirm").mockReturnValue(false);
+
+    render(
+      <MemoryRouter>
+        <ProfilePage />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByText("Excluir conta"));
+
+    await waitFor(() => {
+      expect(deleteCurrentUser).not.toHaveBeenCalled();
+    });
+  });
+
   it("deletes account with confirmation", async () => {
     vi.spyOn(globalThis, "confirm").mockReturnValue(true);
     vi.mocked(deleteCurrentUser).mockResolvedValue(

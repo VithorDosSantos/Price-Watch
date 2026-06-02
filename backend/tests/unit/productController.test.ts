@@ -204,6 +204,15 @@ describe("listProductOffersController", () => {
     await listProductOffersController(req, res);
     expect(res.status).toHaveBeenCalledWith(400);
   });
+
+  it("returns 404 when product is missing", async () => {
+    vi.mocked(svc.listProductComparableOffers).mockResolvedValue(null as any);
+    const { req, res } = mockReqRes({}, { id: "missing" }, { limit: "5" });
+
+    await listProductOffersController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(404);
+  });
 });
 
 describe("deleteProductController", () => {

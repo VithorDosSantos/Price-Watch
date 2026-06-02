@@ -248,7 +248,9 @@ export async function getShowcaseProducts(options?: {
   }
 
   const suffix = searchParams.toString();
-  return await request<ProductSearchResponse>(`/products/showcase${suffix ? `?${suffix}` : ""}`);
+  const queryString = suffix ? `?${suffix}` : "";
+
+  return await request<ProductSearchResponse>(`/products/showcase${queryString}`);
 }
 
 export function mapProductToCard(product: Product): ProductCardView {

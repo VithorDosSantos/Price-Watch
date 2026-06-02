@@ -147,7 +147,7 @@ export async function listProductHistoryController(request: Request, response: R
   try {
     const records = await listProductPriceHistory(request.params.id);
 
-    if (!records) {
+    if (records === null) {
       return response.status(404).json({ message: "Produto não encontrado." });
     }
 
@@ -168,7 +168,7 @@ export async function listProductOffersController(request: Request, response: Re
   try {
     const offers = await listProductComparableOffers(request.params.id, limit);
 
-    if (!offers) {
+    if (offers === null) {
       return response.status(404).json({ message: "Produto não encontrado." });
     }
 

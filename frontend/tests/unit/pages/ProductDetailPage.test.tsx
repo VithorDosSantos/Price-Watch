@@ -38,6 +38,13 @@ vi.mock("recharts", () => ({
 }));
 
 import { getProduct, favoriteProduct } from "../../../src/services/api";
+import {
+  createAlert,
+  deleteFavorite,
+  deleteProduct,
+  listFavorites,
+  updateProduct
+} from "../../../src/services/api";
 
 beforeEach(() => vi.clearAllMocks());
 
@@ -107,6 +114,58 @@ describe("ProductDetailPage", () => {
       fireEvent.click(favBtn);
       await waitFor(() => expect(favoriteProduct).toHaveBeenCalledWith("p1"));
     }
+  });
+
+  it("removes an existing favorite", async () => {
+    vi.mocked(getProduct).mockResolvedValue(mockProduct);
+    vi.mocked(listFavorites).mockResolvedValue([
+      { id: "fav-1", product: { id: "p1" } }
+    ] as never);
+    vi.mocked(deleteFavorite).mockResolvedValue(undefined as never);
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText("Test Product")).toBeInTheDocument());
+
+    fireEvent.click(screen.getByText(/Favoritado/i));
+
+    await waitFor(() => expect(deleteFavorite).toHaveBeenCalledWith("fav-1"));
+  });
+
+  it("creates a price alert for the current user", async () => {
+    vi.mocked(getProduct).mockResolvedValue(mockProduct);
+    vi.mocked(createAlert).mockResolvedValue({ id: "alert-1" } as never);
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText("Test Product")).toBeInTheDocument());
+
+    fireEvent.click(screen.getByText(/Criar alerta de preço/i));
+
+    await waitFor(() => expect(createAlert).toHaveBeenCalledWith("p1", 99.9, "a@b.com"));
+  });
+
+  it("rejects invalid update prices before sending the request", async () => {
+    vi.mocked(getProduct).mockResolvedValue(mockProduct);
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText("Test Product")).toBeInTheDocument());
+
+    fireEvent.click(screen.getByText("Editar produto"));
+    fireEvent.change(screen.getByLabelText("Preco"), { target: { value: "0" } });
+    fireEvent.click(screen.getByText("Salvar alteracoes"));
+
+    expect(updateProduct).not.toHaveBeenCalled();
+  });
+
+  it("deletes the product and navigates away", async () => {
+    vi.mocked(getProduct).mockResolvedValue(mockProduct);
+    vi.mocked(deleteProduct).mockResolvedValue(undefined as never);
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText("Test Product")).toBeInTheDocument());
+
+    fireEvent.click(screen.getByText("Excluir produto"));
+
+    await waitFor(() => expect(deleteProduct).toHaveBeenCalledWith("p1"));
   });
 
   it("renders price history chart", async () => {

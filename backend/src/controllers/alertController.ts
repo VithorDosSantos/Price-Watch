@@ -12,7 +12,7 @@ export async function createPriceAlertController(
 ) {
   try {
     const userId = (request as any).user?.id as string | undefined;
-    if (!userId) {
+    if (userId === undefined) {
       return response.status(401).json({ message: "Unauthorized" });
     }
 
@@ -36,7 +36,7 @@ export async function listPriceAlertsController(
   response: Response,
 ) {
   const userId = (request as any).user?.id as string | undefined;
-  if (!userId) {
+  if (userId === undefined) {
     return response.status(401).json({ message: "Unauthorized" });
   }
 
@@ -49,7 +49,7 @@ export async function updatePriceAlertController(
   response: Response,
 ) {
   const userId = (request as any).user?.id as string | undefined;
-  if (!userId) {
+  if (userId === undefined) {
     return response.status(401).json({ message: "Unauthorized" });
   }
 
@@ -90,7 +90,7 @@ export async function deletePriceAlertController(
   response: Response,
 ) {
   const userId = (request as any).user?.id as string | undefined;
-  if (!userId) {
+  if (userId === undefined) {
     return response.status(401).json({ message: "Unauthorized" });
   }
 

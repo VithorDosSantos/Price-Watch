@@ -9,8 +9,10 @@ import {
   getUsers,
   updateUserRole,
   searchProducts,
+  getShowcaseProducts,
   mapProductToCard,
   getProduct,
+  createProduct,
   updateProduct,
   deleteProduct,
   favoriteProduct,
@@ -31,7 +33,9 @@ import {
   listPriceHistory,
   createPriceHistory,
   updatePriceHistory,
-  deletePriceHistory
+  deletePriceHistory,
+  listProductPriceHistory,
+  listProductOffers,
 } from "../../../src/services/api";
 import type { Product } from "../../../src/services/api";
 
@@ -198,6 +202,18 @@ describe("Auth API", () => {
 
     await expect(registerUser("X", "x@y.com", "p")).rejects.toThrow("Email already in use");
   });
+
+  it("falls back to a generic message when the API error is not JSON", async () => {
+    mockFetch.mockReturnValueOnce(
+      Promise.resolve({
+        ok: false,
+        status: 500,
+        json: () => Promise.reject(new Error("invalid json"))
+      })
+    );
+
+    await expect(getCurrentUser()).rejects.toThrow("Falha na comunicação com a API.");
+  });
 });
 
 describe("Admin API", () => {
@@ -247,6 +263,107 @@ describe("Products API", () => {
       expect.anything()
     );
     expect(result.page).toBe(2);
+  });
+
+  it("getShowcaseProducts sends query params when provided", async () => {
+    const mockResponse = {
+      products: [{ id: "p1", externalId: "e1", name: "Notebook", price: 1000 }],
+      source: "mock",
+      page: 2,
+      limit: 24,
+      hasNextPage: false,
+      hasPreviousPage: false
+    };
+    mockFetch.mockReturnValueOnce(jsonResponse(mockResponse));
+
+    const result = await getShowcaseProducts({ page: 2, limit: 24 });
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/products/showcase?page=2&limit=24"),
+      expect.anything()
+    );
+    expect(result.source).toBe("mock");
+  });
+
+  it("getShowcaseProducts uses the base path when no filters are provided", async () => {
+    mockFetch.mockReturnValueOnce(
+      jsonResponse({
+        products: [],
+        source: "mock",
+        page: 1,
+        limit: 8,
+        hasNextPage: false,
+        hasPreviousPage: false
+      })
+    );
+
+    await getShowcaseProducts();
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/products/showcase"),
+      expect.anything()
+    );
+  });
+
+  it("searchProducts uses default pagination when omitted", async () => {
+    const mockResponse = {
+      products: [],
+      source: "serpapi",
+      page: 1,
+      limit: 8,
+      hasNextPage: false,
+      hasPreviousPage: false
+    };
+    mockFetch.mockReturnValueOnce(jsonResponse(mockResponse));
+
+    await searchProducts("notebook");
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringMatching(/q=notebook/),
+      expect.anything()
+    );
+  });
+
+  it("createProduct sends POST with product payload", async () => {
+    const product: Product = {
+      id: "p1",
+      externalId: "manual-p1",
+      name: "Produto Manual",
+      price: 100
+    };
+    mockFetch.mockReturnValueOnce(jsonResponse(product));
+
+    const result = await createProduct({ name: "Produto Manual", price: 100 });
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/products"),
+      expect.objectContaining({ method: "POST" })
+    );
+    expect(result.name).toBe("Produto Manual");
+  });
+
+  it("listProductPriceHistory hits the product history endpoint", async () => {
+    mockFetch.mockReturnValueOnce(jsonResponse([{ id: "h1", oldPrice: 10, newPrice: 8 }]));
+
+    const result = await listProductPriceHistory("p1");
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/products/p1/history"),
+      expect.anything()
+    );
+    expect(result).toHaveLength(1);
+  });
+
+  it("listProductOffers hits the offers endpoint with limit", async () => {
+    mockFetch.mockReturnValueOnce(jsonResponse([{ externalId: "o1", name: "Oferta", price: 9 }]));
+
+    const result = await listProductOffers("p1", 3);
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/products/p1/offers?limit=3"),
+      expect.anything()
+    );
+    expect(result).toHaveLength(1);
   });
 
   it("getProduct fetches by id", async () => {

@@ -5,6 +5,7 @@ import { HomePage } from "../../../src/pages/HomePage";
 
 vi.mock("../../../src/services/api", () => ({
   searchProducts: vi.fn(),
+  getShowcaseProducts: vi.fn(),
   listFavorites: vi.fn().mockResolvedValue([]),
   mapProductToCard: vi.fn((p: Record<string, unknown>) => ({
     id: p.id,
@@ -21,7 +22,7 @@ vi.mock("../../../src/contexts/AuthContext", () => ({
   useAuth: () => ({ user: null, loading: false, logout: vi.fn(), loginWithToken: vi.fn() })
 }));
 
-import { searchProducts } from "../../../src/services/api";
+import { getShowcaseProducts, listFavorites, searchProducts } from "../../../src/services/api";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -133,6 +134,70 @@ describe("HomePage", () => {
 
     await waitFor(() => {
       expect(screen.getByText(/Não foi possível consultar/i)).toBeInTheDocument();
+    });
+  });
+
+  it("rejects blank searches without calling the API", async () => {
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
+    );
+
+    fireEvent.submit(screen.getByPlaceholderText(/nome do produto/i).closest("form")!);
+
+    expect(searchProducts).not.toHaveBeenCalled();
+    expect(screen.getByText(/Digite um termo para pesquisar/i)).toBeInTheDocument();
+  });
+
+  it("loads showcase suggestions when requested", async () => {
+    vi.mocked(getShowcaseProducts).mockResolvedValue({
+      products: [{ id: "p1", name: "Notebook", price: 3000, storeName: "Amazon" }],
+      totalPages: 1,
+      page: 1,
+      hasNextPage: false,
+      hasPreviousPage: false,
+      source: "mock",
+      message: "Sugestões carregadas para você explorar."
+    });
+    vi.mocked(listFavorites).mockResolvedValue([]);
+
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByText("Ver sugestões"));
+
+    await waitFor(() => expect(getShowcaseProducts).toHaveBeenCalledWith({ page: 1, limit: 8 }));
+    await waitFor(() => {
+      expect(screen.getByText("Notebook")).toBeInTheDocument();
+    });
+  });
+
+  it("shows fallback feedback when search results have no total count", async () => {
+    vi.mocked(searchProducts).mockResolvedValue({
+      products: [{ id: "p1", name: "Notebook", price: 3000, storeName: "Amazon" }],
+      totalPages: undefined,
+      page: 1,
+      hasNextPage: false,
+      hasPreviousPage: false
+    });
+
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
+    );
+
+    fireEvent.change(screen.getByPlaceholderText(/nome do produto/i), {
+      target: { value: "notebook" }
+    });
+    fireEvent.submit(screen.getByPlaceholderText(/nome do produto/i).closest("form")!);
+
+    await waitFor(() => {
+      expect(screen.getByText(/resultado\(s\) nesta página/i)).toBeInTheDocument();
     });
   });
 });

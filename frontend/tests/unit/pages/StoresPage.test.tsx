@@ -12,7 +12,7 @@ vi.mock("../../../src/services/api", () => ({
   getCurrentUser: vi.fn()
 }));
 
-import { listStores, createStore, deleteStore } from "../../../src/services/api";
+import { listStores, createStore, deleteStore, updateStore } from "../../../src/services/api";
 
 beforeEach(() => vi.clearAllMocks());
 
@@ -91,6 +91,52 @@ describe("StoresPage", () => {
   it("deletes a store", async () => {
     vi.mocked(listStores).mockResolvedValue([mockStores[0]]);
     vi.mocked(deleteStore).mockResolvedValue(undefined as never);
+    render(
+      <MemoryRouter>
+        <StoresPage />
+      </MemoryRouter>
+    );
+    await waitFor(() => expect(screen.getByText("Amazon")).toBeInTheDocument());
+
+    const trashBtn = screen
+      .getAllByRole("button")
+      .find((btn) => btn.querySelector(".text-red-600") !== null);
+    if (trashBtn) fireEvent.click(trashBtn);
+
+    await waitFor(() => expect(deleteStore).toHaveBeenCalledWith("s1"));
+  });
+
+  it("updates a store from the edit dialog", async () => {
+    vi.mocked(listStores).mockResolvedValue([mockStores[0]]);
+    vi.mocked(updateStore).mockResolvedValue({
+      id: "s1",
+      name: "Amazon Atualizada",
+      website: "https://amazon.com",
+      contactEmail: "a@a.com",
+      isActive: true
+    });
+    render(
+      <MemoryRouter>
+        <StoresPage />
+      </MemoryRouter>
+    );
+    await waitFor(() => expect(screen.getByText("Amazon")).toBeInTheDocument());
+
+    const editButton = screen
+      .getAllByRole("button")
+      .find((btn) => btn.innerHTML.includes("lucide-pencil"));
+    if (editButton) fireEvent.click(editButton);
+    await waitFor(() => expect(screen.getByLabelText("Nome")).toBeInTheDocument());
+
+    fireEvent.change(screen.getByLabelText("Nome"), { target: { value: "Amazon Atualizada" } });
+    fireEvent.click(screen.getByText("Salvar"));
+
+    await waitFor(() => expect(updateStore).toHaveBeenCalledWith("s1", expect.any(Object)));
+  });
+
+  it("handles delete error", async () => {
+    vi.mocked(listStores).mockResolvedValue([mockStores[0]]);
+    vi.mocked(deleteStore).mockRejectedValue(new Error("fail"));
     render(
       <MemoryRouter>
         <StoresPage />

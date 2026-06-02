@@ -30,6 +30,7 @@ vi.mock("../../../src/contexts/AuthContext", () => ({
 }));
 
 import { listAlerts, deleteAlert } from "../../../src/services/api";
+import { createAlert, searchProducts, updateAlert } from "../../../src/services/api";
 
 beforeEach(() => vi.clearAllMocks());
 
@@ -108,6 +109,58 @@ describe("AlertsPage", () => {
     if (trashBtns.length > 0) fireEvent.click(trashBtns[0]);
 
     await waitFor(() => expect(deleteAlert).toHaveBeenCalledWith("a1"));
+  });
+
+  it("searches for a product and creates a new alert", async () => {
+    vi.mocked(listAlerts).mockResolvedValue([]);
+    vi.mocked(searchProducts).mockResolvedValue({
+      products: [{ id: "p1", name: "Prod1", price: 100, storeName: "Loja A" }],
+      source: "serpapi",
+      page: 1,
+      limit: 6,
+      hasNextPage: false,
+      hasPreviousPage: false
+    } as never);
+    vi.mocked(createAlert).mockResolvedValue({ id: "a9" } as never);
+
+    render(
+      <MemoryRouter>
+        <AlertsPage />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByText("Novo alerta"));
+    fireEvent.change(screen.getByLabelText("Produto ou link"), { target: { value: "Prod1" } });
+    fireEvent.click(screen.getByText("Buscar"));
+
+    await waitFor(() => expect(searchProducts).toHaveBeenCalledWith("Prod1", { page: 1, limit: 6 }));
+    await waitFor(() => expect(screen.getByText("Prod1")).toBeInTheDocument());
+
+    fireEvent.click(screen.getByText("Prod1"));
+    fireEvent.change(screen.getByLabelText("Preço que você quer pagar (R$)"), {
+      target: { value: "80" }
+    });
+    fireEvent.click(screen.getByText("Salvar alerta"));
+
+    await waitFor(() => expect(createAlert).toHaveBeenCalledWith("p1", 80, "a@b.com"));
+  });
+
+  it("toggles an alert status", async () => {
+    vi.mocked(listAlerts).mockResolvedValue(mockAlerts);
+    vi.mocked(updateAlert).mockResolvedValue({ ...mockAlerts[0], isActive: false } as never);
+
+    render(
+      <MemoryRouter>
+        <AlertsPage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => expect(screen.getAllByText("Prod1").length).toBeGreaterThan(0));
+
+    const switches = screen.getAllByRole("switch");
+    fireEvent.click(switches[0]);
+
+    await waitFor(() => expect(updateAlert).toHaveBeenCalledWith("a1", { isActive: false }));
   });
 
   it("handles empty alerts", async () => {
