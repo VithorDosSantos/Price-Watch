@@ -20,13 +20,14 @@ vi.mock("../../../src/contexts/AuthContext", () => ({
 }));
 
 vi.mock("../../../src/services/api", () => ({
+  createAlert: vi.fn(),
   deleteFavorite: vi.fn(),
   favoriteProduct: vi.fn(),
   setAuthToken: vi.fn(),
   getCurrentUser: vi.fn()
 }));
 
-import { favoriteProduct, deleteFavorite } from "../../../src/services/api";
+import { createAlert, favoriteProduct, deleteFavorite } from "../../../src/services/api";
 
 beforeEach(() => vi.clearAllMocks());
 
@@ -99,5 +100,24 @@ describe("ProductCard", () => {
       </MemoryRouter>
     );
     expect(screen.getByText(/5\.2/)).toBeInTheDocument();
+  });
+
+  it("creates alert from card with target price", async () => {
+    vi.mocked(createAlert).mockResolvedValue({ id: "a1" } as never);
+    render(
+      <MemoryRouter>
+        <ProductCard {...props} />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByText("Alerta"));
+    await waitFor(() => expect(screen.getByLabelText("Preco que voce quer pagar")).toBeInTheDocument());
+
+    fireEvent.change(screen.getByLabelText("Preco que voce quer pagar"), {
+      target: { value: "89.9" }
+    });
+    fireEvent.click(screen.getByText("Salvar alerta"));
+
+    await waitFor(() => expect(createAlert).toHaveBeenCalledWith("p1", 89.9, "a@b.com"));
   });
 });

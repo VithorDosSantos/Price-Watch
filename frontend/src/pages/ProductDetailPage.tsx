@@ -56,21 +56,62 @@ type ProductDetailsView = {
   stores: { name: string; price: number; url: string }[];
 };
 
+function roundToOneDecimal(value: number): number {
+  return Math.round(value * 10) / 10;
+}
+
+function buildHistorySeries(
+  price: number,
+  history: Array<{ oldPrice: number; newPrice: number; capturedAt: string }>
+) {
+  if (!history.length) {
+    return [{ date: new Date().toISOString(), price }];
+  }
+
+  const sorted = history
+    .slice()
+    .sort(
+      (left, right) => new Date(left.capturedAt).getTime() - new Date(right.capturedAt).getTime()
+    );
+
+  const points: Array<{ date: string; price: number }> = [];
+  let lastKnownPrice: number | null = null;
+
+  for (const entry of sorted) {
+    const timestamp = new Date(entry.capturedAt).getTime();
+    const oldPrice = Number(entry.oldPrice);
+    const newPrice = Number(entry.newPrice);
+
+    if (points.length === 0 || lastKnownPrice !== oldPrice) {
+      points.push({ date: new Date(timestamp - 60_000).toISOString(), price: oldPrice });
+    }
+
+    points.push({ date: new Date(timestamp).toISOString(), price: newPrice });
+    lastKnownPrice = newPrice;
+  }
+
+  return points;
+}
+
 function mapApiProduct(
   product: Product,
   history: Array<{ oldPrice: number; newPrice: number; capturedAt: string }> = [],
   offers: ComparableOffer[] = []
 ): ProductDetailsView {
   const price = Number(product.price);
-  const mappedHistory = history.length
-    ? history
-        .slice()
-        .reverse()
-        .map((entry) => ({
-          date: new Date(entry.capturedAt).toISOString().slice(0, 10),
-          price: Number(entry.newPrice)
-        }))
-    : [{ date: new Date().toISOString().slice(0, 10), price }];
+  const mappedHistory = buildHistorySeries(price, history);
+  const derivedOriginalPrice =
+    mappedHistory.length > 0 ? Number(mappedHistory[0]?.price ?? price) : price;
+  const originalPrice =
+    typeof product.originalPrice === "number" && product.originalPrice > 0
+      ? Number(product.originalPrice)
+      : derivedOriginalPrice;
+  const priceChange =
+    typeof product.priceChange === "number"
+      ? Number(product.priceChange)
+      : originalPrice > 0
+        ? roundToOneDecimal(((price - originalPrice) / originalPrice) * 100)
+        : 0;
 
   const mappedOffers = offers.length
     ? offers.map((offer) => ({
@@ -91,12 +132,12 @@ function mapApiProduct(
     name: product.name,
     image: product.imageUrl ?? "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600",
     currentPrice: price,
-    originalPrice: Math.round(price * 1.12),
+    originalPrice,
     store: product.storeName ?? "Loja parceira",
     category: product.category ?? "Produto",
     description: "Produto encontrado pela integração do PriceWatch com a busca em tempo real.",
     productUrl: product.productUrl,
-    priceChange: -8.5,
+    priceChange,
     priceHistory: mappedHistory,
     stores: mappedOffers
   };
@@ -110,6 +151,8 @@ export function ProductDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteId, setFavoriteId] = useState<string | null>(null);
+  const [alertDialogOpen, setAlertDialogOpen] = useState(false);
+  const [targetPriceInput, setTargetPriceInput] = useState("");
   const [editOpen, setEditOpen] = useState(false);
   const [formValues, setFormValues] = useState({
     name: "",
@@ -175,6 +218,7 @@ export function ProductDetailPage() {
       productUrl: product.productUrl ?? "",
       imageUrl: product.image ?? ""
     });
+    setTargetPriceInput(String(product.currentPrice ?? ""));
   }, [product]);
 
   if (isLoading) {
@@ -211,14 +255,36 @@ export function ProductDetailPage() {
       return;
     }
 
+    const parsedTargetPrice = Number(targetPriceInput.replace(",", "."));
+    if (!Number.isFinite(parsedTargetPrice) || parsedTargetPrice <= 0) {
+      toast.error("Informe um preco alvo valido.");
+      return;
+    }
+
     try {
-      await createAlert(product.id, product.currentPrice, user.email);
+      await createAlert(product.id, parsedTargetPrice, user.email);
       toast.success("Alerta criado com sucesso!", {
-        description: `Você será notificado quando o preço de "${productName}" mudar.`
+        description: `Você será notificado quando ${productName} atingir R$ ${parsedTargetPrice.toLocaleString("pt-BR")}.`
       });
+      setAlertDialogOpen(false);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Não foi possível criar o alerta.");
     }
+  }
+
+  function handleOpenAlertDialog() {
+    if (!user) {
+      toast.error("Faça login para criar alertas.");
+      navigate("/login");
+      return;
+    }
+
+    if (!product) {
+      return;
+    }
+
+    setTargetPriceInput(String(product.currentPrice));
+    setAlertDialogOpen(true);
   }
 
   function handleFormChange(field: keyof typeof formValues, value: string) {
@@ -350,7 +416,7 @@ export function ProductDetailPage() {
 
             <div className="flex items-center gap-2">
               <PriceBadge change={product.priceChange} size="lg" />
-              <span className="text-xs md:text-sm text-muted-foreground">nos últimos 7 dias</span>
+              <span className="text-xs md:text-sm text-muted-foreground">variacao recente</span>
             </div>
 
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -362,14 +428,37 @@ export function ProductDetailPage() {
           <Separator />
 
           <div className="flex flex-col sm:flex-row gap-3">
-            <Button
-              className="flex-1 bg-violet-600 hover:bg-violet-700"
-              size="lg"
-              onClick={handleCreateAlert}
-            >
-              <Bell className="h-5 w-5 mr-2" />
-              Criar alerta de preço
-            </Button>
+            <Dialog open={alertDialogOpen} onOpenChange={setAlertDialogOpen}>
+              <Button
+                className="flex-1 bg-violet-600 hover:bg-violet-700"
+                size="lg"
+                onClick={handleOpenAlertDialog}
+              >
+                <Bell className="h-5 w-5 mr-2" />
+                Criar alerta de preço
+              </Button>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Definir preço alvo</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-2 py-2">
+                  <Label htmlFor="target-price">Preço que você quer pagar</Label>
+                  <Input
+                    id="target-price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={targetPriceInput}
+                    onChange={(event) => setTargetPriceInput(event.target.value)}
+                  />
+                </div>
+                <DialogFooter>
+                  <Button className="bg-violet-600 hover:bg-violet-700" onClick={handleCreateAlert}>
+                    Salvar alerta
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
             <Button
               variant="outline"
               size="lg"

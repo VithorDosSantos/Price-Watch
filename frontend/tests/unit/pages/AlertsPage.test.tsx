@@ -163,6 +163,29 @@ describe("AlertsPage", () => {
     await waitFor(() => expect(updateAlert).toHaveBeenCalledWith("a1", { isActive: false }));
   });
 
+  it("updates target price for an existing alert", async () => {
+    vi.mocked(listAlerts).mockResolvedValue([mockAlerts[0]] as never);
+    vi.mocked(updateAlert).mockResolvedValue({ ...mockAlerts[0], targetPrice: 75 } as never);
+
+    render(
+      <MemoryRouter>
+        <AlertsPage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => expect(screen.getAllByText("Prod1").length).toBeGreaterThan(0));
+
+    fireEvent.click(screen.getAllByLabelText("Editar preço alvo")[0]);
+    await waitFor(() => expect(screen.getByLabelText("Novo preço alvo (R$)")).toBeInTheDocument());
+
+    fireEvent.change(screen.getByLabelText("Novo preço alvo (R$)"), {
+      target: { value: "75" }
+    });
+    fireEvent.click(screen.getByText("Salvar alteração"));
+
+    await waitFor(() => expect(updateAlert).toHaveBeenCalledWith("a1", { targetPrice: 75 }));
+  });
+
   it("handles empty alerts", async () => {
     vi.mocked(listAlerts).mockResolvedValue([]);
     render(

@@ -1,12 +1,16 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Heart, TrendingDown, TrendingUp } from "lucide-react";
+import { Bell, Heart, TrendingDown, TrendingUp } from "lucide-react";
+import { useState } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { cn } from "./ui/utils";
-import { deleteFavorite, favoriteProduct } from "../services/api";
+import { createAlert, deleteFavorite, favoriteProduct } from "../services/api";
 import { toast } from "sonner";
 import { useAuth } from "../contexts/AuthContext";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
 
 export interface ProductCardProps {
   id: string;
@@ -35,6 +39,8 @@ export function ProductCard({
 }: Readonly<ProductCardProps>) {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [targetPriceInput, setTargetPriceInput] = useState(String(currentPrice));
   const discount = originalPrice
     ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
     : 0;
@@ -67,6 +73,40 @@ export function ProductCard({
       toast.success("Produto salvo nos favoritos.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Não foi possível salvar o favorito.");
+    }
+  }
+
+  function handleOpenAlertDialog() {
+    if (!user) {
+      toast.error("Faça login para criar alertas.");
+      navigate("/login");
+      return;
+    }
+
+    setTargetPriceInput(String(currentPrice));
+    setAlertOpen(true);
+  }
+
+  async function handleCreateAlert() {
+    if (!user) {
+      toast.error("Faça login para criar alertas.");
+      navigate("/login");
+      return;
+    }
+
+    const targetPrice = Number(targetPriceInput.replace(",", "."));
+
+    if (!Number.isFinite(targetPrice) || targetPrice <= 0) {
+      toast.error("Informe um preco alvo valido.");
+      return;
+    }
+
+    try {
+      await createAlert(id, targetPrice, user.email);
+      toast.success("Alerta criado com sucesso.");
+      setAlertOpen(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível criar o alerta.");
     }
   }
 
@@ -126,10 +166,40 @@ export function ProductCard({
           </div>
         )}
 
-        <Link to={`/product/${id}`}>
-          <Button className="w-full bg-violet-600 hover:bg-violet-700">Ver detalhes</Button>
-        </Link>
+        <div className="grid grid-cols-2 gap-2">
+          <Button variant="outline" onClick={handleOpenAlertDialog}>
+            <Bell className="h-4 w-4 mr-2" />
+            Alerta
+          </Button>
+          <Link to={`/product/${id}`}>
+            <Button className="w-full bg-violet-600 hover:bg-violet-700">Ver detalhes</Button>
+          </Link>
+        </div>
       </div>
+
+      <Dialog open={alertOpen} onOpenChange={setAlertOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Definir preco alvo</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <Label htmlFor={`target-price-${id}`}>Preco que voce quer pagar</Label>
+            <Input
+              id={`target-price-${id}`}
+              type="number"
+              min="0"
+              step="0.01"
+              value={targetPriceInput}
+              onChange={(event) => setTargetPriceInput(event.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button className="bg-violet-600 hover:bg-violet-700" onClick={() => void handleCreateAlert()}>
+              Salvar alerta
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

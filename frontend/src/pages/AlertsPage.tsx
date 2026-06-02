@@ -1,4 +1,4 @@
-import { Bell, Plus, Trash2, Search } from "lucide-react";
+import { Bell, Plus, Trash2, Search, PencilLine } from "lucide-react";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -71,6 +71,9 @@ export function AlertsPage() {
   const [newAlertCandidates, setNewAlertCandidates] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isSearchingProduct, setIsSearchingProduct] = useState(false);
+  const [editAlertOpen, setEditAlertOpen] = useState(false);
+  const [editingAlert, setEditingAlert] = useState<AlertRecord | null>(null);
+  const [editingTargetPrice, setEditingTargetPrice] = useState("");
 
   useEffect(() => {
     void refreshAlerts();
@@ -112,6 +115,34 @@ export function AlertsPage() {
     }
   }
 
+  function openEditAlertDialog(alert: AlertRecord) {
+    setEditingAlert(alert);
+    setEditingTargetPrice(String(getTargetPrice(alert)));
+    setEditAlertOpen(true);
+  }
+
+  async function handleUpdateAlertPrice() {
+    if (!editingAlert) {
+      return;
+    }
+
+    const parsedTargetPrice = Number(editingTargetPrice.replace(",", "."));
+    if (!Number.isFinite(parsedTargetPrice) || parsedTargetPrice <= 0) {
+      toast.error("Informe um preço alvo válido.");
+      return;
+    }
+
+    try {
+      const updated = await updateAlert(editingAlert.id, { targetPrice: parsedTargetPrice });
+      setAlerts((prev) => prev.map((alert) => (alert.id === updated.id ? updated : alert)));
+      setEditAlertOpen(false);
+      setEditingAlert(null);
+      toast.success("Preço do alerta atualizado.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível atualizar o alerta.");
+    }
+  }
+
   async function handleSearchAlertProduct() {
     const query = newAlertProductQuery.trim();
     if (!query) {
@@ -128,7 +159,7 @@ export function AlertsPage() {
     } catch {
       setNewAlertCandidates([]);
       setSelectedProduct(null);
-      toast.error("Nao foi possivel buscar produtos agora.");
+      toast.error("Não foi possível buscar produtos agora.");
     } finally {
       setIsSearchingProduct(false);
     }
@@ -148,7 +179,7 @@ export function AlertsPage() {
 
     const priceInput = Number(newAlertPrice);
     if (!Number.isFinite(priceInput) || priceInput <= 0) {
-      toast.error("Informe um preco alvo valido.");
+      toast.error("Informe um preço alvo válido.");
       return;
     }
 
@@ -375,6 +406,16 @@ export function AlertsPage() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-3">
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => openEditAlertDialog(alert)}
+                              title="Editar preço alvo"
+                              aria-label="Editar preço alvo"
+                            >
+                              <PencilLine className="h-4 w-4" />
+                            </Button>
                             <Switch
                               checked={alert.isActive ?? true}
                               onCheckedChange={(checked) =>
@@ -412,14 +453,26 @@ export function AlertsPage() {
                     <div className="space-y-3">
                       <div className="flex items-start justify-between gap-2">
                         <h3 className="font-medium text-sm line-clamp-2 flex-1">{productName}</h3>
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => void handleDeleteAlert(alert.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => openEditAlertDialog(alert)}
+                            title="Editar preço alvo"
+                            aria-label="Editar preço alvo"
+                          >
+                            <PencilLine className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => void handleDeleteAlert(alert.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
 
                       <div className="grid grid-cols-2 gap-3 text-sm">
@@ -464,6 +517,33 @@ export function AlertsPage() {
           </>
         )}
       </Card>
+
+      <Dialog open={editAlertOpen} onOpenChange={setEditAlertOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Atualizar preço alvo</DialogTitle>
+            <DialogDescription>
+              Defina o novo preço para o alerta do produto selecionado.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <Label htmlFor="edit-target-price">Novo preço alvo (R$)</Label>
+            <Input
+              id="edit-target-price"
+              type="number"
+              min="0"
+              step="0.01"
+              value={editingTargetPrice}
+              onChange={(event) => setEditingTargetPrice(event.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button className="bg-violet-600 hover:bg-violet-700" onClick={() => void handleUpdateAlertPrice()}>
+              Salvar alteração
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* How it works */}
       <Card className="p-6 bg-gradient-to-br from-violet-50 to-indigo-50 border-violet-200">

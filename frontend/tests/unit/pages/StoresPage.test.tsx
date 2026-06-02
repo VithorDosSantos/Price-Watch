@@ -12,6 +12,15 @@ vi.mock("../../../src/services/api", () => ({
   getCurrentUser: vi.fn()
 }));
 
+vi.mock("../../../src/contexts/AuthContext", () => ({
+  useAuth: () => ({
+    user: { id: "u1", email: "a@b.com", role: "ADMIN" },
+    loading: false,
+    logout: vi.fn(),
+    loginWithToken: vi.fn()
+  })
+}));
+
 import { listStores, createStore, deleteStore, updateStore } from "../../../src/services/api";
 
 beforeEach(() => vi.clearAllMocks());
@@ -45,6 +54,7 @@ describe("StoresPage", () => {
     await waitFor(() => expect(screen.getByText("Amazon")).toBeInTheDocument());
     expect(screen.getByText("Total cadastradas")).toBeInTheDocument();
     expect(screen.getByText("Lojas ativas")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Cadastrar produto" })).toBeInTheDocument();
   });
 
   it("filters stores by search", async () => {

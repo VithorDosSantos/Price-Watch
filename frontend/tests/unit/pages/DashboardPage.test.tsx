@@ -4,6 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import { DashboardPage } from "../../../src/pages/DashboardPage";
 
 vi.mock("../../../src/services/api", () => ({
+  listAlerts: vi.fn(),
   listFavorites: vi.fn(),
   listPriceHistory: vi.fn(),
   mapProductToCard: vi.fn((p: Record<string, unknown>) => ({
@@ -33,7 +34,7 @@ vi.mock("recharts", () => ({
 }));
 
 import React from "react";
-import { listFavorites, listPriceHistory } from "../../../src/services/api";
+import { listAlerts, listFavorites, listPriceHistory } from "../../../src/services/api";
 
 beforeEach(() => vi.clearAllMocks());
 
@@ -41,6 +42,7 @@ describe("DashboardPage", () => {
   it("renders heading and stats", async () => {
     vi.mocked(listFavorites).mockResolvedValue([]);
     vi.mocked(listPriceHistory).mockResolvedValue([]);
+    vi.mocked(listAlerts).mockResolvedValue([]);
     render(
       <MemoryRouter>
         <DashboardPage />
@@ -57,7 +59,11 @@ describe("DashboardPage", () => {
 
   it("renders with data", async () => {
     vi.mocked(listFavorites).mockResolvedValue([
-      { id: "f1", product: { id: "p1", name: "Notebook", price: 3000, storeName: "Amazon" } }
+      {
+        id: "f1",
+        createdAt: "2026-06-01T10:00:00.000Z",
+        product: { id: "p1", name: "Notebook", price: 3000, storeName: "Amazon" }
+      }
     ]);
     vi.mocked(listPriceHistory).mockResolvedValue([
       {
@@ -67,9 +73,19 @@ describe("DashboardPage", () => {
         oldPrice: 2500,
         storeName: "ML",
         imageUrl: "https://example.com/tv.jpg",
-        recordedAt: "2024-01-01"
+        capturedAt: "2026-06-02T10:00:00.000Z"
       }
     ]);
+    vi.mocked(listAlerts).mockResolvedValue([
+      {
+        id: "a1",
+        targetPrice: 1800,
+        email: "a@b.com",
+        isActive: true,
+        createdAt: "2026-06-02T12:00:00.000Z",
+        product: { id: "p1", name: "TV", price: 2000 }
+      }
+    ] as never);
     render(
       <MemoryRouter>
         <DashboardPage />
@@ -86,6 +102,7 @@ describe("DashboardPage", () => {
   it("handles load error", async () => {
     vi.mocked(listFavorites).mockRejectedValue(new Error("fail"));
     vi.mocked(listPriceHistory).mockRejectedValue(new Error("fail"));
+    vi.mocked(listAlerts).mockRejectedValue(new Error("fail"));
     render(
       <MemoryRouter>
         <DashboardPage />

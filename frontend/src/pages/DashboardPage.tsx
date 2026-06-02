@@ -3,7 +3,15 @@ import { StatsCard } from "../components/StatsCard";
 import { ProductCard } from "../components/ProductCard";
 import { Card } from "../components/ui/card";
 import { PriceBadge } from "../components/PriceBadge";
-import { listFavorites, listPriceHistory, mapProductToCard } from "../services/api";
+import {
+  listAlerts,
+  listFavorites,
+  listPriceHistory,
+  mapProductToCard,
+  type Favorite,
+  type PriceAlert,
+  type PriceHistoryRecord
+} from "../services/api";
 import { useEffect, useState } from "react";
 import {
   Table,
@@ -15,20 +23,61 @@ import {
 } from "../components/ui/table";
 import { LineChart, Line, ResponsiveContainer } from "recharts";
 
+type DashboardPriceHistoryEntry = PriceHistoryRecord & {
+  imageUrl?: string;
+  storeName?: string;
+};
+
+function roundToOneDecimal(value: number): number {
+  return Math.round(value * 10) / 10;
+}
+
+function calculateChangePercent(current: number, previous: number): number {
+  if (!Number.isFinite(previous) || previous <= 0) {
+    return current > 0 ? 100 : 0;
+  }
+
+  return roundToOneDecimal(((current - previous) / previous) * 100);
+}
+
+function getMonthStart(baseDate: Date): Date {
+  return new Date(baseDate.getFullYear(), baseDate.getMonth(), 1);
+}
+
+function isInRange(dateValue: string, start: Date, end: Date): boolean {
+  const date = new Date(dateValue);
+  return date >= start && date < end;
+}
+
 export function DashboardPage() {
-  const [favorites, setFavorites] = useState<Record<string, unknown>[]>([]);
-  const [priceHistory, setPriceHistory] = useState<Record<string, unknown>[]>([]);
+  const [favorites, setFavorites] = useState<Favorite[]>([]);
+  const [alerts, setAlerts] = useState<PriceAlert[]>([]);
+  const [priceHistory, setPriceHistory] = useState<DashboardPriceHistoryEntry[]>([]);
+
+  function getPriceChange(oldPrice: number, newPrice: number): number {
+    if (!Number.isFinite(oldPrice) || oldPrice <= 0) {
+      return 0;
+    }
+
+    return Math.round((((newPrice - oldPrice) / oldPrice) * 100) * 10) / 10;
+  }
 
   useEffect(() => {
     async function load() {
       try {
-        const favs = await listFavorites();
-        setFavorites(favs.map((f) => mapProductToCard(f.product)));
-        const history = await listPriceHistory();
+        const [favs, history, activeAlerts] = await Promise.all([
+          listFavorites(),
+          listPriceHistory(),
+          listAlerts()
+        ]);
+
+        setFavorites(favs);
         setPriceHistory(history);
+        setAlerts(activeAlerts);
       } catch (err) {
         console.error("Failed to load dashboard", err);
         setFavorites([]);
+        setAlerts([]);
         setPriceHistory([]);
       }
     }
@@ -36,15 +85,53 @@ export function DashboardPage() {
     void load();
   }, []);
 
-  const chartData = [
-    { value: 320 },
-    { value: 280 },
-    { value: 350 },
-    { value: 310 },
-    { value: 380 },
-    { value: 340 },
-    { value: 400 }
-  ];
+  const currentMonthStart = getMonthStart(new Date());
+  const nextMonthStart = new Date(currentMonthStart.getFullYear(), currentMonthStart.getMonth() + 1, 1);
+  const previousMonthStart = new Date(
+    currentMonthStart.getFullYear(),
+    currentMonthStart.getMonth() - 1,
+    1
+  );
+
+  const currentMonthHistory = priceHistory.filter((entry) =>
+    isInRange(entry.capturedAt, currentMonthStart, nextMonthStart)
+  );
+  const previousMonthHistory = priceHistory.filter((entry) =>
+    isInRange(entry.capturedAt, previousMonthStart, currentMonthStart)
+  );
+
+  const trackedItemsCurrent = new Set(currentMonthHistory.map((entry) => entry.productName)).size;
+  const trackedItemsPrevious = new Set(previousMonthHistory.map((entry) => entry.productName)).size;
+
+  const activeAlertsTotal = alerts.filter((alert) => alert.isActive).length;
+  const activeAlertsCurrent = alerts.filter(
+    (alert) => alert.isActive && isInRange(alert.createdAt, currentMonthStart, nextMonthStart)
+  ).length;
+  const activeAlertsPrevious = alerts.filter(
+    (alert) => alert.isActive && isInRange(alert.createdAt, previousMonthStart, currentMonthStart)
+  ).length;
+
+  const favoritesCurrent = favorites.filter((favorite) =>
+    isInRange(favorite.createdAt, currentMonthStart, nextMonthStart)
+  ).length;
+  const favoritesPrevious = favorites.filter((favorite) =>
+    isInRange(favorite.createdAt, previousMonthStart, currentMonthStart)
+  ).length;
+
+  const savingsTotal = priceHistory.reduce(
+    (accumulator, entry) => accumulator + Math.max(0, Number(entry.oldPrice) - Number(entry.newPrice)),
+    0
+  );
+  const savingsCurrent = currentMonthHistory.reduce(
+    (accumulator, entry) => accumulator + Math.max(0, Number(entry.oldPrice) - Number(entry.newPrice)),
+    0
+  );
+  const savingsPrevious = previousMonthHistory.reduce(
+    (accumulator, entry) => accumulator + Math.max(0, Number(entry.oldPrice) - Number(entry.newPrice)),
+    0
+  );
+
+  const favoriteCards = favorites.map((favorite) => mapProductToCard(favorite.product));
 
   return (
     <div className="space-y-8">
@@ -59,31 +146,31 @@ export function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatsCard
           title="Itens acompanhados"
-          value={priceHistory.length}
+          value={new Set(priceHistory.map((entry) => entry.productName)).size}
           icon={Eye}
-          change={12.5}
+          change={calculateChangePercent(trackedItemsCurrent, trackedItemsPrevious)}
           changeLabel="vs. mês passado"
         />
         <StatsCard
           title="Alertas ativos"
-          value={4}
+          value={activeAlertsTotal}
           icon={Bell}
-          change={-5.2}
+          change={calculateChangePercent(activeAlertsCurrent, activeAlertsPrevious)}
           changeLabel="vs. mês passado"
         />
         <StatsCard
           title="Favoritos"
           value={favorites.length}
           icon={Package}
-          change={8.1}
+          change={calculateChangePercent(favoritesCurrent, favoritesPrevious)}
           changeLabel="vs. mês passado"
         />
         <StatsCard
           title="Economia estimada"
-          value="R$ 2.450"
+          value={savingsTotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
           icon={TrendingDown}
-          change={-15.3}
-          changeLabel="neste mês"
+          change={calculateChangePercent(savingsCurrent, savingsPrevious)}
+          changeLabel="vs. mês passado"
         />
       </div>
 
@@ -129,15 +216,15 @@ export function DashboardPage() {
                   R$ {entry.newPrice.toLocaleString("pt-BR")}
                 </TableCell>
                 <TableCell>
-                  <PriceBadge change={-8.5} />
+                  <PriceBadge change={getPriceChange(entry.oldPrice, entry.newPrice)} />
                 </TableCell>
                 <TableCell className="text-right">
                   <ResponsiveContainer width={80} height={30}>
-                    <LineChart data={chartData}>
+                    <LineChart data={[{ value: entry.oldPrice }, { value: entry.newPrice }]}>
                       <Line
                         type="monotone"
                         dataKey="value"
-                        stroke="#10b981"
+                        stroke={entry.newPrice <= entry.oldPrice ? "#10b981" : "#ef4444"}
                         strokeWidth={2}
                         dot={false}
                       />
@@ -160,7 +247,7 @@ export function DashboardPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {favorites.map((product) => (
+          {favoriteCards.map((product) => (
             <ProductCard key={product.id} {...product} isFavorite={true} />
           ))}
         </div>

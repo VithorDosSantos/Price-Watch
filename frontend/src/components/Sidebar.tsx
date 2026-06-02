@@ -1,5 +1,6 @@
 import { BarChart3, Bell, Clock3, Heart, Home, Layers3, Store, User } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 import { cn } from "./ui/utils";
 
 const navigation = [
@@ -15,11 +16,16 @@ const navigation = [
 
 export function Sidebar() {
   const location = useLocation();
+  const { user } = useAuth();
+  const items =
+    user?.role === "ADMIN"
+      ? [...navigation, { name: "Produtos", href: "/admin/products", icon: Layers3 }]
+      : navigation;
 
   return (
     <aside className="hidden lg:flex w-64 shrink-0 flex-col border-r bg-gray-50/40">
       <nav className="flex-1 space-y-1 p-4">
-        {navigation.map((item) => {
+        {items.map((item) => {
           const isActive = location.pathname === item.href;
           return (
             <Link

@@ -42,6 +42,7 @@ import {
   createAlert,
   deleteFavorite,
   deleteProduct,
+  listProductPriceHistory,
   listFavorites,
   updateProduct
 } from "../../../src/services/api";
@@ -176,5 +177,27 @@ describe("ProductDetailPage", () => {
       expect(screen.getByText("Test Product")).toBeInTheDocument();
     });
     expect(screen.getByText(/Histórico/i)).toBeInTheDocument();
+  });
+
+  it("shows min and max from a single history change", async () => {
+    vi.mocked(getProduct).mockResolvedValue({ ...mockProduct, price: 100 });
+    vi.mocked(listProductPriceHistory).mockResolvedValue([
+      {
+        id: "h1",
+        oldPrice: 120,
+        newPrice: 100,
+        capturedAt: "2026-06-02T10:00:00.000Z"
+      }
+    ] as never);
+
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText("Test Product")).toBeInTheDocument());
+
+    const lowestSummary = screen.getByText(/Menor preço/i).parentElement;
+    const highestSummary = screen.getByText(/Maior preço/i).parentElement;
+
+    expect(lowestSummary).toHaveTextContent("R$ 100");
+    expect(highestSummary).toHaveTextContent("R$ 120");
   });
 });

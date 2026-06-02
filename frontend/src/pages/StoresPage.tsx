@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Check, PencilLine, Plus, Search, Trash2, X } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
@@ -30,6 +31,7 @@ import {
   type StoreRecord
 } from "../services/api";
 import { toast } from "sonner";
+import { useAuth } from "../contexts/AuthContext";
 
 type StoreFormState = {
   name: string;
@@ -46,6 +48,7 @@ const emptyForm: StoreFormState = {
 };
 
 export function StoresPage() {
+  const { user } = useAuth();
   const [stores, setStores] = useState<StoreRecord[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -126,10 +129,17 @@ export function StoresPage() {
           </p>
         </div>
 
-        <Button className="bg-violet-600 hover:bg-violet-700" onClick={openCreateDialog}>
-          <Plus className="mr-2 h-4 w-4" />
-          Nova loja
-        </Button>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          {user?.role === "ADMIN" ? (
+            <Button asChild variant="outline">
+              <Link to="/admin/products">Cadastrar produto</Link>
+            </Button>
+          ) : null}
+          <Button className="bg-violet-600 hover:bg-violet-700" onClick={openCreateDialog}>
+            <Plus className="mr-2 h-4 w-4" />
+            Nova loja
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
