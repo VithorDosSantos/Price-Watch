@@ -66,7 +66,13 @@ npm run dev
 
 - `GET /health`
 - `GET /products/search?q=termo`
+- `GET /products/showcase`
 - `GET /products/:id`
+- `GET /products/:id/history`
+- `GET /products/:id/offers`
+- `POST /products` (ADMIN)
+- `PUT /products/:id` (ADMIN)
+- `DELETE /products/:id` (ADMIN)
 - `POST /favorites`
 - `GET /favorites`
 - `POST /alerts`

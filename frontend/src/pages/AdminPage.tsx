@@ -7,6 +7,11 @@ export function AdminPage() {
       <p>Use esta área para organizar o sistema e manter os cadastros atualizados.</p>
       <ul className="space-y-3">
         <li>
+          <Link to="/admin/products" className="text-violet-600 underline">
+            Produtos
+          </Link>
+        </li>
+        <li>
           <Link to="/stores" className="text-violet-600 underline">
             Lojas
           </Link>

@@ -1,9 +1,12 @@
 import type { Request, Response } from "express";
 import {
+  createProduct,
   ProductDeleteConflictError,
   SerpApiError,
   getShowcaseProducts,
   getProductById,
+  listProductComparableOffers,
+  listProductPriceHistory,
   searchProducts,
   updateProduct,
   deleteProduct
@@ -106,6 +109,72 @@ export async function updateProductController(request: Request, response: Respon
     return response.status(404).json({ message: "Produto não encontrado." });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Erro ao atualizar produto";
+    return response.status(400).json({ message });
+  }
+}
+
+export async function createProductController(request: Request, response: Response) {
+  const { name, price, imageUrl, productUrl, storeName, category } = request.body ?? {};
+
+  if (String(name ?? "").trim().length === 0) {
+    return response.status(400).json({ message: "Nome do produto é obrigatório." });
+  }
+
+  const parsedPrice = Number(price);
+
+  if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
+    return response.status(400).json({ message: "Preço inválido." });
+  }
+
+  try {
+    const created = await createProduct({
+      name: String(name),
+      price: parsedPrice,
+      imageUrl: optionalNullableString(imageUrl),
+      productUrl: optionalNullableString(productUrl),
+      storeName: optionalNullableString(storeName, true),
+      category: optionalNullableString(category, true)
+    });
+
+    return response.status(201).json(created);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Erro ao criar produto";
+    return response.status(400).json({ message });
+  }
+}
+
+export async function listProductHistoryController(request: Request, response: Response) {
+  try {
+    const records = await listProductPriceHistory(request.params.id);
+
+    if (!records) {
+      return response.status(404).json({ message: "Produto não encontrado." });
+    }
+
+    return response.json(records);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Erro ao consultar histórico do produto";
+    return response.status(400).json({ message });
+  }
+}
+
+export async function listProductOffersController(request: Request, response: Response) {
+  const limit = Number(request.query.limit ?? 5);
+
+  if (!Number.isInteger(limit) || limit < 1 || limit > 10) {
+    return response.status(400).json({ message: "Parâmetro de limite inválido." });
+  }
+
+  try {
+    const offers = await listProductComparableOffers(request.params.id, limit);
+
+    if (!offers) {
+      return response.status(404).json({ message: "Produto não encontrado." });
+    }
+
+    return response.json(offers);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Erro ao consultar ofertas comparáveis";
     return response.status(400).json({ message });
   }
 }

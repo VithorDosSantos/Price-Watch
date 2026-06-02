@@ -187,13 +187,14 @@ Este documento usa um padrão único com ator, pré-condições, fluxo principal
 	- A1: Se a remoção não puder ser concluída, o sistema mantém o alerta ativo.
 - Pós-condições: O alerta deixa de existir para o usuário.
 
-## Como chegar a 5 CRUDs no projeto
+## CRUDs implementados no projeto
 
-Hoje o projeto já possui três áreas com operação de criação, leitura e remoção ou atualização: Produtos, Favoritos e Alertas. Para atender ao requisito acadêmico de pelo menos cinco telas CRUD, as duas expansões mais naturais do domínio são:
+Atualmente o requisito acadêmico de, no mínimo, cinco telas com operações CRUD está atendido com as seguintes áreas:
 
-- Histórico de Preços: CRUD para registros de variação de preço por produto.
-- Lojas Monitoradas ou Integração de Notificações: CRUD para cadastrar, listar, atualizar e remover lojas ou registros de notificações recebidas.
+- Produtos (tela administrativa + rotas administrativas).
+- Lojas monitoradas.
+- Categorias.
+- Histórico de preços (cadastro administrativo).
+- Alertas de preço do usuário.
 
-Se for necessário completar o mínimo com ainda mais segurança, a terceira expansão recomendada é uma entidade de administração, como Categorias Monitoradas, que permite tela própria, filtros e manutenção de catálogo.
-
-Essas expansões fazem sentido porque aproveitam os modelos já existentes em `Product` e `PriceHistory`, e mantêm o sistema coerente com a proposta de monitoramento de preços.
+Além dessas cinco áreas, o sistema também possui CRUD parcial para perfil de usuário e manutenção de papel administrativo.

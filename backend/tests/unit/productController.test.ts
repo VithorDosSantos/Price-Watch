@@ -1,8 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("../../src/services/productService", () => ({
+  createProduct: vi.fn(),
   searchProducts: vi.fn(),
   getProductById: vi.fn(),
+  listProductPriceHistory: vi.fn(),
+  listProductComparableOffers: vi.fn(),
   updateProduct: vi.fn(),
   deleteProduct: vi.fn(),
   SerpApiError: class SerpApiError extends Error {
@@ -24,8 +27,11 @@ vi.mock("../../src/services/productService", () => ({
 }));
 
 import {
+  createProductController,
   searchProductsController,
   getProductDetailsController,
+  listProductHistoryController,
+  listProductOffersController,
   updateProductController,
   deleteProductController,
 } from "../../src/controllers/productController";
@@ -130,6 +136,72 @@ describe("updateProductController", () => {
   it("returns 400 for invalid price", async () => {
     const { req, res } = mockReqRes({ price: -5 }, { id: "1" });
     await updateProductController(req, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+});
+
+describe("createProductController", () => {
+  it("creates a product", async () => {
+    const product = { id: "1", name: "Produto" };
+    vi.mocked(svc.createProduct).mockResolvedValue(product as any);
+    const { req, res } = mockReqRes({ name: "Produto", price: 100 });
+
+    await createProductController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.json).toHaveBeenCalledWith(product);
+  });
+
+  it("returns 400 for invalid name", async () => {
+    const { req, res } = mockReqRes({ name: "", price: 100 });
+    await createProductController(req, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  it("returns 400 for invalid price", async () => {
+    const { req, res } = mockReqRes({ name: "Produto", price: 0 });
+    await createProductController(req, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+});
+
+describe("listProductHistoryController", () => {
+  it("returns records", async () => {
+    vi.mocked(svc.listProductPriceHistory).mockResolvedValue([
+      { id: "h1", oldPrice: 100, newPrice: 90, capturedAt: new Date().toISOString() }
+    ] as any);
+    const { req, res } = mockReqRes({}, { id: "p1" });
+
+    await listProductHistoryController(req, res);
+
+    expect(res.json).toHaveBeenCalled();
+  });
+
+  it("returns 404 when product is missing", async () => {
+    vi.mocked(svc.listProductPriceHistory).mockResolvedValue(null as any);
+    const { req, res } = mockReqRes({}, { id: "missing" });
+
+    await listProductHistoryController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(404);
+  });
+});
+
+describe("listProductOffersController", () => {
+  it("returns offers", async () => {
+    vi.mocked(svc.listProductComparableOffers).mockResolvedValue([
+      { externalId: "x", name: "P", price: 10 }
+    ] as any);
+    const { req, res } = mockReqRes({}, { id: "p1" }, { limit: "5" });
+
+    await listProductOffersController(req, res);
+
+    expect(res.json).toHaveBeenCalled();
+  });
+
+  it("returns 400 for invalid limit", async () => {
+    const { req, res } = mockReqRes({}, { id: "p1" }, { limit: "99" });
+    await listProductOffersController(req, res);
     expect(res.status).toHaveBeenCalledWith(400);
   });
 });

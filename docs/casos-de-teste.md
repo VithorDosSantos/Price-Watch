@@ -181,8 +181,40 @@ Este documento registra o inicio da suite de testes do PriceWatch, cobrindo test
 - Resultado esperado: redirecionamento para `/login`.
 - Status: Automatizado.
 
-## Casos Pendentes
+## CT22 - Criar Produto por API com Admin
 
-- Testar CRUD de lojas por API com usuario administrador.
-- Testar CRUD de historico de precos por API com usuario administrador.
-- Testar integracao de produtos com SerpApi e persistencia local dos resultados.
+- Tipo: Integracao
+- Arquivo automatizado: `backend/tests/integration/adminRoutes.test.ts`
+- Objetivo: garantir que somente ADMIN cria produto manual pela rota `POST /products`.
+- Resultado esperado: HTTP 403 para usuario comum e HTTP 201 para ADMIN.
+- Status: Automatizado.
+
+## CT23 - Consultar Historico e Ofertas de Produto
+
+- Tipo: Unitario
+- Arquivo automatizado: `backend/tests/unit/productController.test.ts`
+- Objetivo: validar os controladores `GET /products/:id/history` e `GET /products/:id/offers`.
+- Resultado esperado: retorno de dados com limites válidos e tratamento de 404/400.
+- Status: Automatizado.
+
+## CT24 - CRUD Administrativo de Produtos na Interface
+
+- Tipo: Unitario (frontend)
+- Arquivo automatizado: `frontend/src/pages/AdminProductsPage.test.tsx`
+- Objetivo: validar listagem, criação e remoção de produtos na tela administrativa.
+- Resultado esperado: carregamento da tabela, submissão de cadastro e exclusão do item.
+- Status: Automatizado.
+
+## CT25 - Criacao de Alerta com Selecao de Produto
+
+- Tipo: Unitario (frontend)
+- Arquivo automatizado: `frontend/src/pages/AlertsPage.test.tsx`
+- Objetivo: validar fluxo de alerta com busca/seleção de produto e manipulação da lista.
+- Resultado esperado: a página renderiza e mantém operações de atualização/remoção sem regressão.
+- Status: Automatizado.
+
+## Situação Atual
+
+- Suíte unitária e de integração backend executada com sucesso localmente.
+- Suíte unitária frontend executada com sucesso localmente.
+- E2E configurado com Playwright; execução depende da instalação dos browsers no ambiente (`npx playwright install`).

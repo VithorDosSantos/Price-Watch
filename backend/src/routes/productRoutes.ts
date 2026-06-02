@@ -1,7 +1,10 @@
 import { Router } from "express";
 import {
+  createProductController,
   deleteProductController,
   getProductDetailsController,
+  listProductHistoryController,
+  listProductOffersController,
   searchProductsController,
   showcaseProductsController,
   updateProductController
@@ -12,6 +15,9 @@ export const productRoutes = Router();
 
 productRoutes.get("/search", searchProductsController);
 productRoutes.get("/showcase", showcaseProductsController);
+productRoutes.get("/:id/history", listProductHistoryController);
+productRoutes.get("/:id/offers", listProductOffersController);
 productRoutes.get("/:id", getProductDetailsController);
+productRoutes.post("/", authenticate, requireAdmin, createProductController);
 productRoutes.put("/:id", authenticate, requireAdmin, updateProductController);
 productRoutes.delete("/:id", authenticate, requireAdmin, deleteProductController);

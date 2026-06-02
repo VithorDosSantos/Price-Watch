@@ -153,6 +153,52 @@ describe("admin routes", () => {
     expect(response.status).toBe(403);
   });
 
+  it("POST /products bloqueia usuario nao admin", async () => {
+    const response = await request(app)
+      .post("/products")
+      .set("Authorization", `Bearer ${buildToken("USER")}`)
+      .send({
+        name: "Produto manual",
+        price: 199.9
+      });
+
+    expect(response.status).toBe(403);
+  });
+
+  it("POST /products permite admin", async () => {
+    Object.defineProperty(prisma, "product", {
+      value: {
+        create: async () => ({
+          id: "prod-1",
+          externalId: "manual-prod-1",
+          name: "Produto manual",
+          price: 199.9,
+          imageUrl: null,
+          productUrl: null,
+          storeName: null,
+          category: null,
+          isManual: true,
+          isDeleted: false,
+          createdAt: new Date("2026-05-21T10:00:00.000Z"),
+          updatedAt: new Date("2026-05-21T10:00:00.000Z")
+        }),
+        findFirst: async () => null
+      },
+      configurable: true
+    });
+
+    const response = await request(app)
+      .post("/products")
+      .set("Authorization", `Bearer ${buildToken("ADMIN")}`)
+      .send({
+        name: "Produto manual",
+        price: 199.9
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.id).toBe("prod-1");
+  });
+
   it("DELETE /products/:id permite admin quando sem dependencias", async () => {
     Object.defineProperty(prisma, "product", {
       value: {

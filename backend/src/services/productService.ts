@@ -1,4 +1,5 @@
 import { prisma } from "../prisma/client";
+import { randomUUID } from "node:crypto";
 
 type SerpApiShoppingResult = {
   title: string;
@@ -41,6 +42,22 @@ export type ProductDTO = {
   productUrl?: string;
   storeName?: string;
   category?: string;
+};
+
+export type ProductPriceHistoryDTO = {
+  id: string;
+  oldPrice: number;
+  newPrice: number;
+  capturedAt: string;
+};
+
+export type ComparableOfferDTO = {
+  externalId: string;
+  name: string;
+  storeName?: string;
+  price: number;
+  productUrl?: string;
+  imageUrl?: string;
 };
 
 export class SerpApiError extends Error {
@@ -154,6 +171,45 @@ function normalizeProductUrl(value?: string | null): string {
   } catch {
     return value.trim().toLowerCase();
   }
+}
+
+function mapSavedProduct(savedProduct: {
+  id: string;
+  externalId: string;
+  name: string;
+  price: { toNumber(): number } | number;
+  imageUrl: string | null;
+  productUrl: string | null;
+  storeName: string | null;
+  category: string | null;
+}): ProductDTO {
+  return {
+    id: savedProduct.id,
+    externalId: savedProduct.externalId,
+    name: savedProduct.name,
+    price:
+      typeof savedProduct.price === "number"
+        ? savedProduct.price
+        : savedProduct.price.toNumber(),
+    imageUrl: savedProduct.imageUrl ?? undefined,
+    productUrl: savedProduct.productUrl ?? undefined,
+    storeName: savedProduct.storeName ?? undefined,
+    category: savedProduct.category ?? undefined
+  };
+}
+
+async function recordProductPriceHistory(productId: string, oldPrice: number, newPrice: number) {
+  if (oldPrice === newPrice) {
+    return;
+  }
+
+  await prisma.priceHistory.create({
+    data: {
+      productId,
+      oldPrice,
+      newPrice
+    }
+  });
 }
 
 async function fetchSerpApiSearch(query: string, start: number): Promise<Response> {
@@ -385,16 +441,7 @@ export async function getProductById(id: string): Promise<ProductDTO | null> {
   });
 
   if (savedProduct) {
-    return {
-      id: savedProduct.id,
-      externalId: savedProduct.externalId,
-      name: savedProduct.name,
-      price: Number(savedProduct.price),
-      imageUrl: savedProduct.imageUrl ?? undefined,
-      productUrl: savedProduct.productUrl ?? undefined,
-      storeName: savedProduct.storeName ?? undefined,
-      category: savedProduct.category ?? undefined
-    };
+    return mapSavedProduct(savedProduct);
   }
 
   return null;
@@ -412,6 +459,8 @@ export async function upsertProduct(product: ProductDTO): Promise<string> {
   ) {
     return existing.id;
   }
+
+  const previousPrice = existing ? Number(existing.price) : null;
 
   const savedProduct = await prisma.product.upsert({
     where: { externalId: product.externalId },
@@ -436,7 +485,62 @@ export async function upsertProduct(product: ProductDTO): Promise<string> {
     }
   });
 
+  if (existing && previousPrice !== null) {
+    await recordProductPriceHistory(savedProduct.id, previousPrice, product.price);
+  }
+
   return savedProduct.id;
+}
+
+export type CreateProductInput = {
+  name: string;
+  price: number;
+  imageUrl?: string | null;
+  productUrl?: string | null;
+  storeName?: string | null;
+  category?: string | null;
+};
+
+export async function createProduct(input: CreateProductInput): Promise<ProductDTO> {
+  const normalizedName = input.name.trim();
+
+  if (!normalizedName) {
+    throw new Error("Nome do produto é obrigatório.");
+  }
+
+  if (!Number.isFinite(input.price) || input.price <= 0) {
+    throw new Error("Preço inválido.");
+  }
+
+  const normalizedProductUrl = input.productUrl?.trim() || null;
+
+  if (normalizedProductUrl) {
+    const existingByUrl = await prisma.product.findFirst({
+      where: {
+        productUrl: normalizedProductUrl,
+        isDeleted: false
+      }
+    });
+
+    if (existingByUrl) {
+      throw new Error("Já existe um produto com a mesma URL.");
+    }
+  }
+
+  const record = await prisma.product.create({
+    data: {
+      externalId: `manual-${randomUUID()}`,
+      name: normalizedName,
+      price: input.price,
+      imageUrl: input.imageUrl?.trim() || null,
+      productUrl: normalizedProductUrl,
+      storeName: input.storeName?.trim() || null,
+      category: input.category?.trim() || null,
+      isManual: true
+    }
+  });
+
+  return mapSavedProduct(record);
 }
 
 export type UpdateProductInput = {
@@ -463,11 +567,14 @@ export async function updateProduct(
     return null;
   }
 
+  const previousPrice = Number(product.price);
+  const nextPrice = input.price ?? previousPrice;
+
   const updated = await prisma.product.update({
     where: { id: product.id },
     data: {
       name: input.name ?? product.name,
-      price: input.price ?? Number(product.price),
+      price: nextPrice,
       imageUrl: input.imageUrl === undefined ? product.imageUrl : input.imageUrl,
       productUrl: input.productUrl === undefined ? product.productUrl : input.productUrl,
       storeName: input.storeName === undefined ? product.storeName : input.storeName,
@@ -476,16 +583,94 @@ export async function updateProduct(
     }
   });
 
-  return {
-    id: updated.id,
-    externalId: updated.externalId,
-    name: updated.name,
-    price: Number(updated.price),
-    imageUrl: updated.imageUrl ?? undefined,
-    productUrl: updated.productUrl ?? undefined,
-    storeName: updated.storeName ?? undefined,
-    category: updated.category ?? undefined
+  await recordProductPriceHistory(updated.id, previousPrice, nextPrice);
+
+  return mapSavedProduct(updated);
+}
+
+export async function listProductPriceHistory(id: string): Promise<ProductPriceHistoryDTO[] | null> {
+  const product = await prisma.product.findFirst({
+    where: {
+      OR: [{ id }, { externalId: id }],
+      isDeleted: false
+    },
+    select: {
+      id: true
+    }
+  });
+
+  if (!product) {
+    return null;
+  }
+
+  const records = await prisma.priceHistory.findMany({
+    where: {
+      productId: product.id
+    },
+    orderBy: {
+      capturedAt: "desc"
+    },
+    take: 30
+  });
+
+  return records.map((item) => ({
+    id: item.id,
+    oldPrice: Number(item.oldPrice),
+    newPrice: Number(item.newPrice),
+    capturedAt: item.capturedAt.toISOString()
+  }));
+}
+
+export async function listProductComparableOffers(
+  id: string,
+  limit = 5
+): Promise<ComparableOfferDTO[] | null> {
+  const product = await getProductById(id);
+
+  if (!product) {
+    return null;
+  }
+
+  const fallbackOffer: ComparableOfferDTO = {
+    externalId: product.externalId,
+    name: product.name,
+    storeName: product.storeName,
+    price: product.price,
+    productUrl: product.productUrl,
+    imageUrl: product.imageUrl
   };
+
+  try {
+    const serpResult = await searchSerpApi(product.name, 1, Math.max(limit * 2, 8));
+    const uniqueKeys = new Set<string>();
+    const offers: ComparableOfferDTO[] = [fallbackOffer];
+    uniqueKeys.add(`${fallbackOffer.storeName ?? ""}-${normalizeProductUrl(fallbackOffer.productUrl)}`);
+
+    for (const item of serpResult.products) {
+      const key = `${item.storeName ?? ""}-${normalizeProductUrl(item.productUrl)}`;
+      if (uniqueKeys.has(key)) {
+        continue;
+      }
+
+      uniqueKeys.add(key);
+      offers.push({
+        externalId: item.externalId,
+        name: item.name,
+        storeName: item.storeName,
+        price: item.price,
+        productUrl: item.productUrl,
+        imageUrl: item.imageUrl
+      });
+
+      if (offers.length >= limit) {
+        break;
+      }
+    }
+
+    return offers;
+  } catch {
+    return [fallbackOffer];
+  }
 }
 
 export async function deleteProduct(id: string): Promise<{ deleted: boolean } | null> {

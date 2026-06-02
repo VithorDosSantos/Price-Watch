@@ -1,6 +1,128 @@
 import { expect, test } from "@playwright/test";
 
+async function mockAuthApi(page: import("@playwright/test").Page) {
+  const state: {
+    user: { id: string; email: string; name?: string; role: string } | null;
+    password: string;
+  } = {
+    user: null,
+    password: ""
+  };
+
+  await page.route("**/auth/register", async (route) => {
+    const payload = route.request().postDataJSON() as {
+      name?: string;
+      email: string;
+      password: string;
+    };
+
+    state.user = {
+      id: "e2e-user-1",
+      email: payload.email,
+      name: payload.name,
+      role: "USER"
+    };
+    state.password = payload.password;
+
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        token: "e2e-token",
+        user: state.user,
+        isFirstAdmin: false
+      })
+    });
+  });
+
+  await page.route("**/auth/login/local", async (route) => {
+    const payload = route.request().postDataJSON() as {
+      email: string;
+      password: string;
+    };
+
+    if (!state.user || payload.email !== state.user.email || payload.password !== state.password) {
+      await route.fulfill({
+        status: 401,
+        contentType: "application/json",
+        body: JSON.stringify({ message: "Invalid credentials" })
+      });
+      return;
+    }
+
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        token: "e2e-token",
+        user: state.user
+      })
+    });
+  });
+
+  await page.route("**/auth/me", async (route) => {
+    const method = route.request().method();
+
+    if (method === "GET") {
+      if (!state.user) {
+        await route.fulfill({
+          status: 401,
+          contentType: "application/json",
+          body: JSON.stringify({ message: "Unauthorized" })
+        });
+        return;
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ user: state.user })
+      });
+      return;
+    }
+
+    if (method === "PATCH") {
+      if (!state.user) {
+        await route.fulfill({
+          status: 401,
+          contentType: "application/json",
+          body: JSON.stringify({ message: "Unauthorized" })
+        });
+        return;
+      }
+
+      const payload = route.request().postDataJSON() as { name?: string; password?: string };
+
+      state.user = {
+        ...state.user,
+        name: payload.name ?? state.user.name
+      };
+      if (payload.password) {
+        state.password = payload.password;
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ user: state.user })
+      });
+      return;
+    }
+
+    if (method === "DELETE") {
+      state.user = null;
+      state.password = "";
+      await route.fulfill({ status: 204, body: "" });
+      return;
+    }
+
+    await route.fallback();
+  });
+}
+
 test("registro, login, update de perfil e exclusao", async ({ page }) => {
+  await mockAuthApi(page);
+
   const timestamp = Date.now();
   const email = `e2e_${timestamp}@pricewatch.local`;
   const password = "Senha#123";
@@ -41,6 +163,14 @@ test("registro, login, update de perfil e exclusao", async ({ page }) => {
 });
 
 test("rota protegida redireciona para login", async ({ page }) => {
+  await page.route("**/auth/me", async (route) => {
+    await route.fulfill({
+      status: 401,
+      contentType: "application/json",
+      body: JSON.stringify({ message: "Unauthorized" })
+    });
+  });
+
   await page.goto("/profile");
   await expect(page).toHaveURL(/\/login/);
   await expect(page.getByRole("heading", { name: "Entrar na conta" })).toBeVisible();

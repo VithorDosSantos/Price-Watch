@@ -16,6 +16,7 @@ import { RegisterPage } from "./pages/RegisterPage";
 import { AdminPage } from "./pages/AdminPage";
 import { AdminUsersPage } from "./pages/AdminUsersPage";
 import { ProfilePage } from "./pages/ProfilePage";
+import { AdminProductsPage } from "./pages/AdminProductsPage";
 import { AdminRoute } from "./components/AdminRoute";
 import { AppErrorBoundary } from "./components/AppErrorBoundary";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -80,6 +81,14 @@ export default function App() {
               element={
                 <AdminRoute>
                   <AdminUsersPage />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/products"
+              element={
+                <AdminRoute>
+                  <AdminProductsPage />
                 </AdminRoute>
               }
             />

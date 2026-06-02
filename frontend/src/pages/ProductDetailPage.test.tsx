@@ -6,6 +6,8 @@ import { ProductDetailPage } from "./ProductDetailPage";
 
 vi.mock("../services/api", () => ({
   getProduct: vi.fn(),
+  listProductOffers: vi.fn().mockResolvedValue([]),
+  listProductPriceHistory: vi.fn().mockResolvedValue([]),
   favoriteProduct: vi.fn(),
   deleteFavorite: vi.fn(),
   deleteProduct: vi.fn(),

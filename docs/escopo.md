@@ -13,23 +13,32 @@ Criar a base inicial do projeto com front-end, back-end, modelagem de banco, doc
 - Página inicial com busca de produtos.
 - Integração da busca com a rota `GET /products/search`.
 - Cards com nome, imagem, preço e acesso aos detalhes.
-- Página de detalhes do produto.
+- Página de detalhes do produto com histórico de preços e ofertas comparáveis.
 - Página de favoritos.
 - Página de alertas de preço.
+- CRUD administrativo de produtos, lojas, categorias e histórico de preços.
+- Gestão administrativa de usuários.
+- Login, registro, perfil e controle de acesso por papel (USER/ADMIN).
 - Dashboard simples com produtos monitorados.
 - API REST com rotas de saúde, produtos, favoritos e alertas.
 - Integração com SerpApi Google Shopping.
 - Persistência dos produtos retornados para suportar detalhes, favoritos e alertas.
-- Modelagem inicial do banco PostgreSQL com Prisma.
+- Modelagem do banco PostgreSQL com Prisma para usuários, produtos e relacionamentos.
 
 ## Fora do Escopo da Sprint 1
 
-- Login e autenticação.
 - Envio real de e-mail.
 - Coleta automática periódica de preços.
-- Gráficos totalmente dinâmicos.
 - Deploy em produção.
-- Sistema multiusuário completo.
+
+## Estado Atual dos Requisitos Acadêmicos
+
+- Front-end interativo: atendido.
+- Back-end com lógica de negócio: atendido.
+- Persistência em banco relacional: atendido.
+- Integração com API externa (SerpApi): atendido.
+- Mínimo de 5 telas com CRUD: atendido com Produtos, Lojas, Categorias, Histórico de Preços e Alertas.
+- Mínimo de 15 casos de uso: atendido (UC01 a UC15).
 
 ## Critérios de Sucesso
 

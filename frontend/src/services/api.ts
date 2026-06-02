@@ -87,6 +87,22 @@ export type PriceHistoryRecord = {
   capturedAt: string;
 };
 
+export type ProductPriceHistoryRecord = {
+  id: string;
+  oldPrice: number;
+  newPrice: number;
+  capturedAt: string;
+};
+
+export type ComparableOffer = {
+  externalId: string;
+  name: string;
+  storeName?: string;
+  price: number;
+  productUrl?: string;
+  imageUrl?: string;
+};
+
 export type PriceHistoryInput = {
   productName: string;
   oldPrice: number;
@@ -262,11 +278,35 @@ export type UpdateProductInput = {
   category?: string | null;
 };
 
+export type CreateProductInput = {
+  name: string;
+  price: number;
+  imageUrl?: string | null;
+  productUrl?: string | null;
+  storeName?: string | null;
+  category?: string | null;
+};
+
+export async function createProduct(input: CreateProductInput) {
+  return request<Product>("/products", {
+    method: "POST",
+    body: JSON.stringify(input)
+  });
+}
+
 export async function updateProduct(id: string, input: UpdateProductInput) {
   return request<Product>(`/products/${id}`, {
     method: "PUT",
     body: JSON.stringify(input)
   });
+}
+
+export async function listProductPriceHistory(productId: string) {
+  return request<ProductPriceHistoryRecord[]>(`/products/${productId}/history`);
+}
+
+export async function listProductOffers(productId: string, limit = 5) {
+  return request<ComparableOffer[]>(`/products/${productId}/offers?limit=${String(limit)}`);
 }
 
 export async function deleteProduct(id: string) {

@@ -31,8 +31,11 @@ import {
   deleteProduct,
   favoriteProduct,
   getProduct,
+  listProductOffers,
+  listProductPriceHistory,
   listFavorites,
   updateProduct,
+  type ComparableOffer,
   type Product
 } from "../services/api";
 import { toast } from "sonner";
@@ -53,18 +56,35 @@ type ProductDetailsView = {
   stores: { name: string; price: number; url: string }[];
 };
 
-function buildPriceHistory(price: number) {
-  return [
-    { date: "2026-04-14", price: Math.round(price * 1.14) },
-    { date: "2026-04-21", price: Math.round(price * 1.1) },
-    { date: "2026-04-28", price: Math.round(price * 1.06) },
-    { date: "2026-05-05", price: Math.round(price * 1.03) },
-    { date: "2026-05-12", price }
-  ];
-}
-
-function mapApiProduct(product: Product): ProductDetailsView {
+function mapApiProduct(
+  product: Product,
+  history: Array<{ oldPrice: number; newPrice: number; capturedAt: string }> = [],
+  offers: ComparableOffer[] = []
+): ProductDetailsView {
   const price = Number(product.price);
+  const mappedHistory = history.length
+    ? history
+        .slice()
+        .reverse()
+        .map((entry) => ({
+          date: new Date(entry.capturedAt).toISOString().slice(0, 10),
+          price: Number(entry.newPrice)
+        }))
+    : [{ date: new Date().toISOString().slice(0, 10), price }];
+
+  const mappedOffers = offers.length
+    ? offers.map((offer) => ({
+        name: offer.storeName ?? "Loja parceira",
+        price: Number(offer.price),
+        url: offer.productUrl ?? "#"
+      }))
+    : [
+        {
+          name: product.storeName ?? "Loja parceira",
+          price,
+          url: product.productUrl ?? "#"
+        }
+      ];
 
   return {
     id: product.id,
@@ -77,16 +97,8 @@ function mapApiProduct(product: Product): ProductDetailsView {
     description: "Produto encontrado pela integração do PriceWatch com a busca em tempo real.",
     productUrl: product.productUrl,
     priceChange: -8.5,
-    priceHistory: buildPriceHistory(price),
-    stores: [
-      {
-        name: product.storeName ?? "Loja parceira",
-        price,
-        url: product.productUrl ?? "#"
-      },
-      { name: "Loja parceira", price: Math.round(price * 1.04), url: "#" },
-      { name: "Marketplace", price: Math.round(price * 1.08), url: "#" }
-    ]
+    priceHistory: mappedHistory,
+    stores: mappedOffers
   };
 }
 
@@ -117,7 +129,17 @@ export function ProductDetailPage() {
       }
       try {
         const apiProduct = await getProduct(id);
-        setProduct(apiProduct ? mapApiProduct(apiProduct) : null);
+        if (!apiProduct) {
+          setProduct(null);
+          return;
+        }
+
+        const [history, offers] = await Promise.all([
+          listProductPriceHistory(apiProduct.id).catch(() => []),
+          listProductOffers(apiProduct.id).catch(() => [])
+        ]);
+
+        setProduct(mapApiProduct(apiProduct, history, offers));
         if (apiProduct) {
           try {
             const favorites = await listFavorites();
@@ -225,7 +247,12 @@ export function ProductDetailPage() {
         imageUrl: formValues.imageUrl.trim() || null
       });
 
-      setProduct(mapApiProduct(updated));
+      const [history, offers] = await Promise.all([
+        listProductPriceHistory(updated.id).catch(() => []),
+        listProductOffers(updated.id).catch(() => [])
+      ]);
+
+      setProduct(mapApiProduct(updated, history, offers));
       setEditOpen(false);
       toast.success("Produto atualizado.");
     } catch (err) {

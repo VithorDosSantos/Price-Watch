@@ -13,6 +13,7 @@ vi.mock("react-router-dom", async () => {
 vi.mock("../services/api", () => ({
   listAlerts: vi.fn(),
   createAlert: vi.fn(),
+  searchProducts: vi.fn(),
   updateAlert: vi.fn(),
   deleteAlert: vi.fn(),
   setAuthToken: vi.fn(),

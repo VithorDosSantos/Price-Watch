@@ -22,7 +22,14 @@ import {
   TableHeader,
   TableRow
 } from "../components/ui/table";
-import { createAlert, deleteAlert, listAlerts, updateAlert } from "../services/api";
+import {
+  createAlert,
+  deleteAlert,
+  listAlerts,
+  searchProducts,
+  updateAlert,
+  type Product
+} from "../services/api";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "../contexts/AuthContext";
@@ -59,6 +66,11 @@ export function AlertsPage() {
   const navigate = useNavigate();
   const [alerts, setAlerts] = useState<AlertRecord[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [newAlertProductQuery, setNewAlertProductQuery] = useState("");
+  const [newAlertPrice, setNewAlertPrice] = useState("");
+  const [newAlertCandidates, setNewAlertCandidates] = useState<Product[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isSearchingProduct, setIsSearchingProduct] = useState(false);
 
   useEffect(() => {
     void refreshAlerts();
@@ -100,6 +112,62 @@ export function AlertsPage() {
     }
   }
 
+  async function handleSearchAlertProduct() {
+    const query = newAlertProductQuery.trim();
+    if (!query) {
+      setNewAlertCandidates([]);
+      setSelectedProduct(null);
+      return;
+    }
+
+    setIsSearchingProduct(true);
+    try {
+      const result = await searchProducts(query, { page: 1, limit: 6 });
+      setNewAlertCandidates(result.products);
+      setSelectedProduct(null);
+    } catch {
+      setNewAlertCandidates([]);
+      setSelectedProduct(null);
+      toast.error("Nao foi possivel buscar produtos agora.");
+    } finally {
+      setIsSearchingProduct(false);
+    }
+  }
+
+  async function handleCreateAlert() {
+    if (!user) {
+      toast.error("Faça login para criar alertas.");
+      navigate("/login");
+      return;
+    }
+
+    if (!selectedProduct) {
+      toast.error("Selecione um produto da lista para criar o alerta.");
+      return;
+    }
+
+    const priceInput = Number(newAlertPrice);
+    if (!Number.isFinite(priceInput) || priceInput <= 0) {
+      toast.error("Informe um preco alvo valido.");
+      return;
+    }
+
+    try {
+      await createAlert(selectedProduct.id, priceInput, user.email);
+      toast.success("Alerta criado com sucesso!", {
+        description: "Você será notificado quando o preço atingir o valor desejado."
+      });
+      setNewAlertProductQuery("");
+      setNewAlertPrice("");
+      setNewAlertCandidates([]);
+      setSelectedProduct(null);
+      await refreshAlerts();
+    } catch (err) {
+      console.error("Failed to create alert", err);
+      toast.error(err instanceof Error ? err.message : "Erro ao criar alerta");
+    }
+  }
+
   const filteredAlerts = alerts.filter((alert) =>
     getProductName(alert).toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -133,40 +201,56 @@ export function AlertsPage() {
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="product">Produto ou link</Label>
-                <Input id="product" placeholder="Digite o nome do produto ou cole o link" />
+                <div className="flex gap-2">
+                  <Input
+                    id="product"
+                    value={newAlertProductQuery}
+                    onChange={(event) => setNewAlertProductQuery(event.target.value)}
+                    placeholder="Digite o nome do produto"
+                  />
+                  <Button type="button" variant="outline" onClick={() => void handleSearchAlertProduct()}>
+                    Buscar
+                  </Button>
+                </div>
+                {isSearchingProduct ? (
+                  <p className="text-xs text-muted-foreground">Buscando produtos...</p>
+                ) : null}
+                {newAlertCandidates.length > 0 ? (
+                  <div className="max-h-40 space-y-2 overflow-y-auto rounded-md border p-2">
+                    {newAlertCandidates.map((candidate) => (
+                      <button
+                        key={candidate.id}
+                        type="button"
+                        className={`w-full rounded-md border px-2 py-2 text-left text-sm ${
+                          selectedProduct?.id === candidate.id
+                            ? "border-violet-500 bg-violet-50"
+                            : "border-transparent hover:bg-gray-50"
+                        }`}
+                        onClick={() => setSelectedProduct(candidate)}
+                      >
+                        <p className="font-medium">{candidate.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {candidate.storeName ?? "Loja parceira"} - R${" "}
+                          {Number(candidate.price).toLocaleString("pt-BR")}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="price">Preço que você quer pagar (R$)</Label>
-                <Input id="price" type="number" placeholder="0,00" />
+                <Input
+                  id="price"
+                  type="number"
+                  placeholder="0,00"
+                  value={newAlertPrice}
+                  onChange={(event) => setNewAlertPrice(event.target.value)}
+                />
               </div>
             </div>
             <DialogFooter>
-              <Button
-                type="submit"
-                className="bg-violet-600 hover:bg-violet-700"
-                onClick={async () => {
-                  const productInput = (document.getElementById("product") as HTMLInputElement)
-                    .value;
-                  const priceInput = Number(
-                    (document.getElementById("price") as HTMLInputElement).value || 0
-                  );
-                  if (!user) {
-                    toast.error("Faça login para criar alertas.");
-                    navigate("/login");
-                    return;
-                  }
-                  try {
-                    await createAlert(productInput, priceInput, user.email);
-                    toast.success("Alerta criado com sucesso!", {
-                      description: "Você será notificado quando o preço atingir o valor desejado."
-                    });
-                    await refreshAlerts();
-                  } catch (err) {
-                    console.error("Failed to create alert", err);
-                    toast.error("Erro ao criar alerta");
-                  }
-                }}
-              >
+              <Button type="submit" className="bg-violet-600 hover:bg-violet-700" onClick={() => void handleCreateAlert()}>
                 Salvar alerta
               </Button>
             </DialogFooter>
