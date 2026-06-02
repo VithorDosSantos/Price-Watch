@@ -71,9 +71,7 @@ export function AdminProductsPage() {
 
   const filteredProducts = useMemo(
     () =>
-      products.filter((product) =>
-        product.name.toLowerCase().includes(searchQuery.toLowerCase())
-      ),
+      products.filter((product) => product.name.toLowerCase().includes(searchQuery.toLowerCase())),
     [products, searchQuery]
   );
 
@@ -114,9 +112,7 @@ export function AdminProductsPage() {
           imageUrl: form.imageUrl.trim() || null
         });
 
-        setProducts((current) =>
-          current.map((item) => (item.id === updated.id ? updated : item))
-        );
+        setProducts((current) => current.map((item) => (item.id === updated.id ? updated : item)));
         toast.success("Produto atualizado com sucesso!");
       } else {
         const created = await createProduct({
@@ -231,7 +227,9 @@ export function AdminProductsPage() {
               <Input
                 id="product-name"
                 value={form.name}
-                onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, name: event.target.value }))
+                }
               />
             </div>
 
@@ -241,7 +239,9 @@ export function AdminProductsPage() {
                 id="product-price"
                 type="number"
                 value={form.price}
-                onChange={(event) => setForm((current) => ({ ...current, price: event.target.value }))}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, price: event.target.value }))
+                }
               />
             </div>
 
@@ -250,7 +250,9 @@ export function AdminProductsPage() {
               <Input
                 id="product-category"
                 value={form.category}
-                onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, category: event.target.value }))
+                }
               />
             </div>
 
@@ -259,7 +261,9 @@ export function AdminProductsPage() {
               <Input
                 id="product-store"
                 value={form.storeName}
-                onChange={(event) => setForm((current) => ({ ...current, storeName: event.target.value }))}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, storeName: event.target.value }))
+                }
               />
             </div>
 
@@ -268,7 +272,9 @@ export function AdminProductsPage() {
               <Input
                 id="product-url"
                 value={form.productUrl}
-                onChange={(event) => setForm((current) => ({ ...current, productUrl: event.target.value }))}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, productUrl: event.target.value }))
+                }
               />
             </div>
 
@@ -277,7 +283,9 @@ export function AdminProductsPage() {
               <Input
                 id="product-image"
                 value={form.imageUrl}
-                onChange={(event) => setForm((current) => ({ ...current, imageUrl: event.target.value }))}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, imageUrl: event.target.value }))
+                }
               />
             </div>
           </div>
@@ -286,7 +294,10 @@ export function AdminProductsPage() {
             <Button variant="outline" onClick={() => setOpen(false)}>
               Cancelar
             </Button>
-            <Button className="bg-violet-600 hover:bg-violet-700" onClick={() => void handleSubmit()}>
+            <Button
+              className="bg-violet-600 hover:bg-violet-700"
+              onClick={() => void handleSubmit()}
+            >
               Salvar
             </Button>
           </DialogFooter>

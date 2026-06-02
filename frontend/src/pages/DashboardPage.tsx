@@ -59,7 +59,7 @@ export function DashboardPage() {
       return 0;
     }
 
-    return Math.round((((newPrice - oldPrice) / oldPrice) * 100) * 10) / 10;
+    return Math.round(((newPrice - oldPrice) / oldPrice) * 100 * 10) / 10;
   }
 
   useEffect(() => {
@@ -86,7 +86,11 @@ export function DashboardPage() {
   }, []);
 
   const currentMonthStart = getMonthStart(new Date());
-  const nextMonthStart = new Date(currentMonthStart.getFullYear(), currentMonthStart.getMonth() + 1, 1);
+  const nextMonthStart = new Date(
+    currentMonthStart.getFullYear(),
+    currentMonthStart.getMonth() + 1,
+    1
+  );
   const previousMonthStart = new Date(
     currentMonthStart.getFullYear(),
     currentMonthStart.getMonth() - 1,
@@ -119,15 +123,18 @@ export function DashboardPage() {
   ).length;
 
   const savingsTotal = priceHistory.reduce(
-    (accumulator, entry) => accumulator + Math.max(0, Number(entry.oldPrice) - Number(entry.newPrice)),
+    (accumulator, entry) =>
+      accumulator + Math.max(0, Number(entry.oldPrice) - Number(entry.newPrice)),
     0
   );
   const savingsCurrent = currentMonthHistory.reduce(
-    (accumulator, entry) => accumulator + Math.max(0, Number(entry.oldPrice) - Number(entry.newPrice)),
+    (accumulator, entry) =>
+      accumulator + Math.max(0, Number(entry.oldPrice) - Number(entry.newPrice)),
     0
   );
   const savingsPrevious = previousMonthHistory.reduce(
-    (accumulator, entry) => accumulator + Math.max(0, Number(entry.oldPrice) - Number(entry.newPrice)),
+    (accumulator, entry) =>
+      accumulator + Math.max(0, Number(entry.oldPrice) - Number(entry.newPrice)),
     0
   );
 

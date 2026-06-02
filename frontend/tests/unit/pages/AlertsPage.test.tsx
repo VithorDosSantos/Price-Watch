@@ -133,7 +133,9 @@ describe("AlertsPage", () => {
     fireEvent.change(screen.getByLabelText("Produto ou link"), { target: { value: "Prod1" } });
     fireEvent.click(screen.getByText("Buscar"));
 
-    await waitFor(() => expect(searchProducts).toHaveBeenCalledWith("Prod1", { page: 1, limit: 6 }));
+    await waitFor(() =>
+      expect(searchProducts).toHaveBeenCalledWith("Prod1", { page: 1, limit: 6 })
+    );
     await waitFor(() => expect(screen.getByText("Prod1")).toBeInTheDocument());
 
     fireEvent.click(screen.getByText("Prod1"));

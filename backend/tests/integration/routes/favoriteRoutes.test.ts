@@ -86,6 +86,7 @@ describe("favorite routes", () => {
 
     Object.defineProperty(prisma, "favorite", {
       value: {
+        findFirst: async () => null,
         create: async () => ({
           id: "fav-1",
           userId: "user-1",

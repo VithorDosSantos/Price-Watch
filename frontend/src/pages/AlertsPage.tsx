@@ -239,7 +239,11 @@ export function AlertsPage() {
                     onChange={(event) => setNewAlertProductQuery(event.target.value)}
                     placeholder="Digite o nome do produto"
                   />
-                  <Button type="button" variant="outline" onClick={() => void handleSearchAlertProduct()}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => void handleSearchAlertProduct()}
+                  >
                     Buscar
                   </Button>
                 </div>
@@ -281,7 +285,11 @@ export function AlertsPage() {
               </div>
             </div>
             <DialogFooter>
-              <Button type="submit" className="bg-violet-600 hover:bg-violet-700" onClick={() => void handleCreateAlert()}>
+              <Button
+                type="submit"
+                className="bg-violet-600 hover:bg-violet-700"
+                onClick={() => void handleCreateAlert()}
+              >
                 Salvar alerta
               </Button>
             </DialogFooter>
@@ -538,7 +546,10 @@ export function AlertsPage() {
             />
           </div>
           <DialogFooter>
-            <Button className="bg-violet-600 hover:bg-violet-700" onClick={() => void handleUpdateAlertPrice()}>
+            <Button
+              className="bg-violet-600 hover:bg-violet-700"
+              onClick={() => void handleUpdateAlertPrice()}
+            >
               Salvar alteração
             </Button>
           </DialogFooter>

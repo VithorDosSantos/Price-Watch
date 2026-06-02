@@ -12,7 +12,11 @@ vi.mock("../../../src/services/api", () => ({
   getCurrentUser: vi.fn()
 }));
 
-import { listPriceHistory, createPriceHistory, deletePriceHistory } from "../../../src/services/api";
+import {
+  listPriceHistory,
+  createPriceHistory,
+  deletePriceHistory
+} from "../../../src/services/api";
 
 beforeEach(() => vi.clearAllMocks());
 

@@ -119,9 +119,7 @@ describe("ProductDetailPage", () => {
 
   it("removes an existing favorite", async () => {
     vi.mocked(getProduct).mockResolvedValue(mockProduct);
-    vi.mocked(listFavorites).mockResolvedValue([
-      { id: "fav-1", product: { id: "p1" } }
-    ] as never);
+    vi.mocked(listFavorites).mockResolvedValue([{ id: "fav-1", product: { id: "p1" } }] as never);
     vi.mocked(deleteFavorite).mockResolvedValue(undefined as never);
     renderPage();
 
@@ -141,7 +139,9 @@ describe("ProductDetailPage", () => {
 
     fireEvent.click(screen.getByText(/Criar alerta de preço/i));
 
-    await waitFor(() => expect(screen.getByLabelText("Preço que você quer pagar")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByLabelText("Preço que você quer pagar")).toBeInTheDocument()
+    );
     fireEvent.change(screen.getByLabelText("Preço que você quer pagar"), {
       target: { value: "99.9" }
     });

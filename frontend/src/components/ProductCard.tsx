@@ -210,7 +210,10 @@ export function ProductCard({
             />
           </div>
           <DialogFooter>
-            <Button className="bg-violet-600 hover:bg-violet-700" onClick={() => void handleCreateAlert()}>
+            <Button
+              className="bg-violet-600 hover:bg-violet-700"
+              onClick={() => void handleCreateAlert()}
+            >
               Salvar alerta
             </Button>
           </DialogFooter>

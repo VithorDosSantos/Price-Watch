@@ -35,7 +35,7 @@ import {
   updatePriceHistory,
   deletePriceHistory,
   listProductPriceHistory,
-  listProductOffers,
+  listProductOffers
 } from "../../../src/services/api";
 import type { Product } from "../../../src/services/api";
 
@@ -323,10 +323,7 @@ describe("Products API", () => {
 
     await searchProducts("notebook");
 
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringMatching(/q=notebook/),
-      expect.anything()
-    );
+    expect(mockFetch).toHaveBeenCalledWith(expect.stringMatching(/q=notebook/), expect.anything());
   });
 
   it("createProduct sends POST with product payload", async () => {
