@@ -122,7 +122,7 @@ export function ProductCard({
             ) : (
               <TrendingUp className="h-4 w-4" />
             )}
-            {Math.abs(priceChange)}% esta semana
+            variacao de {Math.abs(priceChange)}%
           </div>
         )}
 

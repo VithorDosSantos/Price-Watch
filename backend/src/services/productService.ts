@@ -9,6 +9,10 @@ type SerpApiShoppingResult = {
   source?: string;
   price?: string;
   extracted_price?: number;
+  old_price?: string;
+  extracted_old_price?: number;
+  tag?: string;
+  extensions?: string[];
   thumbnail?: string;
   serpapi_thumbnail?: string;
 };
@@ -38,6 +42,8 @@ export type ProductDTO = {
   externalId: string;
   name: string;
   price: number;
+  originalPrice?: number;
+  priceChange?: number;
   imageUrl?: string;
   productUrl?: string;
   storeName?: string;
@@ -144,14 +150,88 @@ function hasPreviousPage(data: SerpApiSearchResponse): boolean {
   return Boolean(data.serpapi_pagination?.previous_link || data.pagination?.previous);
 }
 
+function roundToOneDecimal(value: number): number {
+  return Math.round(value * 10) / 10;
+}
+
+function calculatePriceChangePercent(current: number, previous: number): number | undefined {
+  if (!Number.isFinite(current) || !Number.isFinite(previous) || previous <= 0) {
+    return undefined;
+  }
+
+  if (current === previous) {
+    return 0;
+  }
+
+  return roundToOneDecimal(((current - previous) / previous) * 100);
+}
+
+function parseDiscountPercent(text?: string): number | undefined {
+  if (!text) {
+    return undefined;
+  }
+
+  const match = text.match(/(-?\d+(?:[.,]\d+)?)\s*%/);
+  if (!match) {
+    return undefined;
+  }
+
+  const normalized = match[1]?.replace(",", ".");
+  const value = Number(normalized);
+
+  if (!Number.isFinite(value) || value <= 0 || value >= 100) {
+    return undefined;
+  }
+
+  return value;
+}
+
+function extractDiscountPercent(item: SerpApiShoppingResult): number | undefined {
+  const fromTag = parseDiscountPercent(item.tag);
+  if (fromTag !== undefined) {
+    return fromTag;
+  }
+
+  if (!Array.isArray(item.extensions)) {
+    return undefined;
+  }
+
+  for (const extension of item.extensions) {
+    const parsed = parseDiscountPercent(extension);
+    if (parsed !== undefined) {
+      return parsed;
+    }
+  }
+
+  return undefined;
+}
+
 function mapSerpApiItem(item: SerpApiShoppingResult): ProductDTO {
   const externalId = item.product_id ?? item.product_link ?? item.link ?? item.title;
+  const currentPrice = item.extracted_price ?? parsePrice(item.price);
+
+  let originalPrice = item.extracted_old_price ?? parsePrice(item.old_price);
+  if (!originalPrice || originalPrice <= 0) {
+    const discount = extractDiscountPercent(item);
+    if (discount !== undefined && currentPrice > 0) {
+      originalPrice = currentPrice / (1 - discount / 100);
+    }
+  }
+
+  const normalizedOriginalPrice =
+    originalPrice && originalPrice > currentPrice ? roundToOneDecimal(originalPrice) : undefined;
+  const priceChange =
+    normalizedOriginalPrice !== undefined
+      ? calculatePriceChangePercent(currentPrice, normalizedOriginalPrice)
+      : undefined;
 
   return {
     id: externalId,
     externalId,
     name: item.title,
-    price: item.extracted_price ?? parsePrice(item.price),
+    price: currentPrice,
+    originalPrice: normalizedOriginalPrice,
+    priceChange,
     imageUrl: item.thumbnail ?? item.serpapi_thumbnail,
     productUrl: item.link ?? item.product_link,
     storeName: item.source ?? "SerpApi",
@@ -182,15 +262,30 @@ function mapSavedProduct(savedProduct: {
   productUrl: string | null;
   storeName: string | null;
   category: string | null;
+  priceHistory?: Array<{
+    oldPrice: { toNumber(): number } | number;
+    newPrice: { toNumber(): number } | number;
+  }>;
 }): ProductDTO {
+  const currentPrice =
+    typeof savedProduct.price === "number" ? savedProduct.price : savedProduct.price.toNumber();
+  const latestHistory = savedProduct.priceHistory?.[0];
+  const previousPrice = latestHistory
+    ? typeof latestHistory.oldPrice === "number"
+      ? latestHistory.oldPrice
+      : latestHistory.oldPrice.toNumber()
+    : undefined;
+  const originalPrice =
+    previousPrice !== undefined && previousPrice > currentPrice ? previousPrice : undefined;
+
   return {
     id: savedProduct.id,
     externalId: savedProduct.externalId,
     name: savedProduct.name,
-    price:
-      typeof savedProduct.price === "number"
-        ? savedProduct.price
-        : savedProduct.price.toNumber(),
+    price: currentPrice,
+    originalPrice,
+    priceChange:
+      originalPrice !== undefined ? calculatePriceChangePercent(currentPrice, originalPrice) : undefined,
     imageUrl: savedProduct.imageUrl ?? undefined,
     productUrl: savedProduct.productUrl ?? undefined,
     storeName: savedProduct.storeName ?? undefined,
@@ -319,7 +414,17 @@ export async function searchProducts(
       storeName: true,
       category: true,
       isManual: true,
-      isDeleted: true
+      isDeleted: true,
+      priceHistory: {
+        orderBy: {
+          capturedAt: "desc"
+        },
+        take: 1,
+        select: {
+          oldPrice: true,
+          newPrice: true
+        }
+      }
     }
   });
 
@@ -362,6 +467,14 @@ export async function searchProducts(
       externalId: saved.externalId,
       name: saved.name,
       price: Number(saved.price),
+      originalPrice:
+        saved.priceHistory?.[0] && Number(saved.priceHistory[0].oldPrice) > Number(saved.price)
+          ? Number(saved.priceHistory[0].oldPrice)
+          : undefined,
+      priceChange:
+        saved.priceHistory?.[0] && Number(saved.priceHistory[0].oldPrice) > Number(saved.price)
+          ? calculatePriceChangePercent(Number(saved.price), Number(saved.priceHistory[0].oldPrice))
+          : undefined,
       imageUrl: saved.imageUrl ?? undefined,
       productUrl: saved.productUrl ?? undefined,
       storeName: saved.storeName ?? undefined,
@@ -402,7 +515,17 @@ export async function getShowcaseProducts(page = 1, limit = 8): Promise<ProductS
         imageUrl: true,
         productUrl: true,
         storeName: true,
-        category: true
+        category: true,
+        priceHistory: {
+          orderBy: {
+            capturedAt: "desc"
+          },
+          take: 1,
+          select: {
+            oldPrice: true,
+            newPrice: true
+          }
+        }
       }
     }),
     prisma.product.count({ where: { isDeleted: false } })
@@ -437,6 +560,18 @@ export async function getProductById(id: string): Promise<ProductDTO | null> {
     where: {
       OR: [{ id }, { externalId: id }],
       isDeleted: false
+    },
+    include: {
+      priceHistory: {
+        orderBy: {
+          capturedAt: "desc"
+        },
+        take: 1,
+        select: {
+          oldPrice: true,
+          newPrice: true
+        }
+      }
     }
   });
 

@@ -3,6 +3,8 @@ export type Product = {
   externalId: string;
   name: string;
   price: number;
+  originalPrice?: number;
+  priceChange?: number;
   imageUrl?: string;
   productUrl?: string;
   storeName?: string;
@@ -14,9 +16,9 @@ export type ProductCardView = {
   name: string;
   image: string;
   currentPrice: number;
-  originalPrice: number;
+  originalPrice?: number;
   store: string;
-  priceChange: number;
+  priceChange?: number;
 };
 
 export type ProductSearchResponse = {
@@ -255,15 +257,19 @@ export async function getShowcaseProducts(options?: {
 
 export function mapProductToCard(product: Product): ProductCardView {
   const price = Number(product.price ?? 0);
+  const originalPrice =
+    typeof product.originalPrice === "number" ? Number(product.originalPrice) : undefined;
+  const priceChange =
+    typeof product.priceChange === "number" ? Number(product.priceChange) : undefined;
 
   return {
     id: product.id,
     name: product.name ?? "Produto sem nome",
     image: product.imageUrl ?? "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600",
     currentPrice: price,
-    originalPrice: Math.round(price * 1.12),
+    originalPrice,
     store: product.storeName ?? "Loja parceira",
-    priceChange: -8.5
+    priceChange
   };
 }
 

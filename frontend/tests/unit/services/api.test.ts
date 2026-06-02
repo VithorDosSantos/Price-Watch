@@ -90,12 +90,14 @@ describe("setAuthToken", () => {
 });
 
 describe("mapProductToCard", () => {
-  it("maps product to card view", () => {
+  it("maps product to card view using API pricing metadata", () => {
     const product: Product = {
       id: "1",
       externalId: "ext-1",
       name: "Notebook",
       price: 3000,
+      originalPrice: 3600,
+      priceChange: -16.7,
       imageUrl: "https://img.com/nb.jpg",
       productUrl: "https://store.com/nb",
       storeName: "TechStore",
@@ -109,10 +111,11 @@ describe("mapProductToCard", () => {
     expect(card.currentPrice).toBe(3000);
     expect(card.image).toBe("https://img.com/nb.jpg");
     expect(card.store).toBe("TechStore");
-    expect(card.originalPrice).toBe(Math.round(3000 * 1.12));
+    expect(card.originalPrice).toBe(3600);
+    expect(card.priceChange).toBe(-16.7);
   });
 
-  it("provides default values for missing fields", () => {
+  it("keeps optional pricing metadata undefined when not provided", () => {
     const product: Product = {
       id: "2",
       externalId: "ext-2",
@@ -125,6 +128,8 @@ describe("mapProductToCard", () => {
     expect(card.name).toBe("");
     expect(card.store).toBe("Loja parceira");
     expect(card.image).toContain("unsplash");
+    expect(card.originalPrice).toBeUndefined();
+    expect(card.priceChange).toBeUndefined();
   });
 });
 
