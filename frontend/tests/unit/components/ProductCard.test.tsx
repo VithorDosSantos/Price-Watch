@@ -199,7 +199,9 @@ describe("ProductCard", () => {
     );
 
     fireEvent.click(screen.getByText("Alerta"));
-    await waitFor(() => expect(screen.getByLabelText("Preco que voce quer pagar")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByLabelText("Preco que voce quer pagar")).toBeInTheDocument()
+    );
 
     fireEvent.change(screen.getByLabelText("Preco que voce quer pagar"), {
       target: { value: "0" }
@@ -219,7 +221,9 @@ describe("ProductCard", () => {
     );
 
     fireEvent.click(screen.getByText("Alerta"));
-    await waitFor(() => expect(screen.getByLabelText("Preco que voce quer pagar")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByLabelText("Preco que voce quer pagar")).toBeInTheDocument()
+    );
     fireEvent.click(screen.getByText("Salvar alerta"));
 
     await waitFor(() => expect(createAlert).toHaveBeenCalled());
