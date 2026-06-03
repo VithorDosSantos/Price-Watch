@@ -258,7 +258,7 @@ function mapSerpApiItem(item: SerpApiShoppingResult): ProductDTO {
 
   let originalPrice = item.extracted_old_price ?? parsePrice(item.old_price);
   const hasValidOriginalPrice = originalPrice !== undefined && originalPrice > 0;
-  if (hasValidOriginalPrice === false) {
+  if (hasValidOriginalPrice !== true) {
     const discount = extractDiscountPercent(item);
     if (discount !== undefined && currentPrice > 0) {
       originalPrice = currentPrice / (1 - discount / 100);

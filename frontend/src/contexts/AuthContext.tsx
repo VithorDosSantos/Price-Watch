@@ -16,8 +16,8 @@ export function AuthProvider({ children }: Readonly<{ children: React.ReactNode 
 
   useEffect(() => {
     async function init() {
-      const isBrowser = typeof window === "object";
-      const token = isBrowser ? localStorage.getItem("pw_token") : null;
+      const isBrowser = typeof globalThis.window === "object";
+      const token = isBrowser ? globalThis.localStorage.getItem("pw_token") : null;
       if (token) {
         try {
           setAuthToken(token);

@@ -86,7 +86,7 @@ function isInvalidPrice(value: number): boolean {
 
 export async function updateProductController(request: Request, response: Response) {
   const userId = request.user?.id;
-  if (!userId) {
+  if (userId === undefined) {
     return response.status(401).json({ message: "Unauthorized" });
   }
 
@@ -125,7 +125,7 @@ export async function updateProductController(request: Request, response: Respon
 
 export async function createProductController(request: Request, response: Response) {
   const userId = request.user?.id;
-  if (!userId) {
+  if (userId === undefined) {
     return response.status(401).json({ message: "Unauthorized" });
   }
 

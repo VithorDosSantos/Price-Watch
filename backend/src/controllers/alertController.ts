@@ -66,7 +66,7 @@ export async function updatePriceAlertController(
   if (parsedTargetPrice !== undefined) {
     const isTargetPriceValid =
       Number.isFinite(parsedTargetPrice) && parsedTargetPrice > 0;
-    if (isTargetPriceValid === false) {
+    if (isTargetPriceValid !== true) {
       return response.status(400).json({ message: "Preço alvo inválido." });
     }
   }
@@ -85,11 +85,11 @@ export async function updatePriceAlertController(
     userId,
   );
 
-  if (updated === null) {
-    return response.status(404).json({ message: "Alerta não encontrado." });
+  if (updated !== null) {
+    return response.json(updated);
   }
 
-  return response.json(updated);
+  return response.status(404).json({ message: "Alerta não encontrado." });
 }
 
 export async function deletePriceAlertController(
@@ -103,9 +103,9 @@ export async function deletePriceAlertController(
 
   const deleted = await deletePriceAlert(request.params.id, userId);
 
-  if (deleted === null) {
-    return response.status(404).json({ message: "Alerta não encontrado." });
+  if (deleted !== null) {
+    return response.status(204).send();
   }
 
-  return response.status(204).send();
+  return response.status(404).json({ message: "Alerta não encontrado." });
 }

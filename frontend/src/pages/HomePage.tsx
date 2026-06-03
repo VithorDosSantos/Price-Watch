@@ -77,6 +77,11 @@ export function HomePage() {
   const [pageButtons, setPageButtons] = useState<number[]>([]);
   const canPaginate =
     hasSearched && (hasNextPage || hasPreviousPage || products.length >= SEARCH_PAGE_SIZE);
+  const categoryLabel = selectedCategory ? ` na categoria "${selectedCategory}"` : "";
+  const searchResultsMessage = `Resultados${categoryLabel} para "${submittedQuery}" exibidos abaixo.`;
+  const defaultResultsMessage = "Digite um termo para ver produtos reais da busca integrada.";
+  const paginationTotalLabel = totalPages ? ` de ${String(totalPages)}` : "";
+  const paginationMessage = `Página ${String(currentPage)}${paginationTotalLabel} para "${submittedQuery}"`;
 
   useEffect(() => {
     void listCategories()
@@ -269,9 +274,7 @@ export function HomePage() {
                 {hasSearched ? "Resultados da busca" : "Comece sua busca"}
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                {hasSearched
-                  ? `Resultados${selectedCategory ? ` na categoria "${selectedCategory}"` : ""} para "${submittedQuery}" exibidos abaixo.`
-                  : "Digite um termo para ver produtos reais da busca integrada."}
+                {hasSearched ? searchResultsMessage : defaultResultsMessage}
               </p>
             </div>
             <Button
@@ -301,9 +304,7 @@ export function HomePage() {
 
           {canPaginate && (
             <div className="flex flex-col items-center justify-between gap-3 rounded-2xl border bg-white p-4 shadow-sm sm:flex-row">
-              <p className="text-sm text-muted-foreground">
-                {`Página ${String(currentPage)}${totalPages ? " de " + String(totalPages) : ""} para "${submittedQuery}"`}
-              </p>
+              <p className="text-sm text-muted-foreground">{paginationMessage}</p>
               <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
                 <Button
                   variant="outline"

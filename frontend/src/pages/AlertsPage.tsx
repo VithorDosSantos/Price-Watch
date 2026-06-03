@@ -65,6 +65,14 @@ function getTargetPrice(alert: AlertRecord) {
   return Number(alert.targetPrice ?? 0);
 }
 
+function getAlertCreatedAtLabel(alert: AlertRecord) {
+  if (!alert.createdAt) {
+    return "-";
+  }
+
+  return new Date(alert.createdAt).toLocaleDateString("pt-BR");
+}
+
 export function AlertsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -431,7 +439,7 @@ export function AlertsPage() {
                           )}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {new Date(alert.createdAt).toLocaleDateString("pt-BR")}
+                          {getAlertCreatedAtLabel(alert)}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-3">
@@ -477,6 +485,21 @@ export function AlertsPage() {
                 const difference = currentPrice - targetPrice;
                 const percentDiff = currentPrice > 0 ? (difference / currentPrice) * 100 : 0;
                 const triggered = isAlertTriggered(alert);
+                const isActive = alert.isActive ?? true;
+
+                let badgeVariant: "default" | "secondary" = "secondary";
+                let badgeClassName = "";
+                let badgeLabel = "Inativo";
+
+                if (triggered) {
+                  badgeVariant = "default";
+                  badgeClassName = "bg-emerald-600";
+                  badgeLabel = "Preco atingido";
+                } else if (isActive) {
+                  badgeVariant = "default";
+                  badgeClassName = "bg-green-600";
+                  badgeLabel = "Ativo";
+                }
 
                 return (
                   <Card key={alert.id} className="p-4">
@@ -525,22 +548,15 @@ export function AlertsPage() {
                       <div className="flex items-center justify-between pt-2 border-t">
                         <div className="flex items-center gap-2">
                           <Switch
-                            checked={alert.isActive ?? true}
+                            checked={isActive}
                             onCheckedChange={(checked) => void handleToggleAlert(alert.id, checked)}
                           />
-                          <Badge
-                            variant={
-                              triggered ? "default" : alert.isActive ? "default" : "secondary"
-                            }
-                            className={
-                              triggered ? "bg-emerald-600" : alert.isActive ? "bg-green-600" : ""
-                            }
-                          >
-                            {triggered ? "Preco atingido" : alert.isActive ? "Ativo" : "Inativo"}
+                          <Badge variant={badgeVariant} className={badgeClassName}>
+                            {badgeLabel}
                           </Badge>
                         </div>
                         <p className="text-xs text-muted-foreground">
-                          {new Date(alert.createdAt).toLocaleDateString("pt-BR")}
+                          {getAlertCreatedAtLabel(alert)}
                         </p>
                       </div>
                     </div>
