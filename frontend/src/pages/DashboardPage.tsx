@@ -49,18 +49,18 @@ function isInRange(dateValue: string, start: Date, end: Date): boolean {
   return date >= start && date < end;
 }
 
+function getPriceChange(oldPrice: number, newPrice: number): number {
+  if (!Number.isFinite(oldPrice) || oldPrice <= 0) {
+    return 0;
+  }
+
+  return Math.round(((newPrice - oldPrice) / oldPrice) * 100 * 10) / 10;
+}
+
 export function DashboardPage() {
   const [favorites, setFavorites] = useState<Favorite[]>([]);
   const [alerts, setAlerts] = useState<PriceAlert[]>([]);
   const [priceHistory, setPriceHistory] = useState<DashboardPriceHistoryEntry[]>([]);
-
-  function getPriceChange(oldPrice: number, newPrice: number): number {
-    if (!Number.isFinite(oldPrice) || oldPrice <= 0) {
-      return 0;
-    }
-
-    return Math.round(((newPrice - oldPrice) / oldPrice) * 100 * 10) / 10;
-  }
 
   useEffect(() => {
     async function load() {

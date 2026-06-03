@@ -190,7 +190,12 @@ function parseDiscountPercent(text?: string): number | undefined {
   }
 
   let end = percentIndex - 1;
-  while (end >= 0 && isAsciiWhitespace(text[end]!)) {
+  while (end >= 0) {
+    const char = text[end];
+    if (char === undefined || isAsciiWhitespace(char) === false) {
+      break;
+    }
+
     end -= 1;
   }
 
@@ -199,7 +204,12 @@ function parseDiscountPercent(text?: string): number | undefined {
   }
 
   let start = end;
-  while (start >= 0 && isDiscountNumberChar(text[start]!)) {
+  while (start >= 0) {
+    const char = text[start];
+    if (char === undefined || isDiscountNumberChar(char) === false) {
+      break;
+    }
+
     start -= 1;
   }
 
@@ -247,7 +257,8 @@ function mapSerpApiItem(item: SerpApiShoppingResult): ProductDTO {
   const currentPrice = item.extracted_price ?? parsePrice(item.price);
 
   let originalPrice = item.extracted_old_price ?? parsePrice(item.old_price);
-  if (!originalPrice || originalPrice <= 0) {
+  const hasValidOriginalPrice = originalPrice !== undefined && originalPrice > 0;
+  if (hasValidOriginalPrice === false) {
     const discount = extractDiscountPercent(item);
     if (discount !== undefined && currentPrice > 0) {
       originalPrice = currentPrice / (1 - discount / 100);
@@ -303,16 +314,19 @@ function mapSavedProduct(savedProduct: {
     newPrice: { toNumber(): number } | number;
   }>;
 }): ProductDTO {
+  const toNumber = (value: { toNumber(): number } | number): number =>
+    typeof value === "number" ? value : value.toNumber();
+
   const currentPrice =
     typeof savedProduct.price === "number" ? savedProduct.price : savedProduct.price.toNumber();
   const latestHistory = savedProduct.priceHistory?.[0];
-  const previousPrice = latestHistory
-    ? typeof latestHistory.oldPrice === "number"
-      ? latestHistory.oldPrice
-      : latestHistory.oldPrice.toNumber()
-    : undefined;
+  const previousPrice = latestHistory ? toNumber(latestHistory.oldPrice) : undefined;
   const originalPrice =
     previousPrice !== undefined && previousPrice > currentPrice ? previousPrice : undefined;
+  const priceChange =
+    originalPrice === undefined
+      ? undefined
+      : calculatePriceChangePercent(currentPrice, originalPrice);
 
   return {
     id: savedProduct.id,
@@ -320,8 +334,7 @@ function mapSavedProduct(savedProduct: {
     name: savedProduct.name,
     price: currentPrice,
     originalPrice,
-    priceChange:
-      originalPrice !== undefined ? calculatePriceChangePercent(currentPrice, originalPrice) : undefined,
+    priceChange,
     imageUrl: savedProduct.imageUrl ?? undefined,
     productUrl: savedProduct.productUrl ?? undefined,
     storeName: savedProduct.storeName ?? undefined,

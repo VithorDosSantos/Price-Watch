@@ -79,6 +79,10 @@ function optionalNullableString(value: unknown, trim = false): string | null | u
   return trim ? str.trim() : str;
 }
 
+function isInvalidPrice(value: number): boolean {
+  return Number.isFinite(value) === false || value <= 0;
+}
+
 export async function updateProductController(request: Request, response: Response) {
   const { name, price, imageUrl, productUrl, storeName, category } = request.body ?? {};
 
@@ -88,7 +92,7 @@ export async function updateProductController(request: Request, response: Respon
 
   const parsedPrice = price !== undefined ? Number(price) : undefined;
 
-  if (parsedPrice !== undefined && (!Number.isFinite(parsedPrice) || parsedPrice <= 0)) {
+  if (parsedPrice !== undefined && isInvalidPrice(parsedPrice)) {
     return response.status(400).json({ message: "Preço inválido." });
   }
 
@@ -122,7 +126,7 @@ export async function createProductController(request: Request, response: Respon
 
   const parsedPrice = Number(price);
 
-  if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
+  if (isInvalidPrice(parsedPrice)) {
     return response.status(400).json({ message: "Preço inválido." });
   }
 

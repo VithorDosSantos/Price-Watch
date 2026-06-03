@@ -106,12 +106,12 @@ function mapApiProduct(
     typeof product.originalPrice === "number" && product.originalPrice > 0
       ? Number(product.originalPrice)
       : derivedOriginalPrice;
-  const priceChange =
-    typeof product.priceChange === "number"
-      ? Number(product.priceChange)
-      : originalPrice > 0
-        ? roundToOneDecimal(((price - originalPrice) / originalPrice) * 100)
-        : 0;
+  let priceChange = 0;
+  if (typeof product.priceChange === "number") {
+    priceChange = Number(product.priceChange);
+  } else if (originalPrice > 0) {
+    priceChange = roundToOneDecimal(((price - originalPrice) / originalPrice) * 100);
+  }
 
   const mappedOffers = offers.length
     ? offers.map((offer) => ({

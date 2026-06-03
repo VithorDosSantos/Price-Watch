@@ -6,24 +6,30 @@ import {
   updatePriceAlert,
 } from "../services/alertService";
 
+type AuthenticatedRequest = Request & {
+  user?: {
+    id?: string;
+  };
+};
+
 export async function createPriceAlertController(
   request: Request,
   response: Response,
 ) {
   try {
-    const userId = (request as any).user?.id as string | undefined;
-    if (userId === undefined) {
-      return response.status(401).json({ message: "Unauthorized" });
+    const userId = (request as AuthenticatedRequest).user?.id;
+    if (userId !== undefined) {
+      const alert = await createPriceAlert({
+        productId: request.body.productId,
+        userId,
+        targetPrice: Number(request.body.targetPrice),
+        email: request.body.email,
+      });
+
+      return response.status(201).json(alert);
     }
 
-    const alert = await createPriceAlert({
-      productId: request.body.productId,
-      userId,
-      targetPrice: Number(request.body.targetPrice),
-      email: request.body.email,
-    });
-
-    return response.status(201).json(alert);
+    return response.status(401).json({ message: "Unauthorized" });
   } catch (error) {
     return response.status(400).json({
       message: error instanceof Error ? error.message : "Erro ao criar alerta.",
@@ -35,20 +41,20 @@ export async function listPriceAlertsController(
   request: Request,
   response: Response,
 ) {
-  const userId = (request as any).user?.id as string | undefined;
-  if (userId === undefined) {
-    return response.status(401).json({ message: "Unauthorized" });
+  const userId = (request as AuthenticatedRequest).user?.id;
+  if (userId !== undefined) {
+    const alerts = await listPriceAlerts(userId);
+    return response.json(alerts);
   }
 
-  const alerts = await listPriceAlerts(userId);
-  return response.json(alerts);
+  return response.status(401).json({ message: "Unauthorized" });
 }
 
 export async function updatePriceAlertController(
   request: Request,
   response: Response,
 ) {
-  const userId = (request as any).user?.id as string | undefined;
+  const userId = (request as AuthenticatedRequest).user?.id;
   if (userId === undefined) {
     return response.status(401).json({ message: "Unauthorized" });
   }
@@ -57,11 +63,12 @@ export async function updatePriceAlertController(
   const parsedTargetPrice =
     targetPrice !== undefined ? Number(targetPrice) : undefined;
 
-  if (
-    parsedTargetPrice !== undefined &&
-    (!Number.isFinite(parsedTargetPrice) || parsedTargetPrice <= 0)
-  ) {
-    return response.status(400).json({ message: "Preço alvo inválido." });
+  if (parsedTargetPrice !== undefined) {
+    const isTargetPriceValid =
+      Number.isFinite(parsedTargetPrice) && parsedTargetPrice > 0;
+    if (isTargetPriceValid === false) {
+      return response.status(400).json({ message: "Preço alvo inválido." });
+    }
   }
 
   if (email !== undefined && String(email).trim().length === 0) {
@@ -78,27 +85,27 @@ export async function updatePriceAlertController(
     userId,
   );
 
-  if (updated) {
-    return response.json(updated);
+  if (updated === null) {
+    return response.status(404).json({ message: "Alerta não encontrado." });
   }
 
-  return response.status(404).json({ message: "Alerta não encontrado." });
+  return response.json(updated);
 }
 
 export async function deletePriceAlertController(
   request: Request,
   response: Response,
 ) {
-  const userId = (request as any).user?.id as string | undefined;
+  const userId = (request as AuthenticatedRequest).user?.id;
   if (userId === undefined) {
     return response.status(401).json({ message: "Unauthorized" });
   }
 
   const deleted = await deletePriceAlert(request.params.id, userId);
 
-  if (deleted) {
-    return response.status(204).send();
+  if (deleted === null) {
+    return response.status(404).json({ message: "Alerta não encontrado." });
   }
 
-  return response.status(404).json({ message: "Alerta não encontrado." });
+  return response.status(204).send();
 }
