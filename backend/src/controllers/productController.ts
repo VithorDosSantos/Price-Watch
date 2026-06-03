@@ -62,11 +62,11 @@ export async function showcaseProductsController(request: Request, response: Res
 export async function getProductDetailsController(request: Request, response: Response) {
   try {
     const product = await getProductById(request.params.id);
-    if (!product) {
-      return response.status(404).json({ message: "Produto não encontrado." });
+    if (product) {
+      return response.json(product);
     }
 
-    return response.json(product);
+    return response.status(404).json({ message: "Produto não encontrado." });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Erro ao obter detalhes do produto";
     return response.status(502).json({ message });
@@ -81,7 +81,7 @@ function optionalNullableString(value: unknown, trim = false): string | null | u
 }
 
 function isInvalidPrice(value: number): boolean {
-  return Number.isFinite(value) === false || value <= 0;
+  return !Number.isFinite(value) || value <= 0;
 }
 
 export async function updateProductController(request: Request, response: Response) {

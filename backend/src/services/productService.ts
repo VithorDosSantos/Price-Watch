@@ -92,13 +92,13 @@ function getSerpApiKey() {
 }
 
 function parsePrice(value?: string): number {
-  if (!value) {
+  if (value === undefined || value === null || value === "") {
     return 0;
   }
 
   const cleaned = value.replace(/[^\d,.-]/g, "").trim();
 
-  if (!cleaned) {
+  if (cleaned.length === 0) {
     return 0;
   }
 
@@ -180,7 +180,7 @@ function isDiscountNumberChar(char: string): boolean {
 }
 
 function parseDiscountPercent(text?: string): number | undefined {
-  if (!text) {
+  if (text === undefined || text === null || text === "") {
     return undefined;
   }
 
@@ -192,7 +192,7 @@ function parseDiscountPercent(text?: string): number | undefined {
   let end = percentIndex - 1;
   while (end >= 0) {
     const char = text[end];
-    if (char === undefined || isAsciiWhitespace(char) === false) {
+    if (char === undefined || !isAsciiWhitespace(char)) {
       break;
     }
 
@@ -206,7 +206,7 @@ function parseDiscountPercent(text?: string): number | undefined {
   let start = end;
   while (start >= 0) {
     const char = text[start];
-    if (char === undefined || isDiscountNumberChar(char) === false) {
+    if (char === undefined || !isDiscountNumberChar(char)) {
       break;
     }
 
@@ -258,7 +258,9 @@ function mapSerpApiItem(item: SerpApiShoppingResult): ProductDTO {
 
   let originalPrice = item.extracted_old_price ?? parsePrice(item.old_price);
   const hasValidOriginalPrice = originalPrice !== undefined && originalPrice > 0;
-  if (hasValidOriginalPrice !== true) {
+  if (hasValidOriginalPrice) {
+    // originalPrice is valid, keep as is
+  } else {
     const discount = extractDiscountPercent(item);
     if (discount !== undefined && currentPrice > 0) {
       originalPrice = currentPrice / (1 - discount / 100);
@@ -287,7 +289,7 @@ function mapSerpApiItem(item: SerpApiShoppingResult): ProductDTO {
 }
 
 function normalizeProductUrl(value?: string | null): string {
-  if (!value) {
+  if (value === undefined || value === null || value === "") {
     return "";
   }
 
