@@ -2,8 +2,14 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { ProductCard } from "../../../src/components/ProductCard";
+import { toast } from "sonner";
 
 const mockNavigate = vi.fn();
+let mockUser: { id: string; email: string; role: string } | null = {
+  id: "u1",
+  email: "a@b.com",
+  role: "USER"
+};
 
 vi.mock("react-router-dom", async () => {
   const actual = await vi.importActual("react-router-dom");
@@ -12,11 +18,18 @@ vi.mock("react-router-dom", async () => {
 
 vi.mock("../../../src/contexts/AuthContext", () => ({
   useAuth: () => ({
-    user: { id: "u1", email: "a@b.com", role: "USER" },
+    user: mockUser,
     loading: false,
     logout: vi.fn(),
     loginWithToken: vi.fn()
   })
+}));
+
+vi.mock("sonner", () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn()
+  }
 }));
 
 vi.mock("../../../src/services/api", () => ({
@@ -30,6 +43,9 @@ vi.mock("../../../src/services/api", () => ({
 import { createAlert, favoriteProduct, deleteFavorite } from "../../../src/services/api";
 
 beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  mockUser = { id: "u1", email: "a@b.com", role: "USER" };
+});
 
 describe("ProductCard", () => {
   const props = {
@@ -105,6 +121,33 @@ describe("ProductCard", () => {
     await waitFor(() => expect(favoriteProduct).toHaveBeenCalledTimes(1));
   });
 
+  it("redirects to login when user favorites without authentication", () => {
+    mockUser = null;
+    render(
+      <MemoryRouter>
+        <ProductCard {...props} />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByLabelText("Salvar nos favoritos"));
+
+    expect(mockNavigate).toHaveBeenCalledWith("/login");
+    expect(favoriteProduct).not.toHaveBeenCalled();
+    expect(toast.error).toHaveBeenCalled();
+  });
+
+  it("opens favorites page when card is already favorite without favoriteId", () => {
+    render(
+      <MemoryRouter>
+        <ProductCard {...props} isFavorite={true} />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByLabelText("Ver favoritos"));
+
+    expect(mockNavigate).toHaveBeenCalledWith("/favorites");
+  });
+
   it("removes from favorites on click", async () => {
     vi.mocked(deleteFavorite).mockResolvedValue(undefined as never);
     const onRemoved = vi.fn();
@@ -146,5 +189,54 @@ describe("ProductCard", () => {
     fireEvent.click(screen.getByText("Salvar alerta"));
 
     await waitFor(() => expect(createAlert).toHaveBeenCalledWith("p1", 89.9, "a@b.com"));
+  });
+
+  it("validates alert target price before calling API", async () => {
+    render(
+      <MemoryRouter>
+        <ProductCard {...props} />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByText("Alerta"));
+    await waitFor(() => expect(screen.getByLabelText("Preco que voce quer pagar")).toBeInTheDocument());
+
+    fireEvent.change(screen.getByLabelText("Preco que voce quer pagar"), {
+      target: { value: "0" }
+    });
+    fireEvent.click(screen.getByText("Salvar alerta"));
+
+    expect(createAlert).not.toHaveBeenCalled();
+    expect(toast.error).toHaveBeenCalled();
+  });
+
+  it("shows error when alert creation fails", async () => {
+    vi.mocked(createAlert).mockRejectedValue(new Error("erro"));
+    render(
+      <MemoryRouter>
+        <ProductCard {...props} />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByText("Alerta"));
+    await waitFor(() => expect(screen.getByLabelText("Preco que voce quer pagar")).toBeInTheDocument());
+    fireEvent.click(screen.getByText("Salvar alerta"));
+
+    await waitFor(() => expect(createAlert).toHaveBeenCalled());
+    expect(toast.error).toHaveBeenCalled();
+  });
+
+  it("redirects to login when opening alert without authentication", () => {
+    mockUser = null;
+    render(
+      <MemoryRouter>
+        <ProductCard {...props} />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByText("Alerta"));
+
+    expect(mockNavigate).toHaveBeenCalledWith("/login");
+    expect(toast.error).toHaveBeenCalled();
   });
 });

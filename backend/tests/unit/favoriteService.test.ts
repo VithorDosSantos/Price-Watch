@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { Prisma } from "@prisma/client";
 import { prisma } from "../../src/prisma/client";
 import { mockProductNotFound, mockProductFound } from "./helpers";
 
@@ -98,6 +99,53 @@ describe("favoriteService", () => {
 
       expect(result).toEqual(existing);
       expect(prisma.favorite.create).not.toHaveBeenCalled();
+    });
+
+    it("recovers existing favorite when create hits unique constraint race", async () => {
+      mockProductFound(getProductById as any, upsertProduct as any);
+      const existing = {
+        id: "f-race",
+        productId: "saved-p1",
+        userId: "u1",
+        userName: "Aluno PriceWatch",
+        product: { id: "saved-p1", name: "Product" },
+      };
+
+      mockFavoriteModel({
+        findFirst: vi
+          .fn()
+          .mockResolvedValueOnce(null)
+          .mockResolvedValueOnce(existing),
+        create: vi.fn().mockRejectedValueOnce(
+          new Prisma.PrismaClientKnownRequestError("Unique", {
+            code: "P2002",
+            clientVersion: "test",
+          })
+        ),
+      });
+
+      const result = await createFavorite({ productId: "p1", userId: "u1" });
+
+      expect(result).toEqual(existing);
+      expect(prisma.favorite.findFirst).toHaveBeenCalledTimes(2);
+    });
+
+    it("rethrows known request error when race recovery finds nothing", async () => {
+      mockProductFound(getProductById as any, upsertProduct as any);
+
+      mockFavoriteModel({
+        findFirst: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockRejectedValueOnce(
+          new Prisma.PrismaClientKnownRequestError("Unique", {
+            code: "P2002",
+            clientVersion: "test",
+          })
+        ),
+      });
+
+      await expect(createFavorite({ productId: "p1", userId: "u1" })).rejects.toBeInstanceOf(
+        Prisma.PrismaClientKnownRequestError
+      );
     });
   });
 

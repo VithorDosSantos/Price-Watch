@@ -63,6 +63,7 @@ import {
   ProductDeleteConflictError,
   createProduct,
   deleteProduct,
+  getProductById,
   getShowcaseProducts,
   listProductComparableOffers,
   listProductPriceHistory,
@@ -149,6 +150,70 @@ describe("productService extra coverage", () => {
       status: 502,
       body: "Quota exceeded"
     });
+  });
+
+  it("throws when SerpApi key is missing", async () => {
+    vi.stubEnv("SERPAPI_API_KEY", "");
+
+    await expect(searchProducts("notebook")).rejects.toMatchObject({
+      status: 500
+    });
+  });
+
+  it("maps inline/categorized results and discount parsing branches", async () => {
+    vi.mocked(globalThis.fetch).mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          inline_shopping_results: [
+            {
+              title: "Produto Inline",
+              source: "Loja Inline",
+              price: "R$ 1.234,56",
+              product_link: "https://inline.com/p"
+            }
+          ],
+          categorized_shopping_results: [
+            {
+              shopping_results: [
+                {
+                  title: "Produto Categoria",
+                  source: "Loja Cat",
+                  extracted_price: 90,
+                  tag: "Desconto 10%",
+                  link: "https://cat.com/p"
+                },
+                {
+                  title: "Produto Ext",
+                  source: "Loja Ext",
+                  extracted_price: 80,
+                  extensions: ["Promo 20%"],
+                  link: "https://ext.com/p"
+                }
+              ]
+            }
+          ],
+          pagination: {
+            previous: "https://serpapi.com/search?start=0"
+          },
+          search_information: {
+            total_results: 3
+          }
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      )
+    );
+
+    vi.mocked(prisma.product.findUnique).mockResolvedValue(null as never);
+    vi.mocked(prisma.product.findMany)
+      .mockResolvedValueOnce([] as never)
+      .mockResolvedValueOnce([] as never);
+
+    const result = await searchProducts("produto", 2, 2);
+
+    expect(result.products).toHaveLength(2);
+    expect(result.hasPreviousPage).toBe(true);
+    expect(result.products[0].price).toBeCloseTo(1234.56, 2);
+    expect(result.products[1].originalPrice).toBeCloseTo(100, 2);
   });
 
   it("filters deleted and manual products when merging search results", async () => {
@@ -263,6 +328,13 @@ describe("productService extra coverage", () => {
     await expect(
       createProduct({ name: "Produto manual", price: 100, productUrl: "https://example.com/p" })
     ).rejects.toThrow("Já existe um produto com a mesma URL.");
+  });
+
+  it("validates createProduct required fields", async () => {
+    await expect(createProduct({ name: "   ", price: 10 })).rejects.toThrow(
+      "Nome do produto é obrigatório."
+    );
+    await expect(createProduct({ name: "Produto", price: 0 })).rejects.toThrow("Preço inválido.");
   });
 
   it("keeps manual or deleted products untouched during upsert", async () => {
@@ -414,5 +486,93 @@ describe("productService extra coverage", () => {
     vi.mocked(prisma.priceHistory.count).mockResolvedValueOnce(0 as never);
 
     await expect(deleteProduct("p2")).resolves.toEqual({ deleted: true });
+  });
+
+  it("returns null when listing history or offers for unknown product", async () => {
+    vi.mocked(prisma.product.findFirst).mockResolvedValueOnce(null as never);
+    await expect(listProductPriceHistory("missing")).resolves.toBeNull();
+
+    vi.mocked(prisma.product.findFirst).mockResolvedValueOnce(null as never);
+    await expect(listProductComparableOffers("missing")).resolves.toBeNull();
+  });
+
+  it("falls back to base offer when comparable search fails", async () => {
+    vi.mocked(prisma.product.findFirst).mockResolvedValueOnce({
+      id: "p1",
+      externalId: "ext-1",
+      name: "Notebook",
+      price: 1000,
+      imageUrl: null,
+      productUrl: "https://store.com/p",
+      storeName: "Loja A",
+      category: null,
+      priceHistory: []
+    } as never);
+
+    vi.mocked(globalThis.fetch).mockRejectedValueOnce(new Error("network"));
+
+    const offers = await listProductComparableOffers("p1", 3);
+    expect(offers).toHaveLength(1);
+    expect(offers?.[0].externalId).toBe("ext-1");
+  });
+
+  it("returns null when deleting missing product and includes dependency summary", async () => {
+    vi.mocked(prisma.product.findFirst).mockResolvedValueOnce(null as never);
+    await expect(deleteProduct("missing")).resolves.toBeNull();
+
+    vi.mocked(prisma.product.findFirst).mockResolvedValueOnce({ id: "p3" } as never);
+    vi.mocked(prisma.favorite.count).mockResolvedValueOnce(0 as never);
+    vi.mocked(prisma.priceAlert.count).mockResolvedValueOnce(2 as never);
+    vi.mocked(prisma.priceHistory.count).mockResolvedValueOnce(1 as never);
+
+    await expect(deleteProduct("p3")).rejects.toMatchObject({
+      dependencySummary: "favoritos=0, alertas=2, historico=1"
+    });
+  });
+
+  it("returns mapped product when finding by external id", async () => {
+    vi.mocked(prisma.product.findFirst).mockResolvedValueOnce({
+      id: "p4",
+      externalId: "ext-4",
+      name: "Product",
+      price: 500,
+      imageUrl: null,
+      productUrl: null,
+      storeName: null,
+      category: null,
+      priceHistory: []
+    } as never);
+
+    const found = await getProductById("ext-4");
+    expect(found?.externalId).toBe("ext-4");
+  });
+
+  it("skips history creation when update keeps same price", async () => {
+    vi.mocked(prisma.product.findFirst).mockResolvedValueOnce({
+      id: "p5",
+      externalId: "ext-5",
+      name: "Notebook",
+      price: 900,
+      imageUrl: null,
+      productUrl: null,
+      storeName: null,
+      category: null
+    } as never);
+
+    vi.mocked(prisma.product.update).mockResolvedValueOnce({
+      id: "p5",
+      externalId: "ext-5",
+      name: "Notebook",
+      price: 900,
+      imageUrl: null,
+      productUrl: null,
+      storeName: null,
+      category: null,
+      priceHistory: []
+    } as never);
+
+    await updateProduct("p5", { name: "Notebook" });
+
+    expect(prisma.priceHistory.create).not.toHaveBeenCalled();
   });
 });
