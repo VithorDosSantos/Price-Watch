@@ -429,9 +429,13 @@ type ProductSearchResult = {
 export async function searchProducts(
   query: string,
   page = 1,
-  limit = 8
+  limit = 8,
+  category?: string
 ): Promise<ProductSearchResult> {
-  if (!query.trim()) {
+  const trimmedQuery = query.trim();
+  const trimmedCategory = category?.trim();
+
+  if (!trimmedQuery && !trimmedCategory) {
     return {
       source: "serpapi",
       products: [],
@@ -443,7 +447,14 @@ export async function searchProducts(
     };
   }
 
-  const searchResult = await searchSerpApi(query, page, limit);
+  const searchResult = trimmedQuery
+    ? await searchSerpApi(trimmedQuery, page, limit)
+    : {
+        products: [] as ProductDTO[],
+        hasNextPage: false,
+        hasPreviousPage: page > 1,
+        totalResults: undefined
+      };
 
   await Promise.allSettled(searchResult.products.map((product) => upsertProduct(product)));
 
@@ -531,16 +542,88 @@ export async function searchProducts(
     };
   });
 
+  const localWhere = {
+    isDeleted: false,
+    ...(trimmedCategory
+      ? {
+          category: {
+            equals: trimmedCategory,
+            mode: "insensitive" as const
+          }
+        }
+      : {}),
+    ...(trimmedQuery
+      ? {
+          OR: [
+            {
+              name: {
+                contains: trimmedQuery,
+                mode: "insensitive" as const
+              }
+            },
+            {
+              category: {
+                contains: trimmedQuery,
+                mode: "insensitive" as const
+              }
+            }
+          ]
+        }
+      : {})
+  };
+
+  const localMatches = await prisma.product.findMany({
+    where: localWhere,
+    orderBy: {
+      createdAt: "desc"
+    },
+    select: {
+      id: true,
+      externalId: true,
+      name: true,
+      price: true,
+      imageUrl: true,
+      productUrl: true,
+      storeName: true,
+      category: true,
+      priceHistory: {
+        orderBy: {
+          capturedAt: "desc"
+        },
+        take: 1,
+        select: {
+          oldPrice: true,
+          newPrice: true
+        }
+      }
+    }
+  });
+
+  const localDtos = localMatches.map(mapSavedProduct);
+
+  const mergedByExternalId = new Map<string, ProductDTO>();
+  for (const local of localDtos) {
+    mergedByExternalId.set(local.externalId, local);
+  }
+  for (const external of productsToReturn.filter(Boolean) as ProductDTO[]) {
+    if (!mergedByExternalId.has(external.externalId)) {
+      mergedByExternalId.set(external.externalId, external);
+    }
+  }
+
+  const mergedProducts = Array.from(mergedByExternalId.values());
+  const paginatedProducts = mergedProducts.slice(0, limit);
+
   const totalResults = searchResult.totalResults;
 
   return {
     source: "serpapi",
-    products: productsToReturn.filter(Boolean) as ProductDTO[],
+    products: paginatedProducts,
     page,
     limit,
-    hasNextPage: searchResult.hasNextPage,
+    hasNextPage: searchResult.hasNextPage || mergedProducts.length > limit,
     hasPreviousPage: searchResult.hasPreviousPage,
-    totalResults,
+    totalResults: totalResults ?? mergedProducts.length,
     totalPages: totalResults ? Math.max(1, Math.ceil(totalResults / limit)) : undefined
   };
 }
@@ -553,7 +636,7 @@ export async function getShowcaseProducts(page = 1, limit = 8): Promise<ProductS
   const [items, total] = await Promise.all([
     prisma.product.findMany({
       where: { isDeleted: false },
-      orderBy: { createdAt: "asc" },
+      orderBy: { createdAt: "desc" },
       skip,
       take: normalizedLimit,
       select: {
@@ -683,6 +766,7 @@ export type CreateProductInput = {
   productUrl?: string | null;
   storeName?: string | null;
   category?: string | null;
+  ownerUserId: string;
 };
 
 export async function createProduct(input: CreateProductInput): Promise<ProductDTO> {
@@ -694,6 +778,61 @@ export async function createProduct(input: CreateProductInput): Promise<ProductD
 
   if (!Number.isFinite(input.price) || input.price <= 0) {
     throw new Error("Preço inválido.");
+  }
+
+  const activeStores = await prisma.store.findMany({
+    where: { isActive: true },
+    select: { name: true }
+  });
+
+  if (activeStores.length === 0) {
+    throw new Error("Cadastre ao menos uma loja ativa antes de criar um produto.");
+  }
+
+  const normalizedStoreName = input.storeName?.trim() || "";
+  if (!normalizedStoreName) {
+    throw new Error("Selecione uma loja ativa para cadastrar o produto.");
+  }
+
+  const storeExists = activeStores.some(
+    (store) => store.name.toLowerCase() === normalizedStoreName.toLowerCase()
+  );
+  if (!storeExists) {
+    throw new Error("A loja selecionada não está ativa ou não existe.");
+  }
+
+  const ownedStore = await prisma.store.findFirst({
+    where: {
+      name: {
+        equals: normalizedStoreName,
+        mode: "insensitive"
+      },
+      userId: input.ownerUserId,
+      isActive: true
+    } as any,
+    select: { id: true }
+  });
+
+  if (!ownedStore) {
+    throw new Error("Selecione uma loja ativa criada por voce.");
+  }
+
+  const normalizedCategory = input.category?.trim() || null;
+  if (normalizedCategory) {
+    const categoryExists = await prisma.category.findFirst({
+      where: {
+        name: {
+          equals: normalizedCategory,
+          mode: "insensitive"
+        },
+        isActive: true
+      },
+      select: { id: true }
+    });
+
+    if (!categoryExists) {
+      throw new Error("A categoria selecionada não está ativa ou não existe.");
+    }
   }
 
   const normalizedProductUrl = input.productUrl?.trim() || null;
@@ -718,8 +857,8 @@ export async function createProduct(input: CreateProductInput): Promise<ProductD
       price: input.price,
       imageUrl: input.imageUrl?.trim() || null,
       productUrl: normalizedProductUrl,
-      storeName: input.storeName?.trim() || null,
-      category: input.category?.trim() || null,
+      storeName: normalizedStoreName,
+      category: normalizedCategory,
       isManual: true
     }
   });
@@ -738,7 +877,8 @@ export type UpdateProductInput = {
 
 export async function updateProduct(
   id: string,
-  input: UpdateProductInput
+  input: UpdateProductInput,
+  ownerUserId: string
 ): Promise<ProductDTO | null> {
   const product = await prisma.product.findFirst({
     where: {
@@ -753,6 +893,43 @@ export async function updateProduct(
 
   const previousPrice = Number(product.price);
   const nextPrice = input.price ?? previousPrice;
+  const nextStoreName = input.storeName === undefined ? product.storeName : input.storeName?.trim();
+  const nextCategory = input.category === undefined ? product.category : input.category?.trim();
+
+  if (nextStoreName) {
+    const storeExists = await prisma.store.findFirst({
+      where: {
+        name: {
+          equals: nextStoreName,
+          mode: "insensitive"
+        },
+        userId: ownerUserId,
+        isActive: true
+      } as any,
+      select: { id: true }
+    });
+
+    if (!storeExists) {
+      throw new Error("A loja selecionada não está ativa ou não existe.");
+    }
+  }
+
+  if (nextCategory) {
+    const categoryExists = await prisma.category.findFirst({
+      where: {
+        name: {
+          equals: nextCategory,
+          mode: "insensitive"
+        },
+        isActive: true
+      },
+      select: { id: true }
+    });
+
+    if (!categoryExists) {
+      throw new Error("A categoria selecionada não está ativa ou não existe.");
+    }
+  }
 
   const updated = await prisma.product.update({
     where: { id: product.id },
@@ -761,8 +938,8 @@ export async function updateProduct(
       price: nextPrice,
       imageUrl: input.imageUrl === undefined ? product.imageUrl : input.imageUrl,
       productUrl: input.productUrl === undefined ? product.productUrl : input.productUrl,
-      storeName: input.storeName === undefined ? product.storeName : input.storeName,
-      category: input.category === undefined ? product.category : input.category,
+      storeName: nextStoreName,
+      category: nextCategory,
       isManual: true
     }
   });

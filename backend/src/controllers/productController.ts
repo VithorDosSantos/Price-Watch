@@ -14,6 +14,7 @@ import {
 
 export async function searchProductsController(request: Request, response: Response) {
   const query = typeof request.query.q === "string" ? request.query.q : "";
+  const category = typeof request.query.category === "string" ? request.query.category : undefined;
   const page = Number(request.query.page ?? 1);
   const limit = Number(request.query.limit ?? 8);
 
@@ -24,7 +25,7 @@ export async function searchProductsController(request: Request, response: Respo
   }
 
   try {
-    const result = await searchProducts(query, page, limit);
+    const result = await searchProducts(query, page, limit, category);
     return response.json(result);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Erro ao consultar produtos";
@@ -84,6 +85,11 @@ function isInvalidPrice(value: number): boolean {
 }
 
 export async function updateProductController(request: Request, response: Response) {
+  const userId = request.user?.id;
+  if (!userId) {
+    return response.status(401).json({ message: "Unauthorized" });
+  }
+
   const { name, price, imageUrl, productUrl, storeName, category } = request.body ?? {};
 
   if (name !== undefined && String(name).trim().length === 0) {
@@ -104,7 +110,7 @@ export async function updateProductController(request: Request, response: Respon
       productUrl: optionalNullableString(productUrl),
       storeName: optionalNullableString(storeName, true),
       category: optionalNullableString(category, true)
-    });
+    }, userId);
 
     if (updated) {
       return response.json(updated);
@@ -118,6 +124,11 @@ export async function updateProductController(request: Request, response: Respon
 }
 
 export async function createProductController(request: Request, response: Response) {
+  const userId = request.user?.id;
+  if (!userId) {
+    return response.status(401).json({ message: "Unauthorized" });
+  }
+
   const { name, price, imageUrl, productUrl, storeName, category } = request.body ?? {};
 
   if (String(name ?? "").trim().length === 0) {
@@ -137,7 +148,8 @@ export async function createProductController(request: Request, response: Respon
       imageUrl: optionalNullableString(imageUrl),
       productUrl: optionalNullableString(productUrl),
       storeName: optionalNullableString(storeName, true),
-      category: optionalNullableString(category, true)
+      category: optionalNullableString(category, true),
+      ownerUserId: userId
     });
 
     return response.status(201).json(created);

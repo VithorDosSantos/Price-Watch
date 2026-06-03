@@ -49,6 +49,10 @@ interface AlertRecord {
   };
 }
 
+function isAlertTriggered(alert: AlertRecord) {
+  return (alert.isActive ?? true) && getProductPrice(alert) <= getTargetPrice(alert);
+}
+
 function getProductName(alert: AlertRecord) {
   return alert.product?.name ?? alert.product?.productName ?? "Produto sem nome";
 }
@@ -89,6 +93,18 @@ export function AlertsPage() {
     try {
       const res = await listAlerts();
       setAlerts(res);
+
+      const triggered = res.filter(isAlertTriggered);
+      if (triggered.length > 0) {
+        const names = triggered
+          .slice(0, 3)
+          .map((item) => getProductName(item))
+          .join(", ");
+        const suffix = triggered.length > 3 ? "..." : "";
+        toast.success("Preco alvo atingido em alerta ativo.", {
+          description: `${names}${suffix}`
+        });
+      }
     } catch (err) {
       console.error("Failed to load alerts", err);
       setAlerts([]);
@@ -381,6 +397,7 @@ export function AlertsPage() {
                     const targetPrice = getTargetPrice(alert);
                     const difference = currentPrice - targetPrice;
                     const percentDiff = currentPrice > 0 ? (difference / currentPrice) * 100 : 0;
+                    const triggered = isAlertTriggered(alert);
 
                     return (
                       <TableRow key={alert.id}>
@@ -402,12 +419,16 @@ export function AlertsPage() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge
-                            variant={alert.isActive ? "default" : "secondary"}
-                            className={alert.isActive ? "bg-green-600" : ""}
-                          >
-                            {alert.isActive ? "Ativo" : "Inativo"}
-                          </Badge>
+                          {triggered ? (
+                            <Badge className="bg-emerald-600">Preco atingido</Badge>
+                          ) : (
+                            <Badge
+                              variant={alert.isActive ? "default" : "secondary"}
+                              className={alert.isActive ? "bg-green-600" : ""}
+                            >
+                              {alert.isActive ? "Ativo" : "Inativo"}
+                            </Badge>
+                          )}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {new Date(alert.createdAt).toLocaleDateString("pt-BR")}
@@ -455,6 +476,7 @@ export function AlertsPage() {
                 const targetPrice = getTargetPrice(alert);
                 const difference = currentPrice - targetPrice;
                 const percentDiff = currentPrice > 0 ? (difference / currentPrice) * 100 : 0;
+                const triggered = isAlertTriggered(alert);
 
                 return (
                   <Card key={alert.id} className="p-4">
@@ -507,10 +529,14 @@ export function AlertsPage() {
                             onCheckedChange={(checked) => void handleToggleAlert(alert.id, checked)}
                           />
                           <Badge
-                            variant={alert.isActive ? "default" : "secondary"}
-                            className={alert.isActive ? "bg-green-600" : ""}
+                            variant={
+                              triggered ? "default" : alert.isActive ? "default" : "secondary"
+                            }
+                            className={
+                              triggered ? "bg-emerald-600" : alert.isActive ? "bg-green-600" : ""
+                            }
                           >
-                            {alert.isActive ? "Ativo" : "Inativo"}
+                            {triggered ? "Preco atingido" : alert.isActive ? "Ativo" : "Inativo"}
                           </Badge>
                         </div>
                         <p className="text-xs text-muted-foreground">

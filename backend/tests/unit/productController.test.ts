@@ -37,8 +37,13 @@ import {
 } from "../../src/controllers/productController";
 import * as svc from "../../src/services/productService";
 
-function mockReqRes(body: any = {}, params: any = {}, query: any = {}) {
-  const req = { body, params, query } as any;
+function mockReqRes(
+  body: any = {},
+  params: any = {},
+  query: any = {},
+  user: any = { id: "u1", role: "ADMIN" }
+) {
+  const req = { body, params, query, user } as any;
   const res = {
     status: vi.fn().mockReturnThis(),
     json: vi.fn().mockReturnThis(),

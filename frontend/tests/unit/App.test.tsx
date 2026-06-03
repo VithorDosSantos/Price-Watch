@@ -14,6 +14,7 @@ vi.mock("../../src/contexts/AuthContext", () => ({
 
 vi.mock("../../src/services/api", () => ({
   searchProducts: vi.fn().mockResolvedValue({ products: [], totalPages: 0 }),
+  listCategories: vi.fn().mockResolvedValue([]),
   listFavorites: vi.fn().mockResolvedValue([]),
   mapProductToCard: vi.fn(),
   setAuthToken: vi.fn(),

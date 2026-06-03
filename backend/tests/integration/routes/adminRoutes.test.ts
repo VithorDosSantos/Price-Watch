@@ -186,13 +186,21 @@ describe("admin routes", () => {
       },
       configurable: true
     });
+    Object.defineProperty(prisma, "store", {
+      value: {
+        findMany: async () => [{ name: "Loja A" }],
+        findFirst: async () => ({ id: "store-1" })
+      },
+      configurable: true
+    });
 
     const response = await request(app)
       .post("/products")
       .set("Authorization", `Bearer ${buildToken("ADMIN")}`)
       .send({
         name: "Produto manual",
-        price: 199.9
+        price: 199.9,
+        storeName: "Loja A"
       });
 
     expect(response.status).toBe(201);

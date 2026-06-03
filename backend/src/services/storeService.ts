@@ -5,6 +5,7 @@ export type StoreRecord = {
   name: string;
   website: string;
   contactEmail: string;
+  userId?: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -14,6 +15,7 @@ export type StoreInput = {
   name: string;
   website: string;
   contactEmail: string;
+  userId: string;
   isActive?: boolean;
 };
 
@@ -22,6 +24,7 @@ function mapStore(record: {
   name: string;
   website: string;
   contactEmail: string;
+  userId?: string | null;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -31,6 +34,7 @@ function mapStore(record: {
     name: record.name,
     website: record.website,
     contactEmail: record.contactEmail,
+    userId: record.userId ?? undefined,
     isActive: record.isActive,
     createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString()
@@ -59,15 +63,27 @@ export async function createStore(input: StoreInput) {
       name: input.name.trim(),
       website: input.website.trim(),
       contactEmail: input.contactEmail.trim(),
+      userId: input.userId,
       isActive: input.isActive ?? true
-    }
+    } as any
   });
 
   return mapStore(record);
 }
 
-export async function updateStore(id: string, input: Partial<StoreInput>) {
+export async function updateStore(id: string, input: Partial<StoreInput>, userId: string) {
   try {
+    const existing = await prisma.store.findFirst({
+      where: {
+        id,
+        userId
+      } as any
+    });
+
+    if (!existing) {
+      return null;
+    }
+
     const record = await prisma.store.update({
       where: { id },
       data: {
@@ -86,7 +102,27 @@ export async function updateStore(id: string, input: Partial<StoreInput>) {
 
 export async function deleteStore(id: string) {
   try {
-    await prisma.store.delete({ where: { id } });
+    await prisma.store.delete({ where: { id } as any });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function deleteStoreOwned(id: string, userId: string) {
+  try {
+    const existing = await prisma.store.findFirst({
+      where: {
+        id,
+        userId
+      } as any
+    });
+
+    if (!existing) {
+      return false;
+    }
+
+    await prisma.store.delete({ where: { id } as any });
     return true;
   } catch {
     return false;

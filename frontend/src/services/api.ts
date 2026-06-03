@@ -54,6 +54,7 @@ export type StoreRecord = {
   name: string;
   website: string;
   contactEmail: string;
+  userId?: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -220,7 +221,7 @@ export async function updateUserRole(userId: string, role: "ADMIN" | "USER") {
 
 export async function searchProducts(
   query: string,
-  options?: { page?: number; limit?: number }
+  options?: { page?: number; limit?: number; category?: string }
 ): Promise<ProductSearchResponse> {
   const searchParams = new URLSearchParams({ q: query });
 
@@ -230,6 +231,10 @@ export async function searchProducts(
 
   if (options?.limit) {
     searchParams.set("limit", String(options.limit));
+  }
+
+  if (options?.category && options.category.trim().length > 0) {
+    searchParams.set("category", options.category.trim());
   }
 
   return await request<ProductSearchResponse>(`/products/search?${searchParams.toString()}`);

@@ -6,6 +6,7 @@ import { HomePage } from "../../../src/pages/HomePage";
 vi.mock("../../../src/services/api", () => ({
   searchProducts: vi.fn(),
   getShowcaseProducts: vi.fn(),
+  listCategories: vi.fn().mockResolvedValue([]),
   listFavorites: vi.fn().mockResolvedValue([]),
   mapProductToCard: vi.fn((p: Record<string, unknown>) => ({
     id: p.id,
@@ -86,7 +87,11 @@ describe("HomePage", () => {
     fireEvent.submit(screen.getByPlaceholderText(/nome do produto/i).closest("form")!);
 
     await waitFor(() => {
-      expect(searchProducts).toHaveBeenCalledWith("notebook", { page: 1, limit: 8 });
+      expect(searchProducts).toHaveBeenCalledWith("notebook", {
+        page: 1,
+        limit: 8,
+        category: undefined
+      });
     });
     await waitFor(() => {
       expect(screen.getByText("Notebook")).toBeInTheDocument();
@@ -147,7 +152,7 @@ describe("HomePage", () => {
     fireEvent.submit(screen.getByPlaceholderText(/nome do produto/i).closest("form")!);
 
     expect(searchProducts).not.toHaveBeenCalled();
-    expect(screen.getByText(/Digite um termo para pesquisar/i)).toBeInTheDocument();
+    expect(screen.getByText(/Digite um termo ou selecione uma categoria/i)).toBeInTheDocument();
   });
 
   it("loads showcase suggestions when requested", async () => {

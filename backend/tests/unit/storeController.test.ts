@@ -5,6 +5,7 @@ vi.mock("../../src/services/storeService", () => ({
   createStore: vi.fn(),
   updateStore: vi.fn(),
   deleteStore: vi.fn(),
+  deleteStoreOwned: vi.fn(),
 }));
 
 import {
@@ -15,8 +16,8 @@ import {
 } from "../../src/controllers/storeController";
 import * as svc from "../../src/services/storeService";
 
-function mockReqRes(body: any = {}, params: any = {}) {
-  const req = { body, params } as any;
+function mockReqRes(body: any = {}, params: any = {}, user: any = { id: "u1", role: "ADMIN" }) {
+  const req = { body, params, user } as any;
   const res = {
     status: vi.fn().mockReturnThis(),
     json: vi.fn().mockReturnThis(),
@@ -74,14 +75,14 @@ describe("updateStoreController", () => {
 
 describe("deleteStoreController", () => {
   it("deletes store", async () => {
-    vi.mocked(svc.deleteStore).mockResolvedValue(true as any);
+    vi.mocked(svc.deleteStoreOwned).mockResolvedValue(true as any);
     const { req, res } = mockReqRes({}, { id: "1" });
     await deleteStoreController(req, res);
     expect(res.status).toHaveBeenCalledWith(204);
   });
 
   it("returns 404 when not found", async () => {
-    vi.mocked(svc.deleteStore).mockResolvedValue(null as any);
+    vi.mocked(svc.deleteStoreOwned).mockResolvedValue(null as any);
     const { req, res } = mockReqRes({}, { id: "x" });
     await deleteStoreController(req, res);
     expect(res.status).toHaveBeenCalledWith(404);

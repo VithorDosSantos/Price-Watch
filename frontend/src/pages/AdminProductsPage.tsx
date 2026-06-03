@@ -21,13 +21,18 @@ import {
   TableRow
 } from "../components/ui/table";
 import {
+  listCategories,
+  listStores,
   createProduct,
   deleteProduct,
   getShowcaseProducts,
   updateProduct,
+  type CategoryRecord,
+  type StoreRecord,
   type Product
 } from "../services/api";
 import { toast } from "sonner";
+import { useAuth } from "../contexts/AuthContext";
 
 type ProductFormState = {
   name: string;
@@ -48,7 +53,10 @@ const emptyForm: ProductFormState = {
 };
 
 export function AdminProductsPage() {
+  const { user } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
+  const [stores, setStores] = useState<StoreRecord[]>([]);
+  const [categories, setCategories] = useState<CategoryRecord[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -64,10 +72,26 @@ export function AdminProductsPage() {
     }
   }
 
+  async function refreshReferences() {
+    try {
+      const [storeRecords, categoryRecords] = await Promise.all([listStores(), listCategories()]);
+      setStores(
+        storeRecords.filter(
+          (item) => item.isActive && (item.userId ? item.userId === user?.id : true)
+        )
+      );
+      setCategories(categoryRecords.filter((item) => item.isActive));
+    } catch {
+      setStores([]);
+      setCategories([]);
+    }
+  }
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- load is async, setState is in callback
     void refreshProducts();
-  }, []);
+    void refreshReferences();
+  }, [user?.id]);
 
   const filteredProducts = useMemo(
     () =>
@@ -98,6 +122,11 @@ export function AdminProductsPage() {
     const parsedPrice = Number(form.price);
     if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
       toast.error("Informe um preco valido.");
+      return;
+    }
+
+    if (!form.storeName) {
+      toast.error("Selecione uma loja ativa para salvar o produto.");
       return;
     }
 
@@ -247,24 +276,45 @@ export function AdminProductsPage() {
 
             <div className="space-y-2">
               <Label htmlFor="product-category">Categoria</Label>
-              <Input
+              <select
                 id="product-category"
                 value={form.category}
                 onChange={(event) =>
                   setForm((current) => ({ ...current, category: event.target.value }))
                 }
-              />
+                className="h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
+              >
+                <option value="">Sem categoria</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.name}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="product-store">Loja</Label>
-              <Input
+              <select
                 id="product-store"
                 value={form.storeName}
                 onChange={(event) =>
                   setForm((current) => ({ ...current, storeName: event.target.value }))
                 }
-              />
+                className="h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
+              >
+                <option value="">Selecione uma loja</option>
+                {stores.map((store) => (
+                  <option key={store.id} value={store.name}>
+                    {store.name}
+                  </option>
+                ))}
+              </select>
+              {stores.length === 0 ? (
+                <p className="text-xs text-red-600">
+                  Cadastre uma loja ativa antes de criar um produto.
+                </p>
+              ) : null}
             </div>
 
             <div className="space-y-2">
@@ -297,6 +347,7 @@ export function AdminProductsPage() {
             <Button
               className="bg-violet-600 hover:bg-violet-700"
               onClick={() => void handleSubmit()}
+              disabled={stores.length === 0}
             >
               Salvar
             </Button>

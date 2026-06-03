@@ -10,6 +10,7 @@ function storeRecord(overrides: Record<string, unknown> = {}) {
     name: "Marketplace Exemplo",
     website: "https://marketplace.exemplo.com",
     contactEmail: "contato@marketplace.exemplo.com",
+    userId: "u1",
     isActive: true,
     createdAt: new Date("2026-05-20T10:00:00.000Z"),
     updatedAt: new Date("2026-05-20T10:00:00.000Z"),
@@ -41,11 +42,21 @@ describe("storeService", () => {
 
   it("valida nome e website obrigatorios ao criar loja", async () => {
     await expect(
-      createStore({ name: "", website: "https://loja.test", contactEmail: "contato@loja.test" })
+      createStore({
+        name: "",
+        website: "https://loja.test",
+        contactEmail: "contato@loja.test",
+        userId: "u1"
+      })
     ).rejects.toThrow(/Nome da loja/);
 
     await expect(
-      createStore({ name: "Loja", website: "   ", contactEmail: "contato@loja.test" })
+      createStore({
+        name: "Loja",
+        website: "   ",
+        contactEmail: "contato@loja.test",
+        userId: "u1"
+      })
     ).rejects.toThrow(/Website da loja/);
   });
 
@@ -65,13 +76,15 @@ describe("storeService", () => {
     const store = await createStore({
       name: "  Amazon  ",
       website: "  https://amazon.com.br  ",
-      contactEmail: "  contato@amazon.com.br  "
+      contactEmail: "  contato@amazon.com.br  ",
+      userId: "u1"
     });
 
     expect(receivedData).toEqual({
       name: "Amazon",
       website: "https://amazon.com.br",
       contactEmail: "contato@amazon.com.br",
+      userId: "u1",
       isActive: true
     });
     expect(store.name).toBe("Amazon");
@@ -80,12 +93,13 @@ describe("storeService", () => {
   it("atualiza loja existente", async () => {
     Object.defineProperty(prisma, "store", {
       value: {
+        findFirst: async () => storeRecord(),
         update: async () => storeRecord({ isActive: false })
       },
       configurable: true
     });
 
-    const store = await updateStore("store-1", { isActive: false });
+    const store = await updateStore("store-1", { isActive: false }, "u1");
 
     expect(store?.isActive).toBe(false);
   });

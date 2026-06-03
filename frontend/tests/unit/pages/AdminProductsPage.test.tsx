@@ -5,6 +5,8 @@ import { AdminProductsPage } from "../../../src/pages/AdminProductsPage";
 
 vi.mock("../../../src/services/api", () => ({
   getShowcaseProducts: vi.fn(),
+  listStores: vi.fn(),
+  listCategories: vi.fn(),
   createProduct: vi.fn(),
   updateProduct: vi.fn(),
   deleteProduct: vi.fn(),
@@ -12,9 +14,38 @@ vi.mock("../../../src/services/api", () => ({
   getCurrentUser: vi.fn()
 }));
 
-import { createProduct, deleteProduct, getShowcaseProducts } from "../../../src/services/api";
+import {
+  createProduct,
+  deleteProduct,
+  getShowcaseProducts,
+  listCategories,
+  listStores
+} from "../../../src/services/api";
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  vi.mocked(listStores).mockResolvedValue([
+    {
+      id: "s1",
+      name: "Loja A",
+      website: "https://loja-a.com",
+      contactEmail: "contato@loja-a.com",
+      isActive: true,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z"
+    }
+  ] as never);
+  vi.mocked(listCategories).mockResolvedValue([
+    {
+      id: "c1",
+      name: "Eletronicos",
+      description: "Desc",
+      isActive: true,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z"
+    }
+  ] as never);
+});
 
 describe("AdminProductsPage", () => {
   it("renders heading and products", async () => {
@@ -62,6 +93,10 @@ describe("AdminProductsPage", () => {
     });
     fireEvent.change(screen.getByLabelText("Preco"), {
       target: { value: "100" }
+    });
+    await waitFor(() => expect(screen.getByLabelText("Loja")).toBeInTheDocument());
+    fireEvent.change(screen.getByLabelText("Loja"), {
+      target: { value: "Loja A" }
     });
 
     fireEvent.click(screen.getByRole("button", { name: "Salvar" }));

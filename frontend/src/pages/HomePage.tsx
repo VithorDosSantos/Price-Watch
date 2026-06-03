@@ -1,14 +1,16 @@
 import { Bell, Search, Shield, TrendingUp, User, Heart, BarChart3 } from "lucide-react";
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ProductCard, type ProductCardProps } from "../components/ProductCard";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import {
   getShowcaseProducts,
+  listCategories,
   listFavorites,
   mapProductToCard,
   searchProducts,
+  type CategoryRecord,
   type Product
 } from "../services/api";
 
@@ -59,6 +61,8 @@ function buildFeedbackMessage(result: { products: Product[]; totalResults?: numb
 
 export function HomePage() {
   const [query, setQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [categories, setCategories] = useState<CategoryRecord[]>([]);
   const [submittedQuery, setSubmittedQuery] = useState("");
   const [products, setProducts] = useState<ProductCardProps[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -74,6 +78,12 @@ export function HomePage() {
   const canPaginate =
     hasSearched && (hasNextPage || hasPreviousPage || products.length >= SEARCH_PAGE_SIZE);
 
+  useEffect(() => {
+    void listCategories()
+      .then((records) => setCategories(records.filter((item) => item.isActive)))
+      .catch(() => setCategories([]));
+  }, []);
+
   function normalizeProducts(resultProducts: Product[], favoritesByProduct: Map<string, string>) {
     return resultProducts.slice(0, SEARCH_PAGE_SIZE).map((product) => ({
       ...mapProductToCard(product),
@@ -88,7 +98,8 @@ export function HomePage() {
     try {
       const result = await searchProducts(searchQuery, {
         page,
-        limit: SEARCH_PAGE_SIZE
+        limit: SEARCH_PAGE_SIZE,
+        category: selectedCategory || undefined
       });
       let favoritesByProduct = new Map<string, string>();
 
@@ -121,8 +132,8 @@ export function HomePage() {
   async function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const trimmedQuery = query.trim();
-    if (!trimmedQuery) {
-      setFeedback("Digite um termo para pesquisar.");
+    if (!trimmedQuery && !selectedCategory) {
+      setFeedback("Digite um termo ou selecione uma categoria para pesquisar.");
       setProducts([]);
       setHasSearched(false);
       return;
@@ -211,7 +222,7 @@ export function HomePage() {
 
           <form
             onSubmit={handleSearch}
-            className="mx-auto mt-8 flex max-w-2xl flex-col gap-3 sm:flex-row"
+            className="mx-auto mt-8 flex max-w-3xl flex-col gap-3 sm:flex-row"
           >
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
@@ -221,14 +232,26 @@ export function HomePage() {
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Digite o nome do produto ou cole o link da loja"
                 className="h-14 pl-12 text-base shadow-lg border-gray-200"
-                required
               />
             </div>
+            <select
+              value={selectedCategory}
+              onChange={(event) => setSelectedCategory(event.target.value)}
+              className="h-14 rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-700"
+              aria-label="Filtrar por categoria"
+            >
+              <option value="">Todas as categorias</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.name}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
             <Button
               type="submit"
               size="lg"
               className="h-14 w-full bg-violet-600 hover:bg-violet-700 sm:w-auto sm:px-8"
-              disabled={isLoading || query.trim().length === 0}
+              disabled={isLoading || (query.trim().length === 0 && !selectedCategory)}
             >
               {isLoading ? "Buscando" : "Pesquisar"}
             </Button>
@@ -247,7 +270,7 @@ export function HomePage() {
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 {hasSearched
-                  ? `Resultados para "${query}" exibidos abaixo.`
+                  ? `Resultados${selectedCategory ? ` na categoria "${selectedCategory}"` : ""} para "${submittedQuery}" exibidos abaixo.`
                   : "Digite um termo para ver produtos reais da busca integrada."}
               </p>
             </div>

@@ -54,6 +54,13 @@ vi.mock("../../src/prisma/client", () => ({
     },
     priceAlert: {
       count: vi.fn(async () => 0)
+    },
+    store: {
+      findMany: vi.fn(async () => [{ name: "Loja A" }]),
+      findFirst: vi.fn(async () => ({ id: "s1" }))
+    },
+    category: {
+      findFirst: vi.fn(async () => ({ id: "c1" }))
     }
   }
 }));
@@ -317,7 +324,9 @@ describe("productService extra coverage", () => {
     const created = await createProduct({
       name: "Produto manual",
       price: 100,
-      productUrl: "https://example.com/p"
+      storeName: "Loja A",
+      productUrl: "https://example.com/p",
+      ownerUserId: "u1"
     });
 
     expect(prisma.product.create).toHaveBeenCalled();
@@ -326,15 +335,23 @@ describe("productService extra coverage", () => {
     vi.mocked(prisma.product.findFirst).mockResolvedValueOnce({ id: "existing" } as never);
 
     await expect(
-      createProduct({ name: "Produto manual", price: 100, productUrl: "https://example.com/p" })
+      createProduct({
+        name: "Produto manual",
+        price: 100,
+        storeName: "Loja A",
+        productUrl: "https://example.com/p",
+        ownerUserId: "u1"
+      })
     ).rejects.toThrow("Já existe um produto com a mesma URL.");
   });
 
   it("validates createProduct required fields", async () => {
-    await expect(createProduct({ name: "   ", price: 10 })).rejects.toThrow(
-      "Nome do produto é obrigatório."
-    );
-    await expect(createProduct({ name: "Produto", price: 0 })).rejects.toThrow("Preço inválido.");
+    await expect(
+      createProduct({ name: "   ", price: 10, storeName: "Loja A", ownerUserId: "u1" })
+    ).rejects.toThrow("Nome do produto é obrigatório.");
+    await expect(
+      createProduct({ name: "Produto", price: 0, storeName: "Loja A", ownerUserId: "u1" })
+    ).rejects.toThrow("Preço inválido.");
   });
 
   it("keeps manual or deleted products untouched during upsert", async () => {

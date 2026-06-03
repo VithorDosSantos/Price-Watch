@@ -1,6 +1,28 @@
 import type { Request, Response } from "express";
 import { createCategory, deleteCategory, listCategories, updateCategory } from "../services/categoryService";
 
+function parseOptionalBoolean(value: unknown): boolean | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "true") {
+      return true;
+    }
+    if (normalized === "false") {
+      return false;
+    }
+  }
+
+  return Boolean(value);
+}
+
 export async function listCategoriesController(_request: Request, response: Response) {
   return response.json(await listCategories());
 }
@@ -10,7 +32,7 @@ export async function createCategoryController(request: Request, response: Respo
     const category = await createCategory({
       name: String(request.body.name ?? ""),
       description: String(request.body.description ?? ""),
-      isActive: request.body.isActive === undefined ? undefined : Boolean(request.body.isActive)
+      isActive: parseOptionalBoolean(request.body.isActive)
     });
 
     return response.status(201).json(category);
@@ -23,7 +45,7 @@ export async function updateCategoryController(request: Request, response: Respo
   const category = await updateCategory(request.params.id, {
     name: request.body.name,
     description: request.body.description,
-    isActive: request.body.isActive
+    isActive: parseOptionalBoolean(request.body.isActive)
   });
 
   if (!category) {
