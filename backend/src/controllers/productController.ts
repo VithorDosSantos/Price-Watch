@@ -75,9 +75,12 @@ export async function getProductDetailsController(request: Request, response: Re
 
 function optionalNullableString(value: unknown, trim = false): string | null | undefined {
   if (value === undefined) return undefined;
-  if (!value) return null;
-  const str = typeof value === "string" ? value : JSON.stringify(value);
-  return trim ? str.trim() : str;
+  if (value) {
+    const str = typeof value === "string" ? value : JSON.stringify(value);
+    return trim ? str.trim() : str;
+  }
+
+  return null;
 }
 
 function isInvalidPrice(value: number): boolean {

@@ -66,7 +66,9 @@ export async function updatePriceAlertController(
   if (parsedTargetPrice !== undefined) {
     const isTargetPriceValid =
       Number.isFinite(parsedTargetPrice) && parsedTargetPrice > 0;
-    if (!isTargetPriceValid) {
+    if (isTargetPriceValid) {
+      // valid, continue
+    } else {
       return response.status(400).json({ message: "Preço alvo inválido." });
     }
   }

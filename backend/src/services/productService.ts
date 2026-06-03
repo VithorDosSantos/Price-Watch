@@ -269,10 +269,12 @@ function mapSerpApiItem(item: SerpApiShoppingResult): ProductDTO {
 
   const normalizedOriginalPrice =
     originalPrice && originalPrice > currentPrice ? roundToOneDecimal(originalPrice) : undefined;
-  const priceChange =
-    normalizedOriginalPrice !== undefined
-      ? calculatePriceChangePercent(currentPrice, normalizedOriginalPrice)
-      : undefined;
+  let priceChange: number | undefined;
+  if (normalizedOriginalPrice === undefined) {
+    priceChange = undefined;
+  } else {
+    priceChange = calculatePriceChangePercent(currentPrice, normalizedOriginalPrice);
+  }
 
   return {
     id: externalId,
