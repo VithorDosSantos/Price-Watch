@@ -22,6 +22,7 @@ import {
   TableRow
 } from "../components/ui/table";
 import { LineChart, Line, ResponsiveContainer } from "recharts";
+import { computeDashboardMetrics } from "../lib/dashboardMetrics";
 
 type DashboardPriceHistoryEntry = PriceHistoryRecord & {
   imageUrl?: string;
@@ -38,15 +39,6 @@ function calculateChangePercent(current: number, previous: number): number {
   }
 
   return roundToOneDecimal(((current - previous) / previous) * 100);
-}
-
-function getMonthStart(baseDate: Date): Date {
-  return new Date(baseDate.getFullYear(), baseDate.getMonth(), 1);
-}
-
-function isInRange(dateValue: string, start: Date, end: Date): boolean {
-  const date = new Date(dateValue);
-  return date >= start && date < end;
 }
 
 function getPriceChange(oldPrice: number, newPrice: number): number {
@@ -85,58 +77,20 @@ export function DashboardPage() {
     void load();
   }, []);
 
-  const currentMonthStart = getMonthStart(new Date());
-  const nextMonthStart = new Date(
-    currentMonthStart.getFullYear(),
-    currentMonthStart.getMonth() + 1,
-    1
-  );
-  const previousMonthStart = new Date(
-    currentMonthStart.getFullYear(),
-    currentMonthStart.getMonth() - 1,
-    1
-  );
-
-  const currentMonthHistory = priceHistory.filter((entry) =>
-    isInRange(entry.capturedAt, currentMonthStart, nextMonthStart)
-  );
-  const previousMonthHistory = priceHistory.filter((entry) =>
-    isInRange(entry.capturedAt, previousMonthStart, currentMonthStart)
-  );
-
-  const trackedItemsCurrent = new Set(currentMonthHistory.map((entry) => entry.productName)).size;
-  const trackedItemsPrevious = new Set(previousMonthHistory.map((entry) => entry.productName)).size;
-
-  const activeAlertsTotal = alerts.filter((alert) => alert.isActive).length;
-  const activeAlertsCurrent = alerts.filter(
-    (alert) => alert.isActive && isInRange(alert.createdAt, currentMonthStart, nextMonthStart)
-  ).length;
-  const activeAlertsPrevious = alerts.filter(
-    (alert) => alert.isActive && isInRange(alert.createdAt, previousMonthStart, currentMonthStart)
-  ).length;
-
-  const favoritesCurrent = favorites.filter((favorite) =>
-    isInRange(favorite.createdAt, currentMonthStart, nextMonthStart)
-  ).length;
-  const favoritesPrevious = favorites.filter((favorite) =>
-    isInRange(favorite.createdAt, previousMonthStart, currentMonthStart)
-  ).length;
-
-  const savingsTotal = priceHistory.reduce(
-    (accumulator, entry) =>
-      accumulator + Math.max(0, Number(entry.oldPrice) - Number(entry.newPrice)),
-    0
-  );
-  const savingsCurrent = currentMonthHistory.reduce(
-    (accumulator, entry) =>
-      accumulator + Math.max(0, Number(entry.oldPrice) - Number(entry.newPrice)),
-    0
-  );
-  const savingsPrevious = previousMonthHistory.reduce(
-    (accumulator, entry) =>
-      accumulator + Math.max(0, Number(entry.oldPrice) - Number(entry.newPrice)),
-    0
-  );
+  const {
+    trackedItemsTotal,
+    trackedItemsCurrent,
+    trackedItemsPrevious,
+    activeAlertsTotal,
+    activeAlertsCurrent,
+    activeAlertsPrevious,
+    favoritesTotal,
+    favoritesCurrent,
+    favoritesPrevious,
+    savingsTotal,
+    savingsCurrent,
+    savingsPrevious
+  } = computeDashboardMetrics(priceHistory, alerts, favorites, new Date());
 
   const favoriteCards = favorites.map((favorite) => mapProductToCard(favorite.product));
 
@@ -149,11 +103,10 @@ export function DashboardPage() {
         </p>
       </div>
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatsCard
           title="Itens acompanhados"
-          value={new Set(priceHistory.map((entry) => entry.productName)).size}
+          value={trackedItemsTotal}
           icon={Eye}
           change={calculateChangePercent(trackedItemsCurrent, trackedItemsPrevious)}
           changeLabel="vs. mês passado"
@@ -167,7 +120,7 @@ export function DashboardPage() {
         />
         <StatsCard
           title="Favoritos"
-          value={favorites.length}
+          value={favoritesTotal}
           icon={Package}
           change={calculateChangePercent(favoritesCurrent, favoritesPrevious)}
           changeLabel="vs. mês passado"
@@ -181,7 +134,6 @@ export function DashboardPage() {
         />
       </div>
 
-      {/* Recent Price Drops */}
       <Card className="p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -244,7 +196,6 @@ export function DashboardPage() {
         </Table>
       </Card>
 
-      {/* Favorite Products */}
       <div className="space-y-6">
         <div>
           <h2 className="text-2xl font-bold">Favoritos</h2>

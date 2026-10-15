@@ -16,16 +16,18 @@ vi.mock("../../src/prisma/client", () => ({
       findFirst: vi.fn(async () => null),
       findMany: vi.fn(async () => []),
       count: vi.fn(async () => 0),
-      create: vi.fn(async ({ data }: { data: { externalId: string; name: string; price: number } }) => ({
-        id: `db-${data.externalId}`,
-        externalId: data.externalId,
-        name: data.name,
-        price: data.price,
-        imageUrl: null,
-        productUrl: null,
-        storeName: null,
-        category: null
-      })),
+      create: vi.fn(
+        async ({ data }: { data: { externalId: string; name: string; price: number } }) => ({
+          id: `db-${data.externalId}`,
+          externalId: data.externalId,
+          name: data.name,
+          price: data.price,
+          imageUrl: null,
+          productUrl: null,
+          storeName: null,
+          category: null
+        })
+      ),
       update: vi.fn(async () => ({
         id: "db-id",
         externalId: "db-ext",
@@ -56,13 +58,17 @@ vi.mock("../../src/prisma/client", () => ({
       count: vi.fn(async () => 0)
     },
     store: {
-      findMany: vi.fn(async () => [{ name: "Loja A" }]),
       findFirst: vi.fn(async () => ({ id: "s1" }))
     },
+    $queryRaw: vi.fn(async () => [{ found: 1 }]),
     category: {
       findFirst: vi.fn(async () => ({ id: "c1" }))
     }
   }
+}));
+
+vi.mock("../../src/services/productBatchUpsert", () => ({
+  upsertProductsBatch: vi.fn(async () => undefined)
 }));
 
 import { prisma } from "../../src/prisma/client";
@@ -250,16 +256,14 @@ describe("productService extra coverage", () => {
     vi.mocked(prisma.product.findUnique).mockResolvedValue(null as never);
     vi.mocked(prisma.product.findMany)
       .mockResolvedValueOnce([] as never)
-      .mockResolvedValueOnce([
-        {
-          productUrl: "https://loja-a.com/item",
-          name: "Notebook A",
-          storeName: "Loja A"
-        }
-      ] as never);
+      .mockResolvedValueOnce([{ normalizedProductUrl: "https://loja-a.com/item" }] as never);
 
     const result = await searchProducts("notebook", 1, 4);
 
+    expect(prisma.product.findMany).toHaveBeenCalledWith({
+      where: { isDeleted: true, normalizedProductUrl: { in: ["https://loja-a.com/item"] } },
+      select: { normalizedProductUrl: true }
+    });
     expect(result.products).toHaveLength(0);
     expect(result.totalResults).toBe(1);
     expect(result.totalPages).toBe(1);

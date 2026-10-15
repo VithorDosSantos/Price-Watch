@@ -40,6 +40,11 @@ export type Favorite = {
   product: Product;
 };
 
+export type FavoriteLookup = {
+  id: string;
+  productId: string;
+};
+
 export type PriceAlert = {
   id: string;
   targetPrice: number;
@@ -115,8 +120,6 @@ export type PriceHistoryInput = {
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3333";
 
-// No client-side mock data: always use real backend responses
-
 let authToken: string | null = localStorage.getItem("pw_token");
 
 export function setAuthToken(token: string | null) {
@@ -138,12 +141,8 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 
   if (!response.ok) {
     let message = "Falha na comunicação com a API.";
-    try {
-      const data = await response.json();
-      message = data?.message ?? message;
-    } catch {
-      // Keep generic message when the API does not return JSON.
-    }
+    const data = await response.json().catch(() => null);
+    message = data?.message ?? message;
     throw new Error(message);
   }
 
@@ -154,7 +153,6 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-// Auth helpers
 export async function registerUser(name: string | undefined, email: string, password: string) {
   return request<{
     token: string;
@@ -197,7 +195,6 @@ export async function deleteCurrentUser() {
   });
 }
 
-// Admin user management
 export async function getUsers() {
   return request<{
     users: Array<{
@@ -343,6 +340,19 @@ export async function deleteFavorite(favoriteId: string) {
 
 export async function listFavorites(): Promise<Favorite[]> {
   return await request<Favorite[]>("/favorites");
+}
+
+export async function getFavoriteForProduct(productId: string): Promise<FavoriteLookup | null> {
+  return await request<FavoriteLookup | null>(
+    `/favorites/product/${encodeURIComponent(productId)}`
+  );
+}
+
+export async function lookupFavorites(productIds: string[]): Promise<FavoriteLookup[]> {
+  return await request<FavoriteLookup[]>("/favorites/lookup", {
+    method: "POST",
+    body: JSON.stringify({ productIds })
+  });
 }
 
 export async function createAlert(productId: string, targetPrice: number, email: string) {

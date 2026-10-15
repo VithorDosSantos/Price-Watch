@@ -1,0 +1,11 @@
+funcao,versao,cenario,n,mediana_ms
+F7,antes,aleatorio,30,0.030778125000004763
+F7,depois,aleatorio,30,0.015026562499997453
+F7,antes,aleatorio,300,0.27416249999998854
+F7,depois,aleatorio,300,0.0850687499999907
+F7,antes,aleatorio,3000,4.138300000000072
+F7,depois,aleatorio,3000,1.8609999999998763
+F7,antes,aleatorio,30000,27.772800000000643
+F7,depois,aleatorio,30000,13.751600000000508
+F7,antes,aleatorio,300000,335.6911
+F7,depois,aleatorio,300000,99.16780000000108

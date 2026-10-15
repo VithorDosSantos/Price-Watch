@@ -1,5 +1,8 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "../prisma/client";
 import { randomUUID } from "node:crypto";
+import { normalizeProductUrl, toNormalizedProductUrlColumn } from "./productUrl";
+import { upsertProductsBatch } from "./productBatchUpsert";
 
 type SerpApiShoppingResult = {
   title: string;
@@ -171,12 +174,7 @@ function isAsciiWhitespace(char: string): boolean {
 }
 
 function isDiscountNumberChar(char: string): boolean {
-  return (
-    (char >= "0" && char <= "9") ||
-    char === "." ||
-    char === "," ||
-    char === "-"
-  );
+  return (char >= "0" && char <= "9") || char === "." || char === "," || char === "-";
 }
 
 function parseDiscountPercent(text?: string): number | undefined {
@@ -258,9 +256,7 @@ function mapSerpApiItem(item: SerpApiShoppingResult): ProductDTO {
 
   let originalPrice = item.extracted_old_price ?? parsePrice(item.old_price);
   const hasValidOriginalPrice = originalPrice !== undefined && originalPrice > 0;
-  if (hasValidOriginalPrice) {
-    // originalPrice is valid, keep as is
-  } else {
+  if (!hasValidOriginalPrice) {
     const discount = extractDiscountPercent(item);
     if (discount !== undefined && currentPrice > 0) {
       originalPrice = currentPrice / (1 - discount / 100);
@@ -288,20 +284,6 @@ function mapSerpApiItem(item: SerpApiShoppingResult): ProductDTO {
     storeName: item.source ?? "SerpApi",
     category: undefined
   };
-}
-
-function normalizeProductUrl(value?: string | null): string {
-  if (value === undefined || value === null || value === "") {
-    return "";
-  }
-
-  try {
-    const url = new URL(value);
-    const normalized = `${url.origin}${url.pathname}${url.search}`;
-    return normalized.toLowerCase();
-  } catch {
-    return value.trim().toLowerCase();
-  }
 }
 
 function mapSavedProduct(savedProduct: {
@@ -430,6 +412,23 @@ type ProductSearchResult = {
   message?: string;
 };
 
+export async function findDeletedProductUrls(normalizedUrls: string[]): Promise<Set<string>> {
+  const candidates = Array.from(new Set(normalizedUrls.filter((value) => value.length > 0)));
+  if (candidates.length === 0) {
+    return new Set();
+  }
+
+  const deletedProducts = await prisma.product.findMany({
+    where: {
+      isDeleted: true,
+      normalizedProductUrl: { in: candidates }
+    },
+    select: { normalizedProductUrl: true }
+  });
+
+  return new Set(deletedProducts.map((product) => product.normalizedProductUrl as string));
+}
+
 export async function searchProducts(
   query: string,
   page = 1,
@@ -460,7 +459,7 @@ export async function searchProducts(
         totalResults: undefined
       };
 
-  await Promise.allSettled(searchResult.products.map((product) => upsertProduct(product)));
+  await upsertProductsBatch(searchResult.products);
 
   const savedProducts = await prisma.product.findMany({
     where: {
@@ -492,21 +491,8 @@ export async function searchProducts(
     }
   });
 
-  const deletedProducts = await prisma.product.findMany({
-    where: {
-      isDeleted: true
-    },
-    select: {
-      productUrl: true,
-      name: true,
-      storeName: true
-    }
-  });
-
-  const deletedUrls = new Set(
-    deletedProducts
-      .map((product) => normalizeProductUrl(product.productUrl))
-      .filter((value) => value.length > 0)
+  const deletedUrls = await findDeletedProductUrls(
+    searchResult.products.map((product) => normalizeProductUrl(product.productUrl))
   );
 
   const savedByExternalId = new Map(savedProducts.map((product) => [product.externalId, product]));
@@ -576,60 +562,89 @@ export async function searchProducts(
       : {})
   };
 
-  const localMatches = await prisma.product.findMany({
-    where: localWhere,
-    orderBy: {
-      createdAt: "desc"
-    },
-    select: {
-      id: true,
-      externalId: true,
-      name: true,
-      price: true,
-      imageUrl: true,
-      productUrl: true,
-      storeName: true,
-      category: true,
-      priceHistory: {
-        orderBy: {
-          capturedAt: "desc"
-        },
-        take: 1,
-        select: {
-          oldPrice: true,
-          newPrice: true
+  const [localMatches, localCount] = await Promise.all([
+    prisma.product.findMany({
+      where: localWhere,
+      orderBy: {
+        createdAt: "desc"
+      },
+      take: limit,
+      select: {
+        id: true,
+        externalId: true,
+        name: true,
+        price: true,
+        imageUrl: true,
+        productUrl: true,
+        storeName: true,
+        category: true,
+        priceHistory: {
+          orderBy: {
+            capturedAt: "desc"
+          },
+          take: 1,
+          select: {
+            oldPrice: true,
+            newPrice: true
+          }
         }
       }
-    }
-  });
+    }),
+    prisma.product.count({ where: localWhere })
+  ]);
 
   const localDtos = localMatches.map(mapSavedProduct);
-
-  const mergedByExternalId = new Map<string, ProductDTO>();
-  for (const local of localDtos) {
-    mergedByExternalId.set(local.externalId, local);
-  }
+  const localExternalIds = new Set(localDtos.map((local) => local.externalId));
+  const externalByExternalId = new Map<string, ProductDTO>();
   for (const external of productsToReturn.filter(Boolean) as ProductDTO[]) {
-    if (!mergedByExternalId.has(external.externalId)) {
-      mergedByExternalId.set(external.externalId, external);
+    if (!externalByExternalId.has(external.externalId)) {
+      externalByExternalId.set(external.externalId, external);
     }
   }
 
-  const mergedProducts = Array.from(mergedByExternalId.values());
-  const paginatedProducts = mergedProducts.slice(0, limit);
+  const externalOnly = Array.from(externalByExternalId.values()).filter(
+    (external) => !localExternalIds.has(external.externalId)
+  );
+  const paginatedProducts = [...localDtos, ...externalOnly].slice(0, limit);
 
-  const totalResults = searchResult.totalResults;
+  const knowsAllLocals = localCount <= limit;
+  const knownMergedCount = localDtos.length + externalOnly.length;
+  const exceedsLimit = !knowsAllLocals || knownMergedCount > limit;
+
+  let totalResults = searchResult.totalResults;
+  if (totalResults === undefined || totalResults === null) {
+    totalResults = knowsAllLocals
+      ? knownMergedCount
+      : await countMergedProducts(localWhere, localCount, Array.from(externalByExternalId.keys()));
+  }
 
   return {
     source: "serpapi",
     products: paginatedProducts,
     page,
     limit,
-    hasNextPage: searchResult.hasNextPage || mergedProducts.length > limit,
+    hasNextPage: searchResult.hasNextPage || exceedsLimit,
     hasPreviousPage: searchResult.hasPreviousPage,
-    totalResults: totalResults ?? mergedProducts.length,
-    totalPages: totalResults ? Math.max(1, Math.ceil(totalResults / limit)) : undefined
+    totalResults,
+    totalPages: searchResult.totalResults
+      ? Math.max(1, Math.ceil(searchResult.totalResults / limit))
+      : undefined
   };
+}
+
+async function countMergedProducts(
+  localWhere: Prisma.ProductWhereInput,
+  localCount: number,
+  externalIds: string[]
+): Promise<number> {
+  if (externalIds.length === 0) {
+    return localCount;
+  }
+
+  const overlap = await prisma.product.count({
+    where: { AND: [localWhere, { externalId: { in: externalIds } }] }
+  });
+  return localCount + externalIds.length - overlap;
 }
 
 export async function getShowcaseProducts(page = 1, limit = 8): Promise<ProductSearchResult> {
@@ -740,6 +755,10 @@ export async function upsertProduct(product: ProductDTO): Promise<string> {
       price: product.price,
       imageUrl: product.imageUrl,
       productUrl: product.productUrl,
+      normalizedProductUrl:
+        product.productUrl === undefined
+          ? undefined
+          : toNormalizedProductUrlColumn(product.productUrl),
       storeName: product.storeName,
       category: product.category,
       isManual: false
@@ -750,6 +769,7 @@ export async function upsertProduct(product: ProductDTO): Promise<string> {
       price: product.price,
       imageUrl: product.imageUrl,
       productUrl: product.productUrl,
+      normalizedProductUrl: toNormalizedProductUrlColumn(product.productUrl),
       storeName: product.storeName,
       category: product.category,
       isManual: false
@@ -773,6 +793,44 @@ export type CreateProductInput = {
   ownerUserId: string;
 };
 
+async function hasAnyActiveStore(): Promise<boolean> {
+  const rows = await prisma.$queryRaw<Array<{ found: number }>>(
+    Prisma.sql`SELECT 1 AS found FROM "Store" WHERE "isActive" LIMIT 1`
+  );
+  return rows.length > 0;
+}
+
+async function hasActiveStoreNamed(name: string): Promise<boolean> {
+  const rows = await prisma.$queryRaw<Array<{ found: number }>>(
+    Prisma.sql`SELECT 1 AS found FROM "Store" WHERE "isActive" AND lower("name") = lower(${name}) LIMIT 1`
+  );
+  return rows.length > 0;
+}
+
+async function ownsActiveStoreNamed(name: string, userId: string): Promise<boolean> {
+  if (!name.includes("\\")) {
+    const exact = await prisma.$queryRaw<Array<{ found: number }>>(
+      Prisma.sql`SELECT 1 AS found FROM "Store" WHERE "isActive" AND lower("name") = lower(${name}) AND "userId" = ${userId} LIMIT 1`
+    );
+    if (exact.length > 0) {
+      return true;
+    }
+  }
+
+  const ownedStore = await prisma.store.findFirst({
+    where: {
+      name: {
+        equals: name,
+        mode: "insensitive"
+      },
+      userId,
+      isActive: true
+    },
+    select: { id: true }
+  });
+  return ownedStore !== null;
+}
+
 export async function createProduct(input: CreateProductInput): Promise<ProductDTO> {
   const normalizedName = input.name.trim();
 
@@ -784,12 +842,7 @@ export async function createProduct(input: CreateProductInput): Promise<ProductD
     throw new Error("Preço inválido.");
   }
 
-  const activeStores = await prisma.store.findMany({
-    where: { isActive: true },
-    select: { name: true }
-  });
-
-  if (activeStores.length === 0) {
+  if (!(await hasAnyActiveStore())) {
     throw new Error("Cadastre ao menos uma loja ativa antes de criar um produto.");
   }
 
@@ -798,26 +851,11 @@ export async function createProduct(input: CreateProductInput): Promise<ProductD
     throw new Error("Selecione uma loja ativa para cadastrar o produto.");
   }
 
-  const storeExists = activeStores.some(
-    (store) => store.name.toLowerCase() === normalizedStoreName.toLowerCase()
-  );
-  if (!storeExists) {
+  if (!(await hasActiveStoreNamed(normalizedStoreName))) {
     throw new Error("A loja selecionada não está ativa ou não existe.");
   }
 
-  const ownedStore = await prisma.store.findFirst({
-    where: {
-      name: {
-        equals: normalizedStoreName,
-        mode: "insensitive"
-      },
-      userId: input.ownerUserId,
-      isActive: true
-    } as any,
-    select: { id: true }
-  });
-
-  if (!ownedStore) {
+  if (!(await ownsActiveStoreNamed(normalizedStoreName, input.ownerUserId))) {
     throw new Error("Selecione uma loja ativa criada por voce.");
   }
 
@@ -861,6 +899,7 @@ export async function createProduct(input: CreateProductInput): Promise<ProductD
       price: input.price,
       imageUrl: input.imageUrl?.trim() || null,
       productUrl: normalizedProductUrl,
+      normalizedProductUrl: toNormalizedProductUrlColumn(normalizedProductUrl),
       storeName: normalizedStoreName,
       category: normalizedCategory,
       isManual: true
@@ -942,6 +981,8 @@ export async function updateProduct(
       price: nextPrice,
       imageUrl: input.imageUrl === undefined ? product.imageUrl : input.imageUrl,
       productUrl: input.productUrl === undefined ? product.productUrl : input.productUrl,
+      normalizedProductUrl:
+        input.productUrl === undefined ? undefined : toNormalizedProductUrlColumn(input.productUrl),
       storeName: nextStoreName,
       category: nextCategory,
       isManual: true
@@ -953,7 +994,9 @@ export async function updateProduct(
   return mapSavedProduct(updated);
 }
 
-export async function listProductPriceHistory(id: string): Promise<ProductPriceHistoryDTO[] | null> {
+export async function listProductPriceHistory(
+  id: string
+): Promise<ProductPriceHistoryDTO[] | null> {
   const product = await prisma.product.findFirst({
     where: {
       OR: [{ id }, { externalId: id }],
@@ -1009,7 +1052,9 @@ export async function listProductComparableOffers(
     const serpResult = await searchSerpApi(product.name, 1, Math.max(limit * 2, 8));
     const uniqueKeys = new Set<string>();
     const offers: ComparableOfferDTO[] = [fallbackOffer];
-    uniqueKeys.add(`${fallbackOffer.storeName ?? ""}-${normalizeProductUrl(fallbackOffer.productUrl)}`);
+    uniqueKeys.add(
+      `${fallbackOffer.storeName ?? ""}-${normalizeProductUrl(fallbackOffer.productUrl)}`
+    );
 
     for (const item of serpResult.products) {
       const key = `${item.storeName ?? ""}-${normalizeProductUrl(item.productUrl)}`;

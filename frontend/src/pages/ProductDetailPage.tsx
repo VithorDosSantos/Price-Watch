@@ -30,16 +30,17 @@ import {
   deleteFavorite,
   deleteProduct,
   favoriteProduct,
+  getFavoriteForProduct,
   getProduct,
   listProductOffers,
   listProductPriceHistory,
-  listFavorites,
   updateProduct,
   type ComparableOffer,
   type Product
 } from "../services/api";
 import { toast } from "sonner";
 import { useAuth } from "../contexts/AuthContext";
+import { buildHistorySeries } from "../lib/historySeries";
 
 type ProductDetailsView = {
   id: string;
@@ -58,39 +59,6 @@ type ProductDetailsView = {
 
 function roundToOneDecimal(value: number): number {
   return Math.round(value * 10) / 10;
-}
-
-function buildHistorySeries(
-  price: number,
-  history: Array<{ oldPrice: number; newPrice: number; capturedAt: string }>
-) {
-  if (!history.length) {
-    return [{ date: new Date().toISOString(), price }];
-  }
-
-  const sorted = history
-    .slice()
-    .sort(
-      (left, right) => new Date(left.capturedAt).getTime() - new Date(right.capturedAt).getTime()
-    );
-
-  const points: Array<{ date: string; price: number }> = [];
-  let lastKnownPrice: number | null = null;
-
-  for (const entry of sorted) {
-    const timestamp = new Date(entry.capturedAt).getTime();
-    const oldPrice = Number(entry.oldPrice);
-    const newPrice = Number(entry.newPrice);
-
-    if (points.length === 0 || lastKnownPrice !== oldPrice) {
-      points.push({ date: new Date(timestamp - 60_000).toISOString(), price: oldPrice });
-    }
-
-    points.push({ date: new Date(timestamp).toISOString(), price: newPrice });
-    lastKnownPrice = newPrice;
-  }
-
-  return points;
 }
 
 function mapApiProduct(
@@ -185,8 +153,7 @@ export function ProductDetailPage() {
         setProduct(mapApiProduct(apiProduct, history, offers));
         if (apiProduct) {
           try {
-            const favorites = await listFavorites();
-            const match = favorites.find((fav) => fav.product.id === apiProduct.id);
+            const match = await getFavoriteForProduct(apiProduct.id);
             setIsFavorite(Boolean(match));
             setFavoriteId(match?.id ?? null);
           } catch {
@@ -209,7 +176,7 @@ export function ProductDetailPage() {
       return;
     }
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing form state from loaded product
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setFormValues({
       name: product.name ?? "",
       price: String(product.currentPrice ?? ""),
